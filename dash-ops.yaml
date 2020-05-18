@@ -1,0 +1,6 @@
+config:
+  port: 8080
+  origin: http://localhost:3000
+  headers: 
+    - "Content-Type"
+    - "Authorization"

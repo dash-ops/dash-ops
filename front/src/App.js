@@ -1,26 +1,55 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react"
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom"
+import { Layout } from "antd"
+import "./App.css"
+import PrivateRoute from "./components/PrivateRoute"
+import Sidebar from "./components/Sidebar"
+import Topbar from "./components/Topbar"
+import Footer from "./components/Footer"
+import DashboardModule from "./modules/dashboard"
+import Login from "./pages/Login"
 
-function App() {
+export default function App() {
+  const routers = [...DashboardModule.routers]
+  const [collapsed, setCollapsed] = useState(true)
+  
+  const onCollapse = data => {
+    setCollapsed(data)
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    <Router>
+      <Switch>
+        <Route path="/login">
+          <Login />
+        </Route>
+        <PrivateRoute path="/">
+          <Layout className="layout">
+            <Layout.Sider collapsible collapsed={collapsed} onCollapse={onCollapse}>
+              <Sidebar menus={routers} />
+            </Layout.Sider>
+            <Layout>
+              <Layout.Header className="header">
+                <Topbar />
+              </Layout.Header>
+              <Layout.Content className="content">
+                <div className="container">
+                  <Switch>
+                    {routers.map(route => (
+                      <PrivateRoute key={route.name} path={route.path} exact={route.exact}>
+                        <route.component />
+                      </PrivateRoute>
+                    ))}
+                  </Switch>
+                </div>
+              </Layout.Content>
+              <Layout.Footer className="footer">
+                <Footer />
+              </Layout.Footer>
+            </Layout>
+          </Layout>
+        </PrivateRoute>
+      </Switch>
+    </Router>
+  )
 }
-
-export default App;
