@@ -10,14 +10,12 @@ import (
 )
 
 type DashYaml struct {
-	Config struct {
-		Port    string   `yaml:"port"`
-		Origin  string   `yaml:"origin"`
-		Headers []string `yaml:"headers"`
-	} `yaml:"config"`
+	Port    string   `yaml:"port"`
+	Origin  string   `yaml:"origin"`
+	Headers []string `yaml:"headers"`
 }
 
-func GetGlobalConfig() DashYaml {
+func GetFileGlobalConfig() []byte {
 	var dashYaml = "./dash-ops.yaml"
 	if path := os.Getenv("DASH_CONFIG"); path != "" {
 		dashYaml = path
@@ -29,8 +27,12 @@ func GetGlobalConfig() DashYaml {
 		log.WithError(err).Fatal("reading file config")
 	}
 
+	return file
+}
+
+func GetGlobalConfig(file []byte) DashYaml {
 	dc := DashYaml{}
-	err = yaml.Unmarshal(file, &dc)
+	err := yaml.Unmarshal(file, &dc)
 	if err != nil {
 		log.WithError(err).Fatal("parse yaml config")
 	}

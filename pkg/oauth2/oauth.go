@@ -62,8 +62,18 @@ func OAuthMiddleware(next http.Handler) http.Handler {
 }
 
 // MakeOauthHandlers Add outh endpoints
-func MakeOauthHandlers(r *mux.Router) {
-	dashConfig, oauthConfig := loadConfig()
+func MakeOauthHandlers(r *mux.Router, fileConfig []byte) {
+	dashConfig := loadConfig(fileConfig)
+
+	oauthConfig := &oauth2.Config{
+		ClientID:     dashConfig.Oauth2[0].ClientID,
+		ClientSecret: dashConfig.Oauth2[0].ClientSecret,
+		Scopes:       dashConfig.Oauth2[0].Scopes,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  dashConfig.Oauth2[0].AuthURL,
+			TokenURL: dashConfig.Oauth2[0].TokenURL,
+		},
+	}
 
 	r.HandleFunc("/api/oauth", oauthHandler(oauthConfig)).
 		Name("oauth")

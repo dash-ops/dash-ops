@@ -16,13 +16,14 @@ import (
 )
 
 func main() {
-	dc := config.GetGlobalConfig()
+	fileConfig := config.GetFileGlobalConfig()
+	dashConfig := config.GetGlobalConfig(fileConfig)
 
 	router := mux.NewRouter()
 
 	cors := handlers.CORS(
-		handlers.AllowedHeaders(dc.Config.Headers),
-		handlers.AllowedOrigins([]string{dc.Config.Origin}),
+		handlers.AllowedHeaders(dashConfig.Headers),
+		handlers.AllowedOrigins([]string{dashConfig.Origin}),
 		handlers.AllowCredentials(),
 	)
 	router.Use(cors)
@@ -32,7 +33,7 @@ func main() {
 	})
 
 	// OAuth API
-	oauth.MakeOauthHandlers(router)
+	oauth.MakeOauthHandlers(router, fileConfig)
 	private := router.PathPrefix("/api").Subrouter()
 	private.Use(oauth.OAuthMiddleware)
 
@@ -41,7 +42,7 @@ func main() {
 
 	srv := &http.Server{
 		Handler: router,
-		Addr:    fmt.Sprintf("localhost:%s", dc.Config.Port),
+		Addr:    fmt.Sprintf("localhost:%s", dashConfig.Port),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
