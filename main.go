@@ -12,6 +12,7 @@ import (
 
 	"github.com/dash-ops/dash-ops/pkg/config"
 	"github.com/dash-ops/dash-ops/pkg/spa"
+	oauth "github.com/dash-ops/dash-ops/pkg/oauth2"
 )
 
 func main() {
@@ -29,6 +30,11 @@ func main() {
 	router.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 	})
+
+	// OAuth API
+	oauth.MakeOauthHandlers(router)
+	private := router.PathPrefix("/api").Subrouter()
+	private.Use(oauth.OAuthMiddleware)
 
 	spaHandler := spa.SpaHandler{StaticPath: "front/build", IndexPath: "index.html"}
 	router.PathPrefix("/").Handler(spaHandler)
