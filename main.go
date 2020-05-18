@@ -1,18 +1,30 @@
 package main
 
 import (
+	"fmt"
 	"encoding/json"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
+	"github.com/dash-ops/dash-ops/pkg/config"
 	"github.com/dash-ops/dash-ops/pkg/spa"
 )
 
 func main() {
+	dc := config.GetGlobalConfig()
+
 	router := mux.NewRouter()
+
+	cors := handlers.CORS(
+		handlers.AllowedHeaders(dc.Config.Headers),
+		handlers.AllowedOrigins([]string{dc.Config.Origin}),
+		handlers.AllowCredentials(),
+	)
+	router.Use(cors)
 
 	router.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
@@ -23,7 +35,7 @@ func main() {
 
 	srv := &http.Server{
 		Handler: router,
-		Addr:    "localhost:8000",
+		Addr:    fmt.Sprintf("localhost:%s", dc.Config.Port),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
