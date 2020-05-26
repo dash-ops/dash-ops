@@ -1,8 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -11,8 +11,9 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/dash-ops/dash-ops/pkg/config"
+	"github.com/dash-ops/dash-ops/pkg/kubernetes"
+	"github.com/dash-ops/dash-ops/pkg/oauth2"
 	"github.com/dash-ops/dash-ops/pkg/spa"
-	oauth "github.com/dash-ops/dash-ops/pkg/oauth2"
 )
 
 func main() {
@@ -33,16 +34,18 @@ func main() {
 	})
 
 	// OAuth API
-	oauth.MakeOauthHandlers(router, fileConfig)
+	oauth2.MakeOauthHandlers(router, fileConfig)
 	private := router.PathPrefix("/api").Subrouter()
-	private.Use(oauth.OAuthMiddleware)
+	private.Use(oauth2.OAuthMiddleware)
+
+	kubernetes.MakeKubernetesHandlers(private, fileConfig)
 
 	spaHandler := spa.SpaHandler{StaticPath: "front/build", IndexPath: "index.html"}
 	router.PathPrefix("/").Handler(spaHandler)
 
 	srv := &http.Server{
-		Handler: router,
-		Addr:    fmt.Sprintf("localhost:%s", dashConfig.Port),
+		Handler:      router,
+		Addr:         fmt.Sprintf("localhost:%s", dashConfig.Port),
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}

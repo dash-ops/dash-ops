@@ -1,4 +1,4 @@
-package oauth2
+package commons
 
 import (
 	"net/http"
@@ -11,14 +11,14 @@ import (
 func TestRespondJSON(t *testing.T) {
 	var body interface{}
 	res := httptest.NewRecorder()
-	respondJSON(res, http.StatusOK, body)
+	RespondJSON(res, http.StatusOK, body)
 
 	assert.Equal(t, http.StatusOK, res.Code)
 }
 
 func TestRespondError(t *testing.T) {
 	res := httptest.NewRecorder()
-	respondError(res, http.StatusInternalServerError, "Error")
+	RespondError(res, http.StatusInternalServerError, "Error")
 
 	assert.Equal(t, http.StatusInternalServerError, res.Code)
 }

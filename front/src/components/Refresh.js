@@ -1,6 +1,7 @@
 import React, { useState } from "react"
 import PropTypes from "prop-types"
 import { Button, Checkbox } from "antd"
+import { ReloadOutlined } from "@ant-design/icons"
 import { setItem, getItem } from "../helpers/localStorage"
 import useInterval from "../helpers/useInterval"
 
@@ -26,7 +27,7 @@ function Refresh(props) {
       <Checkbox checked={isAutoRefresh} onChange={onAutoRefresh}>
         Auto Refresh 10s
       </Checkbox>
-      <Button icon="reload" onClick={onReload} />
+      <Button icon={<ReloadOutlined />} onClick={onReload} />
     </>
   )
 }

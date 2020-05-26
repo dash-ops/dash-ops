@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/dash-ops/dash-ops/pkg/commons"
 	"github.com/google/go-github/github"
 	mux_context "github.com/gorilla/context"
 	"github.com/gorilla/mux"
@@ -16,11 +17,11 @@ func meHandler(oauthConfig *oauth2.Config) http.HandlerFunc {
 		client := github.NewClient(oauthConfig.Client(context.Background(), token))
 		user, _, err := client.Users.Get(context.Background(), "")
 		if err != nil {
-			respondError(w, http.StatusInternalServerError, err.Error())
+			commons.RespondError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		respondJSON(w, http.StatusOK, *user)
+		commons.RespondJSON(w, http.StatusOK, *user)
 	}
 }
 

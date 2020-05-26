@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/dash-ops/dash-ops/pkg/commons"
 	mux_context "github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"golang.org/x/oauth2"
@@ -24,12 +25,12 @@ func oauthRedirectHandler(dc DashYaml, oauthConfig *oauth2.Config) http.HandlerF
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := oauthConfig.Exchange(context.Background(), r.URL.Query().Get("code"))
 		if err != nil {
-			respondError(w, http.StatusUnauthorized, "there was an issue getting your token, "+err.Error())
+			commons.RespondError(w, http.StatusUnauthorized, "there was an issue getting your token, "+err.Error())
 			return
 		}
 
 		if !token.Valid() {
-			respondError(w, http.StatusUnauthorized, "retrieved invalid token: "+err.Error())
+			commons.RespondError(w, http.StatusUnauthorized, "retrieved invalid token: "+err.Error())
 			return
 		}
 
@@ -43,17 +44,17 @@ func OAuthMiddleware(next http.Handler) http.Handler {
 		const bearerSchema = "Bearer "
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
-			respondError(w, http.StatusUnauthorized, "retrieved invalid token")
+			commons.RespondError(w, http.StatusUnauthorized, "retrieved invalid token")
 			return
 		}
 		accessToken := authHeader[len(bearerSchema):]
 		if accessToken == "" {
-			respondError(w, http.StatusUnauthorized, "retrieved invalid token")
+			commons.RespondError(w, http.StatusUnauthorized, "retrieved invalid token")
 			return
 		}
 		token := &oauth2.Token{AccessToken: accessToken, TokenType: "Bearer"}
 		if !token.Valid() {
-			respondError(w, http.StatusUnauthorized, "retrieved invalid token")
+			commons.RespondError(w, http.StatusUnauthorized, "retrieved invalid token")
 			return
 		}
 		mux_context.Set(r, TokenKey, token)
