@@ -1,4 +1,4 @@
-package oauth2
+package commons
 
 import (
 	"encoding/json"
@@ -7,8 +7,8 @@ import (
 	"github.com/apex/log"
 )
 
-// respondJSON makes the response with payload as json format
-func respondJSON(w http.ResponseWriter, code int, payload interface{}) {
+// RespondJSON makes the response with payload as json format
+func RespondJSON(w http.ResponseWriter, code int, payload interface{}) {
 	r, err := json.Marshal(payload)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -26,7 +26,7 @@ func respondJSON(w http.ResponseWriter, code int, payload interface{}) {
 	}
 }
 
-// respondError makes the error response with payload as json format
-func respondError(w http.ResponseWriter, code int, message string) {
-	respondJSON(w, code, map[string]string{"error": message})
+// RespondError makes the error response with payload as json format
+func RespondError(w http.ResponseWriter, code int, message string) {
+	RespondJSON(w, code, map[string]string{"error": message})
 }
