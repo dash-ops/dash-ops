@@ -8,6 +8,7 @@ export default {
       name: "Dashboard",
       icon: <DashboardOutlined />,
       path: "/",
+      exact: true,
       component: DashboardPage,
     },
   ],

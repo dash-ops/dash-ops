@@ -7,10 +7,11 @@ import Sidebar from "./components/Sidebar"
 import Topbar from "./components/Topbar"
 import Footer from "./components/Footer"
 import DashboardModule from "./modules/dashboard"
+import KubernetesModule from "./modules/kubernetes"
 import Login from "./pages/Login"
 
 export default function App() {
-  const routers = [...DashboardModule.routers]
+  const routers = [...DashboardModule.routers, ...KubernetesModule.routers]
   const [collapsed, setCollapsed] = useState(true)
   
   const onCollapse = data => {
