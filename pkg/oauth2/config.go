@@ -1,11 +1,11 @@
 package oauth2
 
 import (
-	"gopkg.in/yaml.v2"
 	"github.com/apex/log"
+	"gopkg.in/yaml.v2"
 )
 
-type DashYaml struct {
+type dashYaml struct {
 	Oauth2 []struct {
 		Provider        string   `yaml:"provider"`
 		ClientID        string   `yaml:"clientId"`
@@ -17,8 +17,8 @@ type DashYaml struct {
 	} `yaml:"oauth2"`
 }
 
-func loadConfig(file []byte) DashYaml {
-	dc := DashYaml{}
+func loadConfig(file []byte) dashYaml {
+	dc := dashYaml{}
 
 	err := yaml.Unmarshal(file, &dc)
 	if err != nil {

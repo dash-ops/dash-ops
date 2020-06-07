@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/apex/log v1.1.2
+	github.com/aws/aws-sdk-go v1.20.6
 	github.com/caarlos0/env v3.5.0+incompatible
 	github.com/golang/mock v1.4.3 // indirect
 	github.com/google/go-github v17.0.0+incompatible

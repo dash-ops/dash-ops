@@ -1,6 +1,6 @@
 import React from "react"
-import DeploymentPage from "./DeploymentPage"
 import { DeploymentUnitOutlined } from "@ant-design/icons"
+import DeploymentPage from "./DeploymentPage"
 
 export default {
   routers: [

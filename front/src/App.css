@@ -1,35 +1,26 @@
-.layout {
+.dash-layout {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100%;
 }
 
-.logo {
-  height: 32px;
-  margin: 16px;
-  text-align: center;
-  color: #ffffff;
-  line-height: 32px;
-  font-size: 20px;
-}
-
-.header {
-  padding: 0;
+.dash-header {
+  padding: 0 !important;
   min-height: 60px;
 }
 
-.content {
+.dash-content {
   flex-grow: 1;
   overflow: auto;
   margin: 24px 16px 0;
 }
 
-.container {
+.dash-container {
   padding: 15px;
   margin-top: 10px;
   min-height: 360px;
 }
 
-.footer {
+.dash-footer {
   text-align: center;
 }

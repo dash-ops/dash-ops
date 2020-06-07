@@ -5,14 +5,17 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type DashYaml struct {
-	Kubernetes struct {
-		Kubeconfig string `yaml:"kubeconfig"`
-	} `yaml:"kubernetes"`
+type dashYaml struct {
+	Kubernetes kubernetesConfig `yaml:"kubernetes"`
 }
 
-func loadConfig(file []byte) DashYaml {
-	dc := DashYaml{}
+type kubernetesConfig struct {
+	Kubeconfig string `yaml:"kubeconfig"`
+	Listen     string `yaml:"-"`
+}
+
+func loadConfig(file []byte) dashYaml {
+	dc := dashYaml{}
 
 	err := yaml.Unmarshal(file, &dc)
 	if err != nil {

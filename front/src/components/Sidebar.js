@@ -2,6 +2,7 @@ import React, { useState } from "react"
 import PropTypes from "prop-types"
 import { Link, useLocation } from "react-router-dom"
 import { Menu } from "antd"
+import "./Sidebar.css"
 // import logo from "../logo.png"
 
 function Sidebar({ menus }) {
@@ -10,7 +11,7 @@ function Sidebar({ menus }) {
 
   return (
     <>
-      <div className="logo">
+      <div className="dash-logo">
         {/* <img src={logo} alt="DashOPS - Beta" /> */}
         DashOPS
       </div>

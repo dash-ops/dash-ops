@@ -21,7 +21,7 @@ func oauthHandler(oauthConfig *oauth2.Config) http.HandlerFunc {
 	}
 }
 
-func oauthRedirectHandler(dc DashYaml, oauthConfig *oauth2.Config) http.HandlerFunc {
+func oauthRedirectHandler(dc dashYaml, oauthConfig *oauth2.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token, err := oauthConfig.Exchange(context.Background(), r.URL.Query().Get("code"))
 		if err != nil {
