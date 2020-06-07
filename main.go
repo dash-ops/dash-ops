@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
+	"github.com/dash-ops/dash-ops/pkg/aws"
 	"github.com/dash-ops/dash-ops/pkg/config"
 	"github.com/dash-ops/dash-ops/pkg/kubernetes"
 	"github.com/dash-ops/dash-ops/pkg/oauth2"
@@ -39,6 +40,7 @@ func main() {
 	private.Use(oauth2.OAuthMiddleware)
 
 	kubernetes.MakeKubernetesHandlers(private, fileConfig)
+	aws.MakeAWSInstanceHandlers(private, fileConfig)
 
 	spaHandler := spa.SpaHandler{StaticPath: "front/build", IndexPath: "index.html"}
 	router.PathPrefix("/").Handler(spaHandler)

@@ -7,10 +7,10 @@ import (
 )
 
 func TestLoadConfig(t *testing.T) {
-	fileOauthConfig := []byte(`kubernetes:
+	fileK8sConfig := []byte(`kubernetes:
   kubeconfig: /root/.kube/config`)
 
-	dashConfig := loadConfig(fileOauthConfig)
+	dashConfig := loadConfig(fileK8sConfig)
 
 	assert.Equal(t, "/root/.kube/config", dashConfig.Kubernetes.Kubeconfig)
 }

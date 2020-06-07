@@ -1,18 +1,19 @@
 package config
 
 import (
-	"os"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
-	"gopkg.in/yaml.v2"
 	"github.com/apex/log"
+	"gopkg.in/yaml.v2"
 )
 
 type DashYaml struct {
 	Port    string   `yaml:"port"`
 	Origin  string   `yaml:"origin"`
 	Headers []string `yaml:"headers"`
+	Plugins []string `yaml:"plugins"`
 }
 
 func GetFileGlobalConfig() []byte {

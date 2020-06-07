@@ -16,15 +16,9 @@ type k8sClient struct {
 	clientSet *kubernetes.Clientset
 }
 
-// K8sConfig K8S module config
-type K8sConfig struct {
-	KubeConfigPath string
-	Listen         string
-}
-
 // NewK8sClient Create a new k8s client
-func NewK8sClient(config K8sConfig) (K8sClient, error) {
-	kConfig, err := getConfig(config.KubeConfigPath)
+func NewK8sClient(config kubernetesConfig) (K8sClient, error) {
+	kConfig, err := getConfig(config.Kubeconfig)
 	if err != nil {
 		return nil, err
 	}

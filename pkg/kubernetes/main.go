@@ -46,12 +46,11 @@ func k8sDeploymentDownHandler(k8sClient K8sClient) http.HandlerFunc {
 	}
 }
 
+// MakeKubernetesHandlers Add kubernetes module endpoints
 func MakeKubernetesHandlers(r *mux.Router, fileConfig []byte) {
 	dashConfig := loadConfig(fileConfig)
 
-	k8sClient, err := NewK8sClient(K8sConfig{
-		KubeConfigPath: dashConfig.Kubernetes.Kubeconfig,
-	})
+	k8sClient, err := NewK8sClient(dashConfig.Kubernetes)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
