@@ -1,4 +1,3 @@
-
 package config
 
 import (
@@ -12,7 +11,9 @@ func TestGetGlobalConfig(t *testing.T) {
 origin: http://localhost:3000
 headers: 
   - "Content-Type"
-  - "Authorization"`)
+  - "Authorization"
+plugins:
+  - "Oauth2"`)
 
 	dashConfig := GetGlobalConfig(fileConfig)
 

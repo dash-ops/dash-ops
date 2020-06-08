@@ -34,7 +34,6 @@ func main() {
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 	})
 
-	// OAuth API
 	oauth2.MakeOauthHandlers(router, fileConfig)
 	private := router.PathPrefix("/api").Subrouter()
 	private.Use(oauth2.OAuthMiddleware)
@@ -42,7 +41,7 @@ func main() {
 	kubernetes.MakeKubernetesHandlers(private, fileConfig)
 	aws.MakeAWSInstanceHandlers(private, fileConfig)
 
-	spaHandler := spa.SpaHandler{StaticPath: "front/build", IndexPath: "index.html"}
+	spaHandler := spa.SpaHandler{StaticPath: dashConfig.Front, IndexPath: "index.html"}
 	router.PathPrefix("/").Handler(spaHandler)
 
 	srv := &http.Server{
