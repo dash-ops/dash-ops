@@ -31,7 +31,7 @@ func GetFileGlobalConfig() []byte {
 		log.WithError(err).Fatal("reading file config")
 	}
 
-	return file
+	return []byte(os.ExpandEnv(string(file)))
 }
 
 // GetGlobalConfig get dash ops global config

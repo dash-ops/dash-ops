@@ -44,6 +44,7 @@ func main() {
 	spaHandler := spa.SpaHandler{StaticPath: dashConfig.Front, IndexPath: "index.html"}
 	router.PathPrefix("/").Handler(spaHandler)
 
+	fmt.Println("DashOps server running!!")
 	srv := &http.Server{
 		Handler:      router,
 		Addr:         fmt.Sprintf(":%s", dashConfig.Port),
