@@ -1,0 +1,33 @@
+name: DashOps
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  CD:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Go environment
+      uses: actions/setup-go@v2.0.3
+      
+    - run: CGO_ENABLED=0 go build -ldflags="-s -w" -o dash-ops .
+
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v1.4.2
+    
+    - run: |
+        cd front
+        yarn
+        yarn build
+
+    - name: Build and push Docker images
+      uses: docker/build-push-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        repository: dashops/dash-ops
+        tags: latest
