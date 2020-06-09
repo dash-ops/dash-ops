@@ -1,3 +1,4 @@
 dash-ops
 coverage.out
 *.test.yaml
+.DS_Store
