@@ -5,27 +5,18 @@ import Refresh from "../../components/Refresh"
 import InstanceActions from "./InstanceActions"
 import InstanceTag from "./InstanceTag"
 
-const initialState = { data: [], loading: false }
+const INITIAL_STATE = { data: [], loading: false }
 const LOADING = "LOADING"
 const SET_DATA = "SET_DATA"
 
 function reducer(state, action) {
   switch (action.type) {
     case LOADING:
-      return { loading: true, data: [] }
+      return { ...state, loading: true, data: [] }
     case SET_DATA:
-      return { loading: false, data: action.response }
+      return { ...state, loading: false, data: action.response }
     default:
-      return initialState
-  }
-}
-
-function useSearchInput(initalValue) {
-  const [value, setValue] = useState(initalValue)
-
-  return {
-    value,
-    onSearch: v => setValue(v),
+      return state
   }
 }
 
@@ -58,8 +49,8 @@ async function toStop(instance, setNewState) {
 }
 
 export default function InstancePage() {
-  const search = useSearchInput("")
-  const [instances, dispatch] = useReducer(reducer, initialState)
+  const [search, setSearch] = useState("")
+  const [instances, dispatch] = useReducer(reducer, INITIAL_STATE)
   useEffect(() => {
     dispatch({ type: LOADING })
     fetchData(dispatch)
@@ -70,7 +61,7 @@ export default function InstancePage() {
   }
 
   function updateInstanceState(id, state) {
-    const newInstances = instances.data.map(inst =>
+    const newInstances = instances.data.map((inst) =>
       inst.instance_id === id ? { ...inst, state } : inst,
     )
     dispatch({ type: SET_DATA, response: newInstances })
@@ -91,7 +82,7 @@ export default function InstancePage() {
       title: "State",
       dataIndex: "state",
       key: "state",
-      render: state => !state || <InstanceTag state={state} />,
+      render: (state) => !state || <InstanceTag state={state} />,
     },
     {
       title: "Action",
@@ -114,14 +105,14 @@ export default function InstancePage() {
       <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
         <Col xs={18} md={6}>
           <Input.Search
-            onChange={e => search.onSearch(e.target.value)}
-            onSearch={search.onSearch}
-            value={search.value}
+            onChange={(e) => setSearch(e.target.value)}
+            onSearch={setSearch}
+            value={search}
             enterButton
           />
         </Col>
         <Col xs={6} md={6}>
-          <Button onClick={() => search.onSearch("")}>Clear</Button>
+          <Button onClick={() => setSearch("")}>Clear</Button>
         </Col>
         <Col xs={0} md={{ span: 6, offset: 6 }} style={{ textAlign: "right" }}>
           <Refresh onReload={onReload} />
@@ -131,7 +122,7 @@ export default function InstancePage() {
         <Col flex="auto" style={{ marginTop: 10 }}>
           <Table
             dataSource={instances.data.filter(
-              instance => search.value === "" || instance.name.includes(search.value),
+              (instance) => search === "" || instance.name.includes(search),
             )}
             columns={columns}
             rowKey="instance_id"
