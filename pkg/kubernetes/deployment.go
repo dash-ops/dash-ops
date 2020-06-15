@@ -7,19 +7,27 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Deployment Struct representing an k8s deoloyment
+// Deployment Struct representing an k8s deployment
 type Deployment struct {
 	Name      string `json:"name"`
 	Namespace string `json:"namespace"`
 	PodCount  int    `json:"pod_count"`
 }
 
-func (kc k8sClient) GetDeployments() ([]Deployment, error) {
+type deploymentFilter struct {
+	Namespace string
+}
+
+func (kc k8sClient) GetDeployments(filter deploymentFilter) ([]Deployment, error) {
 	var deployments []Deployment
+
+	if filter.Namespace == "" {
+		filter.Namespace = apiv1.NamespaceAll
+	}
 
 	deploys, err := kc.clientSet.
 		AppsV1().
-		Deployments(apiv1.NamespaceAll).
+		Deployments(filter.Namespace).
 		List(metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get deployments: %s", err)

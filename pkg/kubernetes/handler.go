@@ -8,9 +8,26 @@ import (
 	"github.com/gorilla/mux"
 )
 
+func k8sNamespacesHandler(k8sClient K8sClient) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		deployment, err := k8sClient.GetNamespaces()
+		if err != nil {
+			commons.RespondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		commons.RespondJSON(w, http.StatusOK, deployment)
+	}
+}
+
 func k8sDeploymentsHandler(k8sClient K8sClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		deployment, err := k8sClient.GetDeployments()
+		v := r.URL.Query()
+
+		namespace := v.Get("namespace")
+		deployment, err := k8sClient.GetDeployments(deploymentFilter{
+			Namespace: namespace,
+		})
 		if err != nil {
 			commons.RespondError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -54,6 +71,10 @@ func MakeKubernetesHandlers(r *mux.Router, fileConfig []byte) {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
+
+	r.HandleFunc("/v1/k8s/namespaces", k8sNamespacesHandler(k8sClient)).
+		Methods("GET", "OPTIONS").
+		Name("k8sNamespaces")
 
 	r.HandleFunc("/v1/k8s/deployments", k8sDeploymentsHandler(k8sClient)).
 		Methods("GET", "OPTIONS").
