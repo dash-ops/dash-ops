@@ -21,7 +21,8 @@ func TestMakeOauthHandlers(t *testing.T) {
       - read:org`)
 
 	r := mux.NewRouter()
-	MakeOauthHandlers(r, fileOauthConfig)
+	api := r.PathPrefix("/api").Subrouter()
+	MakeOauthHandlers(r, api, fileOauthConfig)
 
 	path, err := r.GetRoute("oauth").GetPathTemplate()
 	assert.Nil(t, err)
@@ -29,5 +30,5 @@ func TestMakeOauthHandlers(t *testing.T) {
 
 	path, err = r.GetRoute("oauthRedirect").GetPathTemplate()
 	assert.Nil(t, err)
-	assert.Equal(t, "/oauth/redirect", path)
+	assert.Equal(t, "/api/oauth/redirect", path)
 }

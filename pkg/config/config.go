@@ -15,7 +15,18 @@ type DashYaml struct {
 	Origin  string   `yaml:"origin"`
 	Headers []string `yaml:"headers"`
 	Front   string   `yaml:"front"`
-	Plugins []string `yaml:"plugins"`
+	Plugins Plugins  `yaml:"plugins"`
+}
+
+type Plugins []string
+
+func (list Plugins) Has(a string) bool {
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
 
 // GetFileGlobalConfig get dash ops file config

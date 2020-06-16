@@ -72,19 +72,19 @@ func MakeKubernetesHandlers(r *mux.Router, fileConfig []byte) {
 		fmt.Println(err.Error())
 	}
 
-	r.HandleFunc("/v1/k8s/namespaces", k8sNamespacesHandler(k8sClient)).
+	r.HandleFunc("/k8s/namespaces", k8sNamespacesHandler(k8sClient)).
 		Methods("GET", "OPTIONS").
 		Name("k8sNamespaces")
 
-	r.HandleFunc("/v1/k8s/deployments", k8sDeploymentsHandler(k8sClient)).
+	r.HandleFunc("/k8s/deployments", k8sDeploymentsHandler(k8sClient)).
 		Methods("GET", "OPTIONS").
 		Name("k8sDeployments")
 
-	r.HandleFunc("/v1/k8s/deployment/up/{namespace}/{name}", k8sDeploymentUpHandler(k8sClient)).
+	r.HandleFunc("/k8s/deployment/up/{namespace}/{name}", k8sDeploymentUpHandler(k8sClient)).
 		Methods("POST", "OPTIONS").
 		Name("k8sDeploymentUp")
 
-	r.HandleFunc("/v1/k8s/deployment/down/{namespace}/{name}", k8sDeploymentDownHandler(k8sClient)).
+	r.HandleFunc("/k8s/deployment/down/{namespace}/{name}", k8sDeploymentDownHandler(k8sClient)).
 		Methods("POST", "OPTIONS").
 		Name("k8sDeploymentDown")
 }

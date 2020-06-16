@@ -63,7 +63,7 @@ func OAuthMiddleware(next http.Handler) http.Handler {
 }
 
 // MakeOauthHandlers Add outh endpoints
-func MakeOauthHandlers(r *mux.Router, fileConfig []byte) {
+func MakeOauthHandlers(r *mux.Router, internal *mux.Router, fileConfig []byte) {
 	dashConfig := loadConfig(fileConfig)
 
 	oauthConfig := &oauth2.Config{
@@ -76,15 +76,12 @@ func MakeOauthHandlers(r *mux.Router, fileConfig []byte) {
 		},
 	}
 
-	r.HandleFunc("/api/oauth", oauthHandler(oauthConfig)).
+	r.HandleFunc("/oauth", oauthHandler(oauthConfig)).
 		Name("oauth")
 	r.HandleFunc("/oauth/redirect", oauthRedirectHandler(dashConfig, oauthConfig)).
 		Name("oauthRedirect")
 
-	p := r.PathPrefix("/api").Subrouter()
-	p.Use(OAuthMiddleware)
-
 	if dashConfig.Oauth2[0].Provider == "github" {
-		makeGithubHandlers(p, oauthConfig)
+		makeGithubHandlers(internal, oauthConfig)
 	}
 }

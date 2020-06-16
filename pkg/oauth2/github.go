@@ -26,7 +26,7 @@ func meHandler(oauthConfig *oauth2.Config) http.HandlerFunc {
 }
 
 func makeGithubHandlers(r *mux.Router, oauthConfig *oauth2.Config) {
-	r.HandleFunc("/v1/me", meHandler(oauthConfig)).
+	r.HandleFunc("/me", meHandler(oauthConfig)).
 		Methods("GET", "OPTIONS").
 		Name("userGithub")
 }

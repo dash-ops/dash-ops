@@ -30,16 +30,26 @@ func main() {
 	)
 	router.Use(cors)
 
-	router.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
+	api := router.PathPrefix("/api").Subrouter()
+	api.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 	})
+	config.MakeConfigHandlers(api, dashConfig)
 
-	oauth2.MakeOauthHandlers(router, fileConfig)
-	private := router.PathPrefix("/api").Subrouter()
-	private.Use(oauth2.OAuthMiddleware)
-
-	kubernetes.MakeKubernetesHandlers(private, fileConfig)
-	aws.MakeAWSInstanceHandlers(private, fileConfig)
+	internal := api.PathPrefix("/v1").Subrouter()
+	if dashConfig.Plugins.Has("OAuth2") {
+		// ToDo transform into isolated plugins
+		oauth2.MakeOauthHandlers(api, internal, fileConfig)
+		internal.Use(oauth2.OAuthMiddleware)
+	}
+	if dashConfig.Plugins.Has("Kubernetes") {
+		// ToDo transform into isolated plugins
+		kubernetes.MakeKubernetesHandlers(internal, fileConfig)
+	}
+	if dashConfig.Plugins.Has("AWS") {
+		// ToDo transform into isolated plugins
+		aws.MakeAWSInstanceHandlers(internal, fileConfig)
+	}
 
 	spaHandler := spa.SpaHandler{StaticPath: dashConfig.Front, IndexPath: "index.html"}
 	router.PathPrefix("/").Handler(spaHandler)

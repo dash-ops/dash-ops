@@ -54,15 +54,15 @@ func MakeAWSInstanceHandlers(r *mux.Router, fileConfig []byte) {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	r.HandleFunc("/v1/ec2/instances", ec2InstancesHandler(awsClient)).
+	r.HandleFunc("/ec2/instances", ec2InstancesHandler(awsClient)).
 		Methods("GET", "OPTIONS").
 		Name("ec2Instances")
 
-	r.HandleFunc("/v1/ec2/instance/start/{instanceId}", ec2InstanceStartHandler(awsClient)).
+	r.HandleFunc("/ec2/instance/start/{instanceId}", ec2InstanceStartHandler(awsClient)).
 		Methods("POST", "OPTIONS").
 		Name("ec2InstanceStart")
 
-	r.HandleFunc("/v1/ec2/instance/stop/{instanceId}", ec2InstanceStopHandler(awsClient)).
+	r.HandleFunc("/ec2/instance/stop/{instanceId}", ec2InstanceStopHandler(awsClient)).
 		Methods("POST", "OPTIONS").
 		Name("ec2InstanceStop")
 }
