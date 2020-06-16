@@ -13,16 +13,20 @@ jobs:
 
     - name: Setup Go environment
       uses: actions/setup-go@v2.0.3
-      
     - run: CGO_ENABLED=0 go build -ldflags="-s -w" -o dash-ops .
 
     - name: Setup Node.js environment
       uses: actions/setup-node@v1.4.2
-    
     - run: |
         cd front
         yarn
         yarn build
+
+    - name: Bump version and push tag
+      id: tags
+      uses: mathieudutour/github-tag-action@v4.5
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build and push Docker images
       uses: docker/build-push-action@v1
@@ -30,4 +34,4 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         repository: dashops/dash-ops
-        tags: latest
+        tags: latest, ${{ steps.tags.outputs.new_version }}
