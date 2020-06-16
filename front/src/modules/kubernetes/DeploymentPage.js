@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useReducer } from "react"
 import { Row, Col, Table, Button, Input, notification, Form, Tag, Select } from "antd"
+import { cancelToken } from "../../helpers/http"
 import { getNamespaces } from "./namespaceResource"
 import { getDeployments, upDeployment, downDeployment } from "./deploymentResource"
 import Refresh from "../../components/Refresh"
@@ -20,9 +21,9 @@ function reducer(state, action) {
   }
 }
 
-async function fetchData(dispatch, filter) {
+async function fetchData(dispatch, filter, config) {
   try {
-    const result = await getDeployments(filter)
+    const result = await getDeployments(filter, config)
     dispatch({ type: SET_DATA, response: result.data })
   } catch (e) {
     notification.error({ message: "Ops... Failed to fetch API data" })
@@ -55,14 +56,24 @@ export default function DeploymentPage() {
   const [deployments, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
-    getNamespaces().then((result) => {
+    const source = cancelToken.source()
+    getNamespaces({ cancelToken: source.token }).then((result) => {
       setNamespaces(result.data)
     })
+
+    return () => {
+      source.cancel()
+    }
   }, [])
 
   useEffect(() => {
+    const source = cancelToken.source()
     dispatch({ type: LOADING })
-    fetchData(dispatch, { namespace })
+    fetchData(dispatch, { namespace }, { cancelToken: source.token })
+
+    return () => {
+      source.cancel()
+    }
   }, [namespace])
 
   async function onReload() {
@@ -153,17 +164,19 @@ export default function DeploymentPage() {
       </Row>
       <Row>
         <Col flex="auto" style={{ marginTop: 10 }}>
-          <Table
-            dataSource={deployments.data.filter(
-              (deployment) => search === "" || deployment.name.includes(search),
-            )}
-            columns={columns}
-            rowKey="name"
-            loading={deployments.loading}
-            size="small"
-            pagination={false}
-            scroll={{ x: 600 }}
-          />
+          {deployments !== [] && (
+            <Table
+              dataSource={deployments.data.filter(
+                (deployment) => search === "" || deployment.name.includes(search),
+              )}
+              columns={columns}
+              rowKey="name"
+              loading={deployments.loading}
+              size="small"
+              pagination={false}
+              scroll={{ x: 600 }}
+            />
+          )}
         </Col>
       </Row>
     </>

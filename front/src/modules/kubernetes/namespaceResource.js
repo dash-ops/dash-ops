@@ -1,5 +1,7 @@
 import http from "../../helpers/http"
 
-export function getNamespaces() {
-  return http.get("/v1/k8s/namespaces").then((resp) => (resp.data ? resp : { ...resp, data: [] }))
+export function getNamespaces(config) {
+  return http
+    .get("/v1/k8s/namespaces", config)
+    .then((resp) => (resp.data ? resp : { ...resp, data: [] }))
 }

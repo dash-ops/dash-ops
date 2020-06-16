@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useReducer } from "react"
 import { Row, Col, Table, Button, Input, notification } from "antd"
+import { cancelToken } from "../../helpers/http"
 import { getInstances, startInstance, stopInstance } from "./instanceResource"
 import Refresh from "../../components/Refresh"
 import InstanceActions from "./InstanceActions"
@@ -20,9 +21,9 @@ function reducer(state, action) {
   }
 }
 
-async function fetchData(dispatch) {
+async function fetchData(dispatch, config) {
   try {
-    const result = await getInstances()
+    const result = await getInstances(config)
     dispatch({ type: SET_DATA, response: result.data })
   } catch (e) {
     notification.error({ message: "Ops... Failed to fetch API data" })
@@ -51,9 +52,15 @@ async function toStop(instance, setNewState) {
 export default function InstancePage() {
   const [search, setSearch] = useState("")
   const [instances, dispatch] = useReducer(reducer, INITIAL_STATE)
+
   useEffect(() => {
+    const source = cancelToken.source()
     dispatch({ type: LOADING })
-    fetchData(dispatch)
+    fetchData(dispatch, { cancelToken: source.token })
+
+    return () => {
+      source.cancel()
+    }
   }, [])
 
   async function onReload() {
@@ -120,17 +127,19 @@ export default function InstancePage() {
       </Row>
       <Row>
         <Col flex="auto" style={{ marginTop: 10 }}>
-          <Table
-            dataSource={instances.data.filter(
-              (instance) => search === "" || instance.name.includes(search),
-            )}
-            columns={columns}
-            rowKey="instance_id"
-            loading={instances.loading}
-            size="small"
-            pagination={false}
-            scroll={{ x: 600 }}
-          />
+          {instances !== [] && (
+            <Table
+              dataSource={instances.data.filter(
+                (instance) => search === "" || instance.name.includes(search),
+              )}
+              columns={columns}
+              rowKey="instance_id"
+              loading={instances.loading}
+              size="small"
+              pagination={false}
+              scroll={{ x: 600 }}
+            />
+          )}
         </Col>
       </Row>
     </>

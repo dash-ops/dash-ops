@@ -6,18 +6,23 @@ const http = axios.create({
 })
 
 http.interceptors.request.use(
-  config => ({ ...config, ...getConfigBearerToken() }),
-  error => Promise.reject(error),
+  (config) => ({ ...config, ...getConfigBearerToken() }),
+  (error) => Promise.reject(error),
 )
 
 http.interceptors.response.use(
-  response => response,
-  error => {
+  (response) => response,
+  (error) => {
+    if (axios.isCancel(error)) {
+      return Promise.reject("Request canceled")
+    }
     if (error.response.status === 401) {
       cleanToken()
     }
     return Promise.reject(error.response)
   },
 )
+
+export const cancelToken = axios.CancelToken
 
 export default http

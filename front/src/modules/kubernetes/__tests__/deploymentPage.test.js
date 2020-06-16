@@ -3,6 +3,7 @@ import { render, unmountComponentAtNode } from "react-dom"
 import { act } from "react-dom/test-utils"
 import { notification } from "antd"
 import * as deploymentResource from "../deploymentResource"
+import * as namespaceResource from "../namespaceResource"
 import DeploymentPage from "../DeploymentPage"
 
 let container = null
@@ -42,6 +43,7 @@ it("should return table with content", async () => {
       pod_count: 0,
     },
   ]
+  jest.spyOn(namespaceResource, "getNamespaces").mockResolvedValue({ data: [{ name: "default" }] })
   jest.spyOn(deploymentResource, "getDeployments").mockResolvedValue({ data: mockDeployments })
 
   await act(async () => {
@@ -55,6 +57,7 @@ it("should return table with content", async () => {
 })
 
 it("should return notification error when failed instances fetch", async () => {
+  jest.spyOn(namespaceResource, "getNamespaces").mockResolvedValue({ data: [{ name: "default" }] })
   jest.spyOn(deploymentResource, "getDeployments").mockRejectedValue(new Error())
   jest.spyOn(notification, "error").mockImplementation(() => {})
 
@@ -80,6 +83,7 @@ it("should filter the list when filled in the search field", async () => {
       pod_count: 0,
     },
   ]
+  jest.spyOn(namespaceResource, "getNamespaces").mockResolvedValue({ data: [{ name: "default" }] })
   jest.spyOn(deploymentResource, "getDeployments").mockResolvedValue({ data: mockDeployments })
 
   await act(async () => {
@@ -108,6 +112,7 @@ it("should request scale up deployment when clicked in up button", async () => {
       pod_count: 0,
     },
   ]
+  jest.spyOn(namespaceResource, "getNamespaces").mockResolvedValue({ data: [{ name: "default" }] })
   jest.spyOn(deploymentResource, "getDeployments").mockResolvedValue({ data: mockDeployments })
   jest.spyOn(deploymentResource, "upDeployment")
 
@@ -134,6 +139,7 @@ it("should request scale down deployment when clicked in down button", async () 
       pod_count: 1,
     },
   ]
+  jest.spyOn(namespaceResource, "getNamespaces").mockResolvedValue({ data: [{ name: "default" }] })
   jest.spyOn(deploymentResource, "getDeployments").mockResolvedValue({ data: mockDeployments })
   jest.spyOn(deploymentResource, "downDeployment")
 
