@@ -5,7 +5,7 @@ headers:
   - "Authorization"
 front: front/build
 plugins:
-  - "Oauth2"
+  - "OAuth2"
   - "Kubernetes"
   - "AWS"
 oauth2:

@@ -57,9 +57,11 @@ export default function DeploymentPage() {
 
   useEffect(() => {
     const source = cancelToken.source()
-    getNamespaces({ cancelToken: source.token }).then((result) => {
-      setNamespaces(result.data)
-    })
+    getNamespaces({ cancelToken: source.token })
+      .then((result) => {
+        setNamespaces(result.data)
+      })
+      .catch(() => {})
 
     return () => {
       source.cancel()

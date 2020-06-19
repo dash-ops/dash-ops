@@ -15,8 +15,8 @@ function Sidebar({ menus }) {
         {/* <img src={logo} alt="DashOPS - Beta" /> */}
         DashOPS
       </div>
-      <Menu onClick={e => setCurrent(e.key)} selectedKeys={[current]} mode="inline" theme="dark">
-        {menus.map(menu => (
+      <Menu onClick={(e) => setCurrent(e.key)} selectedKeys={[current]} mode="inline" theme="dark">
+        {menus.map((menu) => (
           <Menu.Item key={menu.path}>
             <Link to={menu.path}>
               {menu.icon ?? <></>}
