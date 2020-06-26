@@ -1,5 +1,6 @@
 import React from "react"
 import { DeploymentUnitOutlined } from "@ant-design/icons"
+import ClusterPage from "./ClusterPage"
 import DeploymentPage from "./DeploymentPage"
 import ContentWithMenu from "../../components/ContentWIthMenu"
 
@@ -12,12 +13,12 @@ export default {
       component: ContentWithMenu,
       props: {
         routers: [
-          // {
-          //   name: "Nodes",
-          //   path: "/k8s",
-          //   exact: true,
-          //   component: DeploymentPage,
-          // },
+          {
+            name: "Cluster",
+            path: "/k8s",
+            exact: true,
+            component: ClusterPage,
+          },
           {
             name: "Deployments",
             path: "/k8s/deployments",

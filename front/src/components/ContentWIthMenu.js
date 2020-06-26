@@ -12,7 +12,7 @@ export default function ContentWithMenu({ routers }) {
         <Menu
           onClick={(e) => setCurrent(e.key)}
           selectedKeys={[current]}
-          mode="vertical"
+          mode="inline"
           theme="light"
         >
           {routers.map((route) => (

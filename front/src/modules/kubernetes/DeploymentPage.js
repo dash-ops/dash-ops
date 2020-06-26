@@ -99,11 +99,11 @@ export default function DeploymentPage() {
       sorter: (a, b) => (a.name > b.name) * 2 - 1,
       sortDirections: ["descend", "ascend"],
     },
-    { title: "Namespace", dataIndex: "namespace", key: "namespace" },
     {
       title: "Pods running",
       dataIndex: "pod_count",
       key: "pod_count",
+      sorter: (a, b) => (a.pod_count > b.pod_count) * 2 - 1,
       render: (content) => {
         const color = content > 0 ? "green" : "red"
         return <Tag color={color}>{content}</Tag>
@@ -166,7 +166,7 @@ export default function DeploymentPage() {
       </Row>
       <Row>
         <Col flex="auto" style={{ marginTop: 10 }}>
-          {deployments !== [] && (
+          {deployments.data !== [] && (
             <Table
               dataSource={deployments.data.filter(
                 (deployment) => search === "" || deployment.name.includes(search),
