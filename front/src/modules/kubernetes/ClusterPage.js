@@ -67,12 +67,12 @@ export default function ClusterPage() {
     },
     {
       title: "CPU requests",
-      dataIndex: "allocatedResources",
-      key: "allocatedResources",
-      render: ({ cpuRequestsFraction }) => (
+      dataIndex: "allocated_resources",
+      key: "allocated_resources",
+      render: ({ cpu_requests_fraction }) => (
         <div style={{ maxWidth: 170 }}>
           <Progress
-            percent={cpuRequestsFraction.toFixed(1)}
+            percent={cpu_requests_fraction.toFixed(1)}
             size="small"
             strokeColor={{
               "0%": "#ffad20",
@@ -85,12 +85,12 @@ export default function ClusterPage() {
     },
     {
       title: "CPU limits",
-      dataIndex: "allocatedResources",
-      key: "allocatedResources",
-      render: ({ cpuLimitsFraction }) => (
+      dataIndex: "allocated_resources",
+      key: "allocated_resources",
+      render: ({ cpu_limits_fraction }) => (
         <div style={{ maxWidth: 170 }}>
           <Progress
-            percent={cpuLimitsFraction.toFixed(1)}
+            percent={cpu_limits_fraction.toFixed(1)}
             size="small"
             strokeColor={{
               "0%": "#ffad20",
@@ -103,12 +103,12 @@ export default function ClusterPage() {
     },
     {
       title: "Memory requests",
-      dataIndex: "allocatedResources",
-      key: "allocatedResources",
-      render: ({ memoryRequestsFraction }) => (
+      dataIndex: "allocated_resources",
+      key: "allocated_resources",
+      render: ({ memory_requests_fraction }) => (
         <div style={{ maxWidth: 170 }}>
           <Progress
-            percent={memoryRequestsFraction.toFixed(1)}
+            percent={memory_requests_fraction.toFixed(1)}
             size="small"
             strokeColor={{
               "0%": "#ffad20",
@@ -121,12 +121,12 @@ export default function ClusterPage() {
     },
     {
       title: "Memory limit",
-      dataIndex: "allocatedResources",
-      key: "allocatedResources",
-      render: ({ memoryLimitsFraction }) => (
+      dataIndex: "allocated_resources",
+      key: "allocated_resources",
+      render: ({ memory_limits_fraction }) => (
         <div style={{ maxWidth: 170 }}>
           <Progress
-            percent={memoryLimitsFraction.toFixed(1)}
+            percent={memory_limits_fraction.toFixed(1)}
             size="small"
             strokeColor={{
               "0%": "#ffad20",
@@ -139,11 +139,11 @@ export default function ClusterPage() {
     },
     {
       title: "Pods Allocate/Capacity",
-      dataIndex: "allocatedResources",
-      key: "allocatedResources",
-      render: ({ allocatedPods, podCapacity }) => (
+      dataIndex: "allocated_resources",
+      key: "allocated_resources",
+      render: ({ allocated_pods, pod_capacity }) => (
         <div style={{ textAlign: "center" }}>
-          {allocatedPods}/{podCapacity}
+          {allocated_pods}/{pod_capacity}
         </div>
       ),
     },

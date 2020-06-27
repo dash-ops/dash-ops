@@ -14,24 +14,24 @@ import (
 type Node struct {
 	Name               string                 `json:"name"`
 	Ready              v1.ConditionStatus     `json:"ready"`
-	AllocatedResources NodeAllocatedResources `json:"allocatedResources"`
+	AllocatedResources NodeAllocatedResources `json:"allocated_resources"`
 }
 
 // NodeAllocatedResources describes node allocated resources.
 type NodeAllocatedResources struct {
-	CPURequests            int64   `json:"cpuRequests"`
-	CPURequestsFraction    float64 `json:"cpuRequestsFraction"`
-	CPULimits              int64   `json:"cpuLimits"`
-	CPULimitsFraction      float64 `json:"cpuLimitsFraction"`
-	CPUCapacity            int64   `json:"cpuCapacity"`
-	MemoryRequests         int64   `json:"memoryRequests"`
-	MemoryRequestsFraction float64 `json:"memoryRequestsFraction"`
-	MemoryLimits           int64   `json:"memoryLimits"`
-	MemoryLimitsFraction   float64 `json:"memoryLimitsFraction"`
-	MemoryCapacity         int64   `json:"memoryCapacity"`
-	AllocatedPods          int     `json:"allocatedPods"`
-	PodCapacity            int64   `json:"podCapacity"`
-	PodFraction            float64 `json:"podFraction"`
+	CPURequests            int64   `json:"cpu_requests"`
+	CPURequestsFraction    float64 `json:"cpu_requests_fraction"`
+	CPULimits              int64   `json:"cpu_limits"`
+	CPULimitsFraction      float64 `json:"cpu_limits_fraction"`
+	CPUCapacity            int64   `json:"cpu_capacity"`
+	MemoryRequests         int64   `json:"memory_requests"`
+	MemoryRequestsFraction float64 `json:"memory_requests_fraction"`
+	MemoryLimits           int64   `json:"memory_limits"`
+	MemoryLimitsFraction   float64 `json:"memory_limits_fraction"`
+	MemoryCapacity         int64   `json:"memory_capacity"`
+	AllocatedPods          int     `json:"allocated_pods"`
+	PodCapacity            int64   `json:"pod_capacity"`
+	PodFraction            float64 `json:"pod_fraction"`
 }
 
 func (kc k8sClient) GetNodes() ([]Node, error) {

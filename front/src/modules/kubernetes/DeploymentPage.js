@@ -100,13 +100,17 @@ export default function DeploymentPage() {
       sortDirections: ["descend", "ascend"],
     },
     {
-      title: "Pods running",
-      dataIndex: "pod_count",
-      key: "pod_count",
-      sorter: (a, b) => (a.pod_count > b.pod_count) * 2 - 1,
+      title: "Pods Info",
+      dataIndex: "pod_info",
+      key: "pod_info",
+      sorter: (a, b) => (a.pod_info.current > b.pod_info.current) * 2 - 1,
       render: (content) => {
-        const color = content > 0 ? "green" : "red"
-        return <Tag color={color}>{content}</Tag>
+        const color = content.current > 0 ? "green" : "red"
+        return (
+          <Tag color={color}>
+            {content.current}/{content.desired}
+          </Tag>
+        )
       },
     },
     {
