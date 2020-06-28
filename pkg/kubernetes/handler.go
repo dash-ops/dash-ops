@@ -73,6 +73,23 @@ func k8sDeploymentDownHandler(k8sClient K8sClient) http.HandlerFunc {
 	}
 }
 
+func k8sPodsHandler(k8sClient K8sClient) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		v := r.URL.Query()
+
+		namespace := v.Get("namespace")
+		pods, err := k8sClient.GetPods(podFilter{
+			Namespace: namespace,
+		})
+		if err != nil {
+			commons.RespondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		commons.RespondJSON(w, http.StatusOK, pods)
+	}
+}
+
 // MakeKubernetesHandlers Add kubernetes module endpoints
 func MakeKubernetesHandlers(r *mux.Router, fileConfig []byte) {
 	dashConfig := loadConfig(fileConfig)
@@ -101,4 +118,8 @@ func MakeKubernetesHandlers(r *mux.Router, fileConfig []byte) {
 	r.HandleFunc("/k8s/deployment/down/{namespace}/{name}", k8sDeploymentDownHandler(k8sClient)).
 		Methods("POST", "OPTIONS").
 		Name("k8sDeploymentDown")
+
+	r.HandleFunc("/k8s/pods", k8sPodsHandler(k8sClient)).
+		Methods("GET", "OPTIONS").
+		Name("k8sPods")
 }
