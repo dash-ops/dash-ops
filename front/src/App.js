@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react"
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom"
-import { Layout } from "antd"
+import { Layout, notification } from "antd"
 import { loadModulesRouter } from "./helpers/loadModules"
 import PrivateRoute from "./components/PrivateRoute"
 import Sidebar from "./components/Sidebar"
@@ -15,9 +15,13 @@ export default function App() {
   const [collapsed, setCollapsed] = useState(true)
 
   useEffect(() => {
-    loadModulesRouter().then((modules) => {
-      setRouters([...routers, ...modules])
-    })
+    loadModulesRouter()
+      .then((modules) => {
+        setRouters([...routers, ...modules])
+      })
+      .catch(() => {
+        notification.error({ message: "Failed to load plugins" })
+      })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -41,11 +45,11 @@ export default function App() {
                 <Topbar />
               </Layout.Header>
               <Layout.Content className="dash-content">
-                <div className="dash-container">
+                <div className="dash-container" style={{ backgroundColor: "#fff" }}>
                   <Switch>
                     {routers.map((route) => (
                       <PrivateRoute key={route.name} path={route.path} exact={route.exact}>
-                        <route.component />
+                        <route.component {...route.props} />
                       </PrivateRoute>
                     ))}
                   </Switch>

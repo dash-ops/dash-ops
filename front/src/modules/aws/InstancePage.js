@@ -127,7 +127,7 @@ export default function InstancePage() {
       </Row>
       <Row>
         <Col flex="auto" style={{ marginTop: 10 }}>
-          {instances !== [] && (
+          {instances.data !== [] && (
             <Table
               dataSource={instances.data.filter(
                 (instance) => search === "" || instance.name.includes(search),

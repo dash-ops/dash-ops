@@ -9,9 +9,15 @@ import (
 
 // Deployment Struct representing an k8s deployment
 type Deployment struct {
-	Name      string `json:"name"`
-	Namespace string `json:"namespace"`
-	PodCount  int    `json:"pod_count"`
+	Name      string  `json:"name"`
+	Namespace string  `json:"namespace"`
+	PodInfo   PodInfo `json:"pod_info"`
+}
+
+// PodInfo Struct
+type PodInfo struct {
+	Current int32 `json:"current"`
+	Desired int32 `json:"desired"`
 }
 
 type deploymentFilter struct {
@@ -37,7 +43,10 @@ func (kc k8sClient) GetDeployments(filter deploymentFilter) ([]Deployment, error
 		deployments = append(deployments, Deployment{
 			Name:      deploy.GetName(),
 			Namespace: deploy.GetNamespace(),
-			PodCount:  int(*deploy.Spec.Replicas),
+			PodInfo: PodInfo{
+				Current: int32(deploy.Status.Replicas),
+				Desired: int32(*deploy.Spec.Replicas),
+			},
 		})
 	}
 

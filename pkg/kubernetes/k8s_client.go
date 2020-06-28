@@ -8,9 +8,11 @@ import (
 
 // K8sClient K8S module interface
 type K8sClient interface {
+	GetNodes() ([]Node, error)
 	GetNamespaces() ([]Namespace, error)
 	GetDeployments(filters deploymentFilter) ([]Deployment, error)
 	Scale(name string, ns string, replicas int32) error
+	GetPods(filters podFilter) ([]Pod, error)
 }
 
 type k8sClient struct {

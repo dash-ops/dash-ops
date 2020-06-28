@@ -13,6 +13,9 @@ http.interceptors.request.use(
 http.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.message === "Network Error") {
+      return Promise.reject(error.message)
+    }
     if (axios.isCancel(error)) {
       return Promise.reject("Request canceled")
     }

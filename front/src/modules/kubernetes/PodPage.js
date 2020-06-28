@@ -2,9 +2,9 @@ import React, { useState, useEffect, useReducer } from "react"
 import { Row, Col, Table, Button, Input, notification, Form, Tag, Select } from "antd"
 import { cancelToken } from "../../helpers/http"
 import { getNamespaces } from "./namespaceResource"
-import { getDeployments, upDeployment, downDeployment } from "./deploymentResource"
+import { getPods } from "./podsResource"
 import Refresh from "../../components/Refresh"
-import DeploymentActions from "./DeploymentActions"
+import { Link } from "react-router-dom"
 
 const INITIAL_STATE = { data: [], loading: false }
 const LOADING = "LOADING"
@@ -23,7 +23,7 @@ function reducer(state, action) {
 
 async function fetchData(dispatch, filter, config) {
   try {
-    const result = await getDeployments(filter, config)
+    const result = await getPods(filter, config)
     dispatch({ type: SET_DATA, response: result.data })
   } catch (e) {
     notification.error({ message: "Ops... Failed to fetch API data" })
@@ -31,29 +31,11 @@ async function fetchData(dispatch, filter, config) {
   }
 }
 
-async function toUp(deployment, setNewPodCount) {
-  try {
-    await upDeployment(deployment.name, deployment.namespace)
-    setNewPodCount(deployment.name, 1)
-  } catch (e) {
-    notification.error({ message: `Failed to try to up deployment` })
-  }
-}
-
-async function toDown(deployment, setNewPodCount) {
-  try {
-    await downDeployment(deployment.name, deployment.namespace)
-    setNewPodCount(deployment.name, 0)
-  } catch (e) {
-    notification.error({ message: `Failed to try to down deployment` })
-  }
-}
-
-export default function DeploymentPage() {
+export default function PodPage() {
   const [search, setSearch] = useState("")
   const [namespace, setNamespace] = useState("default")
   const [namespaces, setNamespaces] = useState([])
-  const [deployments, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const [pods, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
     const source = cancelToken.source()
@@ -79,14 +61,7 @@ export default function DeploymentPage() {
   }, [namespace])
 
   async function onReload() {
-    fetchData(dispatch, { namespace })
-  }
-
-  function updatePodCount(name, podCount) {
-    const newDeployments = deployments.data.map((dep) =>
-      dep.name === name ? { ...dep, pod_count: podCount } : dep,
-    )
-    dispatch({ type: SET_DATA, response: newDeployments })
+    fetchData(dispatch)
   }
 
   const columns = [
@@ -100,32 +75,24 @@ export default function DeploymentPage() {
       sortDirections: ["descend", "ascend"],
     },
     {
-      title: "Pods Info",
-      dataIndex: "pod_info",
-      key: "pod_info",
-      sorter: (a, b) => (a.pod_info.current > b.pod_info.current) * 2 - 1,
+      title: "Status",
+      dataIndex: "status",
+      key: "status",
       render: (content) => {
-        const color = content.current > 0 ? "green" : "red"
-        return (
-          <Tag color={color}>
-            {content.current}/{content.desired}
-          </Tag>
-        )
+        const color = content === "True" ? "green" : "red"
+        return <Tag color={color}>{content}</Tag>
       },
     },
     {
-      title: "Action",
-      dataIndex: "",
-      key: "action",
-      fixed: "right",
-      width: 90,
-      render: (text, deployment) => (
-        <DeploymentActions
-          deployment={deployment}
-          toUp={() => toUp(deployment, updatePodCount)}
-          toDown={() => toDown(deployment, updatePodCount)}
-        />
-      ),
+      title: "Restart",
+      dataIndex: "restart_count",
+      key: "restart_count",
+    },
+    {
+      title: "Node",
+      dataIndex: "node_name",
+      key: "node_name",
+      render: (content) => <Link to={`/k8s?node=${content}`}>{content}</Link>,
     },
   ]
 
@@ -170,14 +137,12 @@ export default function DeploymentPage() {
       </Row>
       <Row>
         <Col flex="auto" style={{ marginTop: 10 }}>
-          {deployments.data !== [] && (
+          {pods.data !== [] && (
             <Table
-              dataSource={deployments.data.filter(
-                (deployment) => search === "" || deployment.name.includes(search),
-              )}
+              dataSource={pods.data}
               columns={columns}
               rowKey="name"
-              loading={deployments.loading}
+              loading={pods.loading}
               size="small"
               pagination={false}
               scroll={{ x: 600 }}
