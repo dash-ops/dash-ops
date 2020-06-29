@@ -118,7 +118,7 @@ export default function DeploymentPage() {
       dataIndex: "",
       key: "action",
       fixed: "right",
-      width: 90,
+      width: 140,
       render: (text, deployment) => (
         <DeploymentActions
           deployment={deployment}

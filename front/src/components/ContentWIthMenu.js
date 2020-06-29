@@ -1,10 +1,14 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Switch, Route, Link, useLocation } from "react-router-dom"
 import { Row, Col, Menu } from "antd"
 
 export default function ContentWithMenu({ routers }) {
   const location = useLocation()
-  const [current, setCurrent] = useState(location.pathname)
+  const [current, setCurrent] = useState("/")
+
+  useEffect(() => {
+    setCurrent(location.pathname)
+  }, [location.pathname])
 
   return (
     <Row gutter={16}>

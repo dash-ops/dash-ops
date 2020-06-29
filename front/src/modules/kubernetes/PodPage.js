@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useReducer } from "react"
+import { Link, useLocation, useHistory } from "react-router-dom"
 import { Row, Col, Table, Button, Input, notification, Form, Tag, Select } from "antd"
 import { cancelToken } from "../../helpers/http"
+import useQuery from "../../helpers/useQuery"
 import { getNamespaces } from "./namespaceResource"
 import { getPods } from "./podsResource"
 import Refresh from "../../components/Refresh"
-import { Link } from "react-router-dom"
 
 const INITIAL_STATE = { data: [], loading: false }
 const LOADING = "LOADING"
@@ -32,8 +33,11 @@ async function fetchData(dispatch, filter, config) {
 }
 
 export default function PodPage() {
-  const [search, setSearch] = useState("")
-  const [namespace, setNamespace] = useState("default")
+  const history = useHistory()
+  const location = useLocation()
+  const query = useQuery()
+  const [search, setSearch] = useState(query.get("name") ?? "")
+  const [namespace, setNamespace] = useState(query.get("namespace") ?? "default")
   const [namespaces, setNamespaces] = useState([])
   const [pods, dispatch] = useReducer(reducer, INITIAL_STATE)
 
@@ -53,15 +57,22 @@ export default function PodPage() {
   useEffect(() => {
     const source = cancelToken.source()
     dispatch({ type: LOADING })
+
+    history.push(`${location.pathname}?name=${search}&namespace=${namespace}`)
     fetchData(dispatch, { namespace }, { cancelToken: source.token })
 
     return () => {
       source.cancel()
     }
-  }, [namespace])
+  }, [namespace]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function onReload() {
     fetchData(dispatch)
+  }
+
+  function searchHandler(value) {
+    history.push(`${location.pathname}?name=${value}&namespace=${namespace}`)
+    setSearch(value)
   }
 
   const columns = [
@@ -101,14 +112,14 @@ export default function PodPage() {
       <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
         <Col xs={18} md={6}>
           <Input.Search
-            onChange={(e) => setSearch(e.target.value)}
-            onSearch={setSearch}
+            onChange={(e) => searchHandler(e.target.value)}
+            onSearch={searchHandler}
             value={search}
             enterButton
           />
         </Col>
         <Col xs={6} md={3} xl={2}>
-          <Button onClick={() => setSearch("")}>Clear</Button>
+          <Button onClick={() => searchHandler("")}>Clear</Button>
         </Col>
         <Col xs={24} md={6}>
           <Form.Item label="Namespace">
@@ -139,7 +150,7 @@ export default function PodPage() {
         <Col flex="auto" style={{ marginTop: 10 }}>
           {pods.data !== [] && (
             <Table
-              dataSource={pods.data}
+              dataSource={pods.data.filter((p) => search === "" || p.name.includes(search))}
               columns={columns}
               rowKey="name"
               loading={pods.loading}
