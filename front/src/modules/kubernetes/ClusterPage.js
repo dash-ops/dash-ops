@@ -1,6 +1,7 @@
-import React, { useEffect, useReducer } from "react"
-import { Row, Col, Table, Tag, Progress, notification } from "antd"
+import React, { useState, useEffect, useReducer } from "react"
+import { Row, Col, Table, Tag, Progress, notification, Input, Button } from "antd"
 import { cancelToken } from "../../helpers/http"
+import useQuery from "../../helpers/useQuery"
 import { getNodes } from "./nodesResource"
 import Refresh from "../../components/Refresh"
 
@@ -30,6 +31,8 @@ async function fetchData(dispatch, config) {
 }
 
 export default function ClusterPage() {
+  const query = useQuery()
+  const [search, setSearch] = useState(query.get("node") ?? "")
   const [nodes, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
@@ -152,8 +155,17 @@ export default function ClusterPage() {
   return (
     <>
       <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
-        <Col xs={18} md={6}></Col>
-        <Col xs={6} md={3} xl={2}></Col>
+        <Col xs={18} md={6}>
+          <Input.Search
+            onChange={(e) => setSearch(e.target.value)}
+            onSearch={setSearch}
+            value={search}
+            enterButton
+          />
+        </Col>
+        <Col xs={6} md={3} xl={2}>
+          <Button onClick={() => setSearch("")}>Clear</Button>
+        </Col>
         <Col xs={24} md={6}></Col>
         <Col
           xs={0}
@@ -168,7 +180,7 @@ export default function ClusterPage() {
         <Col flex="auto" style={{ marginTop: 10 }}>
           {nodes.data !== [] && (
             <Table
-              dataSource={nodes.data}
+              dataSource={nodes.data.filter((n) => search === "" || n.name.includes(search))}
               columns={columns}
               rowKey="name"
               loading={nodes.loading}

@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import PropTypes from "prop-types"
 import { Link, useLocation } from "react-router-dom"
 import { Menu } from "antd"
@@ -7,7 +7,11 @@ import "./Sidebar.css"
 
 function Sidebar({ menus }) {
   const location = useLocation()
-  const [current, setCurrent] = useState(location.pathname)
+  const [current, setCurrent] = useState("/")
+
+  useEffect(() => {
+    setCurrent(`/${location.pathname.split("/")[1]}`)
+  }, [location.pathname])
 
   return (
     <>

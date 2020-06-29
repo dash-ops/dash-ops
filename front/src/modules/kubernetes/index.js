@@ -3,7 +3,7 @@ import { DeploymentUnitOutlined } from "@ant-design/icons"
 import ClusterPage from "./ClusterPage"
 import DeploymentPage from "./DeploymentPage"
 import PodPage from "./PodPage"
-import ContentWithMenu from "../../components/ContentWIthMenu"
+import ContentWithMenu from "../../components/ContentWithMenu"
 
 export default {
   routers: [
