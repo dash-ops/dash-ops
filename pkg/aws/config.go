@@ -14,7 +14,7 @@ type awsConfig struct {
 	AccessKeyID     string `yaml:"accessKeyId"`
 	SecretAccessKey string `yaml:"secretAccessKey"`
 	EC2Config       struct {
-		Blacklist []string `yaml:"blacklist"`
+		Skiplist []string `yaml:"skiplist"`
 	} `yaml:"ec2Config"`
 }
 

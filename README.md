@@ -37,7 +37,7 @@ aws:
   accessKeyId: ${AWS_ACCESS_KEY_ID}
   secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
   ec2Config:
-    blacklist:
+    skiplist:
       - 'EKSWorkerAutoScalingGroupSpot'
 ```
 
