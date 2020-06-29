@@ -4,19 +4,25 @@
 
 Dash-ops is under construction, the goal is to create a simple and permissioned interface with small actions for developers who use some features of structuring tools such as Kubernetes, AWS, GitHub...
 
+We want to remove the cognitive burden of many engineers who just want to focus on the development of their features and leave the responsibility of managing the structuring part of their system to teams focused as teams of SREs.
+
+## Docs
+
+Access the [document directory here](/docs).
+
 ## Running local
 
 Create a configuration file in the project's root directory called `dash-ops.yaml`, example:
 
 ```yaml
 port: 8080
-origin: http://localhost:3000
+origin: http://localhost:8080
 headers:
   - 'Content-Type'
   - 'Authorization'
-front: front/build
+front: app
 plugins:
-  - 'Oauth2'
+  - 'OAuth2'
   - 'Kubernetes'
   - 'AWS'
 oauth2:
@@ -25,13 +31,13 @@ oauth2:
     clientSecret: ${GITHUB_CLIENT_SECRET}
     authURL: 'https://github.com/login/oauth/authorize'
     tokenURL: 'https://github.com/login/oauth/access_token'
-    urlLoginSuccess: 'http://localhost:3000'
+    urlLoginSuccess: 'http://localhost:8080'
     scopes:
       - user
       - repo
       - read:org
 kubernetes:
-  kubeconfig: ~/.kube/config
+  kubeconfig: /.kube/config
 aws:
   region: us-east-1
   accessKeyId: ${AWS_ACCESS_KEY_ID}
@@ -42,23 +48,27 @@ aws:
 ```
 
 This project has backend in GoLang and frontend with React.
-To run the backend just run:
+We recommend using the last generated docker image to test locally:
 
 ```sh
-go run main.go
-```
-
-And for the frontend run:
-
-```sh
-cd front
-yarn
-yarn start
+docker run --rm \
+  -v $(pwd)/dash-ops.yaml:/dash-ops.yaml \
+  -v /home/my-user/.kube/config:/.kube/config \
+  -e GITHUB_CLIENT_ID=666 \
+  -e GITHUB_CLIENT_SECRET=666xpto \
+  -e AWS_ACCESS_KEY_ID=999 \
+  -e AWS_SECRET_ACCESS_KEY=999xpto \
+  -p 8080:8080 \
+  -it dashops/dash-ops
 ```
 
 ## Running on a kubernetes cluster with helm:
 
-Create a `values.yaml` file with your settings and secrets, example:
+We use our own helm chart, for more information go here, or follow the instructions below to execute:
+
+### Create a `values.yaml`
+
+File with your settings and secrets, example:
 
 ```yaml
 name: dash-ops
