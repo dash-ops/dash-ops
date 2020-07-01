@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useReducer } from "react"
-import { Link, useLocation, useHistory } from "react-router-dom"
+import { Link, useLocation, useHistory, useParams } from "react-router-dom"
 import { Row, Col, Table, Button, Input, notification, Form, Tag, Select } from "antd"
 import { cancelToken } from "../../helpers/http"
 import useQuery from "../../helpers/useQuery"
@@ -33,6 +33,7 @@ async function fetchData(dispatch, filter, config) {
 }
 
 export default function PodPage() {
+  const { context } = useParams()
   const history = useHistory()
   const location = useLocation()
   const query = useQuery()
@@ -43,7 +44,7 @@ export default function PodPage() {
 
   useEffect(() => {
     const source = cancelToken.source()
-    getNamespaces({ cancelToken: source.token })
+    getNamespaces({ context }, { cancelToken: source.token })
       .then((result) => {
         setNamespaces(result.data)
       })
@@ -52,22 +53,22 @@ export default function PodPage() {
     return () => {
       source.cancel()
     }
-  }, [])
+  }, [context])
 
   useEffect(() => {
     const source = cancelToken.source()
     dispatch({ type: LOADING })
 
     history.push(`${location.pathname}?name=${search}&namespace=${namespace}`)
-    fetchData(dispatch, { namespace }, { cancelToken: source.token })
+    fetchData(dispatch, { context, namespace }, { cancelToken: source.token })
 
     return () => {
       source.cancel()
     }
-  }, [namespace]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [context, namespace]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function onReload() {
-    fetchData(dispatch)
+    fetchData(dispatch, { context, namespace })
   }
 
   function searchHandler(value) {
@@ -103,7 +104,7 @@ export default function PodPage() {
       title: "Node",
       dataIndex: "node_name",
       key: "node_name",
-      render: (content) => <Link to={`/k8s?node=${content}`}>{content}</Link>,
+      render: (content) => <Link to={`/k8s/${context}?node=${content}`}>{content}</Link>,
     },
   ]
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useReducer } from "react"
+import { useParams } from "react-router-dom"
 import { Row, Col, Table, Tag, Progress, notification, Input, Button } from "antd"
 import { cancelToken } from "../../helpers/http"
 import useQuery from "../../helpers/useQuery"
@@ -20,9 +21,9 @@ function reducer(state, action) {
   }
 }
 
-async function fetchData(dispatch, config) {
+async function fetchData(dispatch, filter, config) {
   try {
-    const result = await getNodes(config)
+    const result = await getNodes(filter, config)
     dispatch({ type: SET_DATA, response: result.data })
   } catch (e) {
     notification.error({ message: "Ops... Failed to fetch API data" })
@@ -31,6 +32,7 @@ async function fetchData(dispatch, config) {
 }
 
 export default function ClusterPage() {
+  const { context } = useParams()
   const query = useQuery()
   const [search, setSearch] = useState(query.get("node") ?? "")
   const [nodes, dispatch] = useReducer(reducer, INITIAL_STATE)
@@ -38,15 +40,15 @@ export default function ClusterPage() {
   useEffect(() => {
     const source = cancelToken.source()
     dispatch({ type: LOADING })
-    fetchData(dispatch, { cancelToken: source.token })
+    fetchData(dispatch, { context }, { cancelToken: source.token })
 
     return () => {
       source.cancel()
     }
-  }, [])
+  }, [context])
 
   async function onReload() {
-    fetchData(dispatch)
+    fetchData(dispatch, { context })
   }
 
   const columns = [

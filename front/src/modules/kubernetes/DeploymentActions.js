@@ -4,13 +4,13 @@ import { Link } from "react-router-dom"
 import { Button, Tooltip } from "antd"
 import { PlayCircleOutlined, PauseCircleOutlined } from "@ant-design/icons"
 
-function DeploymentActions({ deployment, toUp, toDown }) {
+function DeploymentActions({ context, deployment, toUp, toDown }) {
   const showUpButton = deployment.pod_info.current === 0
 
   return (
     <Button.Group>
       <Tooltip title="Pods">
-        <Link to={`/k8s/pods?name=${deployment.name}&namespace=${deployment.namespace}`}>
+        <Link to={`/k8s/${context}/pods?name=${deployment.name}&namespace=${deployment.namespace}`}>
           <Button type="primary" ghost size="small">
             Pods
           </Button>
