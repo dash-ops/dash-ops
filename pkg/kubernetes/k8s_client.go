@@ -21,7 +21,7 @@ type k8sClient struct {
 
 // NewK8sClient Create a new k8s client
 func NewK8sClient(config kubernetesConfig) (K8sClient, error) {
-	kConfig, err := getConfig(config.Kubeconfig)
+	kConfig, err := getConfig(config)
 	if err != nil {
 		return nil, err
 	}
@@ -34,10 +34,18 @@ func NewK8sClient(config kubernetesConfig) (K8sClient, error) {
 	return k8sClient{clientSet}, nil
 }
 
-func getConfig(config string) (*rest.Config, error) {
-	if config == "" {
+func getConfig(config kubernetesConfig) (*rest.Config, error) {
+	if config.Kubeconfig == "" {
 		return rest.InClusterConfig()
 	}
 
-	return clientcmd.BuildConfigFromFlags("", config)
+	if config.Context == "" {
+		return clientcmd.BuildConfigFromFlags("", config.Kubeconfig)
+	}
+
+	return clientcmd.NewNonInteractiveDeferredLoadingClientConfig(
+		&clientcmd.ClientConfigLoadingRules{ExplicitPath: config.Kubeconfig},
+		&clientcmd.ConfigOverrides{
+			CurrentContext: config.Context,
+		}).ClientConfig()
 }

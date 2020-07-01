@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom"
 import { Layout, notification } from "antd"
-import { loadModulesRouter } from "./helpers/loadModules"
+import { loadModulesConfig } from "./helpers/loadModules"
 import PrivateRoute from "./components/PrivateRoute"
 import Sidebar from "./components/Sidebar"
 import Topbar from "./components/Topbar"
@@ -11,13 +11,15 @@ import Login from "./pages/Login"
 import "./App.css"
 
 export default function App() {
+  const [menus, setMenus] = useState([...DashboardModule.menus])
   const [routers, setRouters] = useState([...DashboardModule.routers])
   const [collapsed, setCollapsed] = useState(true)
 
   useEffect(() => {
-    loadModulesRouter()
+    loadModulesConfig()
       .then((modules) => {
-        setRouters([...routers, ...modules])
+        setMenus([...menus, ...modules.menus])
+        setRouters([...routers, ...modules.routers])
       })
       .catch(() => {
         notification.error({ message: "Failed to load plugins" })
@@ -38,7 +40,7 @@ export default function App() {
         <PrivateRoute path="/">
           <Layout className="dash-layout">
             <Layout.Sider collapsible collapsed={collapsed} onCollapse={onCollapse}>
-              <Sidebar menus={routers} />
+              <Sidebar menus={menus} />
             </Layout.Sider>
             <Layout>
               <Layout.Header className="dash-header">
@@ -48,7 +50,7 @@ export default function App() {
                 <div className="dash-container" style={{ backgroundColor: "#fff" }}>
                   <Switch>
                     {routers.map((route) => (
-                      <PrivateRoute key={route.name} path={route.path} exact={route.exact}>
+                      <PrivateRoute key={route.key} path={route.path} exact={route.exact}>
                         <route.component {...route.props} />
                       </PrivateRoute>
                     ))}

@@ -6,11 +6,13 @@ import (
 )
 
 type dashYaml struct {
-	Kubernetes kubernetesConfig `yaml:"kubernetes"`
+	Kubernetes []kubernetesConfig `yaml:"kubernetes"`
 }
 
 type kubernetesConfig struct {
+	Name       string `yaml:"name"`
 	Kubeconfig string `yaml:"kubeconfig"`
+	Context    string `yaml:"context"`
 	Listen     string `yaml:"-"`
 }
 

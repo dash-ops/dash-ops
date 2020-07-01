@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react"
-import { Switch, Route, Link, useLocation } from "react-router-dom"
+import { Switch, Route, Link, useParams, useLocation } from "react-router-dom"
 import { Row, Col, Menu } from "antd"
 
-export default function ContentWithMenu({ routers }) {
+export default function ContentWithMenu({ pages }) {
+  const { context } = useParams()
   const location = useLocation()
   const [current, setCurrent] = useState("/")
 
@@ -19,16 +20,16 @@ export default function ContentWithMenu({ routers }) {
           mode="inline"
           theme="light"
         >
-          {routers.map((route) => (
-            <Menu.Item key={route.path}>
-              <Link to={route.path}>{route.name}</Link>
+          {pages.map((menu) => (
+            <Menu.Item key={menu.path.replace(/:context/, context)}>
+              <Link to={menu.path.replace(/:context/, context)}>{menu.name}</Link>
             </Menu.Item>
           ))}
         </Menu>
       </Col>
       <Col xs={18} md={21}>
         <Switch>
-          {routers.map((route) => (
+          {pages.map((route) => (
             <Route key={route.name} path={route.path} exact={route.exact}>
               <route.component />
             </Route>

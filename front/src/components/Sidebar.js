@@ -7,10 +7,11 @@ import "./Sidebar.css"
 
 function Sidebar({ menus }) {
   const location = useLocation()
-  const [current, setCurrent] = useState("/")
+  const [current, setCurrent] = useState([])
 
   useEffect(() => {
-    setCurrent(`/${location.pathname.split("/")[1]}`)
+    const parent = location.pathname.substring(0, location.pathname.lastIndexOf("/"))
+    setCurrent([parent, location.pathname])
   }, [location.pathname])
 
   return (
@@ -19,10 +20,10 @@ function Sidebar({ menus }) {
         {/* <img src={logo} alt="DashOPS - Beta" /> */}
         DashOPS
       </div>
-      <Menu onClick={(e) => setCurrent(e.key)} selectedKeys={[current]} mode="inline" theme="dark">
+      <Menu onClick={(e) => setCurrent(e.key)} selectedKeys={current} mode="inline" theme="dark">
         {menus.map((menu) => (
-          <Menu.Item key={menu.path}>
-            <Link to={menu.path}>
+          <Menu.Item key={menu.link}>
+            <Link to={menu.link}>
               {menu.icon ?? <></>}
               <span>{menu.name}</span>
             </Link>
@@ -38,8 +39,7 @@ Sidebar.propTypes = {
     PropTypes.shape({
       name: PropTypes.string,
       icon: PropTypes.element,
-      path: PropTypes.string,
-      component: PropTypes.func,
+      link: PropTypes.string,
     }),
   ),
 }

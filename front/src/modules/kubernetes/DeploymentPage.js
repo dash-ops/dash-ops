@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useReducer } from "react"
+import { useParams } from "react-router-dom"
 import { Row, Col, Table, Button, Input, notification, Form, Tag, Select } from "antd"
 import { cancelToken } from "../../helpers/http"
 import { getNamespaces } from "./namespaceResource"
@@ -50,6 +51,7 @@ async function toDown(deployment, setNewPodCount) {
 }
 
 export default function DeploymentPage() {
+  const { context } = useParams()
   const [search, setSearch] = useState("")
   const [namespace, setNamespace] = useState("default")
   const [namespaces, setNamespaces] = useState([])
@@ -57,7 +59,7 @@ export default function DeploymentPage() {
 
   useEffect(() => {
     const source = cancelToken.source()
-    getNamespaces({ cancelToken: source.token })
+    getNamespaces({ context }, { cancelToken: source.token })
       .then((result) => {
         setNamespaces(result.data)
       })
@@ -66,20 +68,20 @@ export default function DeploymentPage() {
     return () => {
       source.cancel()
     }
-  }, [])
+  }, [context])
 
   useEffect(() => {
     const source = cancelToken.source()
     dispatch({ type: LOADING })
-    fetchData(dispatch, { namespace }, { cancelToken: source.token })
+    fetchData(dispatch, { context, namespace }, { cancelToken: source.token })
 
     return () => {
       source.cancel()
     }
-  }, [namespace])
+  }, [context, namespace])
 
   async function onReload() {
-    fetchData(dispatch, { namespace })
+    fetchData(dispatch, { context, namespace })
   }
 
   function updatePodCount(name, podCount) {
@@ -121,6 +123,7 @@ export default function DeploymentPage() {
       width: 140,
       render: (text, deployment) => (
         <DeploymentActions
+          context={context}
           deployment={deployment}
           toUp={() => toUp(deployment, updatePodCount)}
           toDown={() => toDown(deployment, updatePodCount)}
