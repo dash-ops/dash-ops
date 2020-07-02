@@ -22,6 +22,18 @@ kubernetes:
     context: 'prod'
 ```
 
+Caso você esteja rodando no cluster o dash-ops e adicionou configurações de `ClusterRole` no `rbac`, você simplesmente pode rodar o plugin kuberentes sem o kubeconfig, seria a configuração `inCluster`, exemplo:
+
+```yaml
+kubernetes:
+  - name: 'Kubernetes Dev'
+    kubeconfig:
+```
+
+Neste caso o plugin vai ter permissões de acessar diretamente a API do kuberentes que ele esta rodando sem um kubeconfig.
+
+> Se você esta usando o nosso template helm o `ClusterRole` já vem pre configurado (https://github.com/dash-ops/helm-charts)
+
 ### Permissionamento
 
 > No momento a única funcionalidade do Kubernetes plugin que afeta algo no kuberentes é o `scale` dos `deployments`, essa função é recomenda apenas em clusters no ambiente de desenvolvimento.

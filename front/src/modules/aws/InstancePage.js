@@ -136,7 +136,6 @@ export default function InstancePage() {
               rowKey="instance_id"
               loading={instances.loading}
               size="small"
-              pagination={false}
               scroll={{ x: 600 }}
             />
           )}

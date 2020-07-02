@@ -1,3 +1,10 @@
+pre {
+  tab-size: 2;
+  background: #001628;
+  color: #72e0d1;
+  padding: 10px;
+}
+
 .dash-layout {
   display: flex;
   flex-direction: column;
@@ -12,15 +19,35 @@
 .dash-content {
   flex-grow: 1;
   overflow: auto;
-  margin: 24px 16px 0;
+  margin: 24px 16px;
 }
 
 .dash-container {
   padding: 15px;
-  margin-top: 10px;
   min-height: 360px;
+  background-color: #ffffff;
 }
 
 .dash-footer {
   text-align: center;
+}
+
+@media only screen and (max-width: 992px) {
+  .dash-content {
+    margin: 12px 8px;
+  }
+
+  .dash-container {
+    padding: 7px;
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  .dash-content {
+    margin: 0px;
+  }
+
+  .dash-container {
+    margin: 0px;
+  }
 }

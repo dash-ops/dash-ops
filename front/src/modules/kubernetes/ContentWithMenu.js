@@ -13,21 +13,23 @@ export default function ContentWithMenu({ pages }) {
 
   return (
     <Row gutter={16}>
-      <Col xs={18} md={3}>
+      <Col xs={24} md={5} lg={4} xl={3}>
         <Menu
           onClick={(e) => setCurrent(e.key)}
           selectedKeys={[current]}
           mode="inline"
           theme="light"
         >
-          {pages.map((menu) => (
-            <Menu.Item key={menu.path.replace(/:context/, context)}>
-              <Link to={menu.path.replace(/:context/, context)}>{menu.name}</Link>
-            </Menu.Item>
-          ))}
+          {pages.map((route) => {
+            return route.menu ? (
+              <Menu.Item key={route.path.replace(/:context/, context)}>
+                <Link to={route.path.replace(/:context/, context)}>{route.name}</Link>
+              </Menu.Item>
+            ) : null
+          })}
         </Menu>
       </Col>
-      <Col xs={18} md={21}>
+      <Col xs={24} md={19} lg={20} xl={21}>
         <Switch>
           {pages.map((route) => (
             <Route key={route.name} path={route.path} exact={route.exact}>

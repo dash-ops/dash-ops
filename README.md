@@ -37,7 +37,12 @@ oauth2:
       - repo
       - read:org
 kubernetes:
-  kubeconfig: /.kube/config
+  - name: 'Kubernetes Dev'
+    kubeconfig: ~/.kube/config
+    context: 'sandbox'
+  - name: 'Kubernetes Prod'
+    kubeconfig: ~/.kube/config
+    context: 'prod'
 aws:
   region: us-east-1
   accessKeyId: ${AWS_ACCESS_KEY_ID}
@@ -122,7 +127,8 @@ configMap: |
         - repo
         - read:org
   kubernetes:
-    kubeconfig:
+    - name: 'Kubernetes InCluster'
+      kubeconfig:
   aws:
     region: us-east-1
     accessKeyId: ${AWS_ACCESS_KEY_ID}

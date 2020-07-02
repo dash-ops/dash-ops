@@ -1,7 +1,9 @@
 package kubernetes
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 
 	apiv1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -20,7 +22,14 @@ type Pod struct {
 }
 
 type podFilter struct {
+	Name      string
 	Namespace string
+}
+
+// ContainerLog pod list container logs
+type ContainerLog struct {
+	Name string `json:"name"`
+	Log  string `json:"log"`
 }
 
 func (kc k8sClient) GetPods(filter podFilter) ([]Pod, error) {
@@ -53,6 +62,39 @@ func (kc k8sClient) GetPods(filter podFilter) ([]Pod, error) {
 	}
 
 	return pods, nil
+}
+
+func (kc k8sClient) GetPodLogs(filter podFilter) ([]ContainerLog, error) {
+	var logs []ContainerLog
+
+	pod, err := kc.clientSet.CoreV1().Pods(filter.Namespace).Get(filter.Name, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get pod: %s", err)
+	}
+
+	for _, container := range pod.Spec.Containers {
+		podLogOpts := v1.PodLogOptions{Container: container.Name}
+
+		req := kc.clientSet.CoreV1().Pods(filter.Namespace).GetLogs(filter.Name, &podLogOpts)
+		podLogs, err := req.Stream()
+		if err != nil {
+			return nil, fmt.Errorf("Error in opening stream: %s", err)
+		}
+		defer podLogs.Close()
+
+		buf := new(bytes.Buffer)
+		_, err = io.Copy(buf, podLogs)
+		if err != nil {
+			return nil, fmt.Errorf("Error in copy information from podLogs to buf: %s", err)
+		}
+
+		logs = append(logs, ContainerLog{
+			Name: container.Name,
+			Log:  buf.String(),
+		})
+	}
+
+	return logs, nil
 }
 
 func getPodConditionStatus(pod v1.Pod, conditionType v1.PodConditionType) v1.ConditionStatus {

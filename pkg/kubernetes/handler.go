@@ -55,9 +55,9 @@ func k8sNamespacesHandler(k8sClient K8sClient) http.HandlerFunc {
 
 func k8sDeploymentsHandler(k8sClient K8sClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		v := r.URL.Query()
+		query := r.URL.Query()
 
-		namespace := v.Get("namespace")
+		namespace := query.Get("namespace")
 		deployments, err := k8sClient.GetDeployments(deploymentFilter{
 			Namespace: namespace,
 		})
@@ -96,9 +96,9 @@ func k8sDeploymentDownHandler(k8sClient K8sClient) http.HandlerFunc {
 
 func k8sPodsHandler(k8sClient K8sClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		v := r.URL.Query()
+		query := r.URL.Query()
 
-		namespace := v.Get("namespace")
+		namespace := query.Get("namespace")
 		pods, err := k8sClient.GetPods(podFilter{
 			Namespace: namespace,
 		})
@@ -108,6 +108,24 @@ func k8sPodsHandler(k8sClient K8sClient) http.HandlerFunc {
 		}
 
 		commons.RespondJSON(w, http.StatusOK, pods)
+	}
+}
+
+func k8sPodLogsHandler(k8sClient K8sClient) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		query := r.URL.Query()
+
+		logs, err := k8sClient.GetPodLogs(podFilter{
+			Name:      vars["name"],
+			Namespace: query.Get("namespace"),
+		})
+		if err != nil {
+			commons.RespondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		commons.RespondJSON(w, http.StatusOK, logs)
 	}
 }
 
@@ -150,5 +168,10 @@ func MakeKubernetesHandlers(r *mux.Router, fileConfig []byte) {
 		contextRoute.HandleFunc("/pods", k8sPodsHandler(k8sClient)).
 			Methods("GET", "OPTIONS").
 			Name("k8sPods")
+
+		contextRoute.HandleFunc("/pod/{name}/logs", k8sPodLogsHandler(k8sClient)).
+			Queries("namespace", "{namespace}").
+			Methods("GET", "OPTIONS").
+			Name("k8sPodLogs")
 	}
 }

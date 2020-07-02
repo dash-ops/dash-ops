@@ -1,8 +1,12 @@
 .dash-logo {
+  float: left;
   height: 32px;
-  margin: 16px;
-  text-align: center;
+  margin: 16px 0;
   color: #ffffff;
   line-height: 32px;
   font-size: 20px;
+}
+
+.dash-logo span {
+  font-size: 10px;
 }
