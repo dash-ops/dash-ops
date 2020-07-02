@@ -87,11 +87,19 @@ export default function PodPage() {
     },
     {
       title: "Status",
-      dataIndex: "status",
-      key: "status",
+      dataIndex: "condition_status",
+      key: "condition_status",
       render: (content) => {
-        const color = content === "True" ? "green" : "red"
-        return <Tag color={color}>{content}</Tag>
+        switch (content.status) {
+          case "Running":
+            return <Tag color="green">{content.status}</Tag>
+          case "Succeeded":
+            return <Tag color="blue">{content.status}</Tag>
+          case "Pending":
+            return <Tag color="yellow">{content.status}</Tag>
+          default:
+            return <Tag>{content.status}</Tag>
+        }
       },
     },
     {
@@ -100,23 +108,23 @@ export default function PodPage() {
       key: "restart_count",
     },
     {
-      title: "Node",
-      dataIndex: "node_name",
-      key: "node_name",
-      width: 300,
-      render: (content) => <Link to={`/k8s/${context}?node=${content}`}>{content}</Link>,
-    },
-    {
       title: "Action",
       dataIndex: "",
       key: "action",
       width: 140,
       render: (text, pod) => (
         <Button.Group>
-          <Tooltip title="Pods">
+          <Tooltip title="Containers Log">
             <Link to={`/k8s/${context}/pod/logs?name=${pod.name}&namespace=${namespace}`}>
               <Button type="primary" ghost size="small">
                 Logs
+              </Button>
+            </Link>
+          </Tooltip>
+          <Tooltip title={`Details ${pod.node_name}`}>
+            <Link to={`/k8s/${context}?node=${pod.node_name}`}>
+              <Button type="primary" ghost size="small">
+                Node
               </Button>
             </Link>
           </Tooltip>

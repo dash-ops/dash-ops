@@ -12,13 +12,20 @@ import (
 
 // Pod Struct representing an k8s pod
 type Pod struct {
-	Name         string             `json:"name"`
-	Namespace    string             `json:"namespace"`
-	Status       v1.ConditionStatus `json:"status"`
-	RestartCount int32              `json:"restart_count"`
-	NodeName     string             `json:"node_name"`
-	Requests     v1.ResourceList    `json:"requests"`
-	Limits       v1.ResourceList    `json:"limits"`
+	Name            string          `json:"name"`
+	Namespace       string          `json:"namespace"`
+	ConditionStatus PodStatus       `json:"condition_status"`
+	RestartCount    int32           `json:"restart_count"`
+	NodeName        string          `json:"node_name"`
+	Requests        v1.ResourceList `json:"requests"`
+	Limits          v1.ResourceList `json:"limits"`
+}
+
+// PodStatus representing an k8s pod status
+type PodStatus struct {
+	Status          string              `json:"status"`
+	PodPhase        v1.PodPhase         `json:"pod_phase"`
+	ContainerStates []v1.ContainerState `json:"container_states"`
 }
 
 type podFilter struct {
@@ -51,13 +58,13 @@ func (kc k8sClient) GetPods(filter podFilter) ([]Pod, error) {
 		reqs, limits, _ := podRequestsAndLimits(&p)
 
 		pods = append(pods, Pod{
-			Name:         p.GetName(),
-			Namespace:    p.GetNamespace(),
-			Status:       getPodConditionStatus(p, v1.PodReady),
-			RestartCount: getPodRestartCount(p),
-			NodeName:     p.Spec.NodeName,
-			Requests:     reqs,
-			Limits:       limits,
+			Name:            p.GetName(),
+			Namespace:       p.GetNamespace(),
+			ConditionStatus: getPodConditionStatus(p),
+			RestartCount:    getPodRestartCount(p),
+			NodeName:        p.Spec.NodeName,
+			Requests:        reqs,
+			Limits:          limits,
 		})
 	}
 
@@ -97,13 +104,17 @@ func (kc k8sClient) GetPodLogs(filter podFilter) ([]ContainerLog, error) {
 	return logs, nil
 }
 
-func getPodConditionStatus(pod v1.Pod, conditionType v1.PodConditionType) v1.ConditionStatus {
-	for _, condition := range pod.Status.Conditions {
-		if condition.Type == conditionType {
-			return condition.Status
-		}
+func getPodConditionStatus(pod v1.Pod) PodStatus {
+	var states []v1.ContainerState
+	for _, containerStatus := range pod.Status.ContainerStatuses {
+		states = append(states, containerStatus.State)
 	}
-	return v1.ConditionUnknown
+
+	return PodStatus{
+		Status:          string(getPodStatusPhase(pod)),
+		PodPhase:        pod.Status.Phase,
+		ContainerStates: states,
+	}
 }
 
 func getPodRestartCount(pod v1.Pod) int32 {
@@ -162,4 +173,37 @@ func maxResourceList(list, new v1.ResourceList) {
 			}
 		}
 	}
+}
+
+func getPodStatusPhase(pod v1.Pod) v1.PodPhase {
+	if pod.Status.Phase == v1.PodFailed {
+		return v1.PodFailed
+	}
+
+	if pod.Status.Phase == v1.PodSucceeded {
+		return v1.PodSucceeded
+	}
+
+	ready := false
+	initialized := false
+	for _, c := range pod.Status.Conditions {
+		if c.Type == v1.PodReady {
+			ready = c.Status == v1.ConditionTrue
+		}
+		if c.Type == v1.PodInitialized {
+			initialized = c.Status == v1.ConditionTrue
+		}
+	}
+
+	if initialized && ready && pod.Status.Phase == v1.PodRunning {
+		return v1.PodRunning
+	}
+
+	if pod.DeletionTimestamp != nil && pod.Status.Reason == "NodeLost" {
+		return v1.PodUnknown
+	} else if pod.DeletionTimestamp != nil {
+		return "Terminating"
+	}
+
+	return v1.PodPending
 }

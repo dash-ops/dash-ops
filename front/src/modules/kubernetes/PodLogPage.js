@@ -1,5 +1,5 @@
 import React, { useEffect, useReducer } from "react"
-import { useParams } from "react-router-dom"
+import { useParams, useHistory } from "react-router-dom"
 import { Row, Col, Collapse, Button, notification } from "antd"
 import { CaretLeftOutlined } from "@ant-design/icons"
 import { cancelToken } from "../../helpers/http"
@@ -34,6 +34,7 @@ async function fetchData(dispatch, filter, config) {
 
 export default function PodLogPage() {
   const { context } = useParams()
+  const history = useHistory()
   const query = useQuery()
   const name = query.get("name") ?? ""
   const namespace = query.get("namespace") ?? "default"
@@ -56,7 +57,7 @@ export default function PodLogPage() {
     <>
       <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
         <Col xs={18} md={5} lg={6}>
-          <Button type="primary" icon={<CaretLeftOutlined />}>
+          <Button type="primary" icon={<CaretLeftOutlined />} onClick={history.goBack}>
             Go Back
           </Button>
         </Col>
