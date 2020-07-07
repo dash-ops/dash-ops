@@ -14,7 +14,7 @@ type Cluster struct {
 	Context string `json:"context"`
 }
 
-func k8sClusterHandler(dashConfig dashYaml) http.HandlerFunc {
+func k8sClustersHandler(dashConfig dashYaml) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var clusters []Cluster
 
@@ -26,6 +26,12 @@ func k8sClusterHandler(dashConfig dashYaml) http.HandlerFunc {
 		}
 
 		commons.RespondJSON(w, http.StatusOK, clusters)
+	}
+}
+
+func k8sPermissionsHandler(permission k8sPermission) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		commons.RespondJSON(w, http.StatusOK, permission)
 	}
 }
 
@@ -133,7 +139,7 @@ func k8sPodLogsHandler(k8sClient K8sClient) http.HandlerFunc {
 func MakeKubernetesHandlers(r *mux.Router, fileConfig []byte) {
 	dashConfig := loadConfig(fileConfig)
 
-	r.HandleFunc("/k8s/clusters", k8sClusterHandler(dashConfig)).
+	r.HandleFunc("/k8s/clusters", k8sClustersHandler(dashConfig)).
 		Methods("GET", "OPTIONS").
 		Name("k8sClusters")
 
@@ -144,6 +150,10 @@ func MakeKubernetesHandlers(r *mux.Router, fileConfig []byte) {
 		}
 
 		contextRoute := r.PathPrefix("/k8s/" + cluster.Context).Subrouter()
+
+		contextRoute.HandleFunc("/permissions", k8sPermissionsHandler(cluster.Permission)).
+			Methods("GET", "OPTIONS").
+			Name("k8sPermissions")
 
 		contextRoute.HandleFunc("/nodes", k8sNodesHandler(k8sClient)).
 			Methods("GET", "OPTIONS").

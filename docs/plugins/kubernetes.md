@@ -16,13 +16,13 @@ Em seu arquivo de configuração você poderá adicionar seus clusters do kubern
 kubernetes:
   - name: 'Kubernetes Dev'
     kubeconfig: ~/.kube/config
-    context: 'sandbox'
+    context: 'dev'
   - name: 'Kubernetes Prod'
     kubeconfig: ~/.kube/config
     context: 'prod'
 ```
 
-Caso você esteja rodando no cluster o dash-ops e adicionou configurações de `ClusterRole` no `rbac`, você simplesmente pode rodar o plugin kuberentes sem o kubeconfig, seria a configuração `inCluster`, exemplo:
+Caso você esteja rodando no cluster o `dash-ops` e adicionou configurações de `ClusterRole` no `rbac`, você simplesmente pode rodar o plugin kuberentes sem o `kubeconfig`, seria a configuração `inCluster`, exemplo:
 
 ```yaml
 kubernetes:
@@ -44,11 +44,11 @@ Exemplo de como adicionar a permissão:
 kubernetes:
   - name: 'Kubernetes Dev'
     kubeconfig: ~/.kube/config
-    context: 'sandbox'
+    context: 'dev'
     permission:
-      - deployments:
-          - start: ['org*team']
-          - stop: ['org*team']
+      deployments:
+        start: ['org*team']
+        stop: ['org*team']
 ```
 
 > `org*team`: Organização e o time do Github com a permissão de executar o `scale` para `1` ou `0` do `deployment` no kuberentes.

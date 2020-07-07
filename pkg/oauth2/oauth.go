@@ -12,6 +12,7 @@ import (
 
 type key string
 
+// TokenKey ...
 const TokenKey key = "token"
 
 func oauthHandler(oauthConfig *oauth2.Config) http.HandlerFunc {

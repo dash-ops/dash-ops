@@ -5,7 +5,7 @@ import { LogoutOutlined } from "@ant-design/icons"
 import { cleanToken } from "../helpers/oauth"
 import { getUserData } from "../modules/oauth2/userResource"
 
-function Topbar() {
+function Topbar({ oAuth2 }) {
   const [user, setUser] = useState()
   const history = useHistory()
 
@@ -16,6 +16,10 @@ function Topbar() {
   }, [history])
 
   useEffect(() => {
+    if (!oAuth2) {
+      return
+    }
+
     async function fetchData() {
       try {
         const result = await getUserData()
@@ -26,7 +30,7 @@ function Topbar() {
     }
 
     fetchData()
-  }, [logout])
+  }, [logout, oAuth2])
 
   return (
     <Menu mode="horizontal" style={{ lineHeight: "64px", float: "right" }}>

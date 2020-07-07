@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom"
 import { Row, Col, Card, Button } from "antd"
 import { GithubFilled } from "@ant-design/icons"
 
-function Login() {
+function LoginPage() {
   const location = useLocation()
   const from = location.state || "/"
   const urlLoginGithub = `${process.env.REACT_APP_API_URL}/oauth?redirect_url=${from}`
@@ -23,4 +23,4 @@ function Login() {
   )
 }
 
-export default Login
+export default LoginPage

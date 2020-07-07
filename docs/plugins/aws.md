@@ -41,9 +41,9 @@ Exemplo de como adicionar a permissão:
 aws:
   ...
   permission:
-    - ec2:
-        - start: ["org*team"]
-        - stop: ["org*team"]
+    ec2:
+      start: ["org*team"]
+      stop: ["org*team"]
 ```
 
 > `org*team`: Organização e o time do Github com a permissão de executar o `start` ou `stop` das instâncias EC2.

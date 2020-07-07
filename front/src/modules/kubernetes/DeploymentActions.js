@@ -9,9 +9,9 @@ function DeploymentActions({ context, deployment, toUp, toDown }) {
 
   return (
     <Button.Group>
-      <Tooltip title="Pods">
+      <Tooltip title={showUpButton ? "No Pods" : "Pods"}>
         <Link to={`/k8s/${context}/pods?name=${deployment.name}&namespace=${deployment.namespace}`}>
-          <Button type="primary" ghost size="small">
+          <Button type="primary" ghost size="small" disabled={showUpButton}>
             Pods
           </Button>
         </Link>

@@ -39,7 +39,7 @@ oauth2:
 kubernetes:
   - name: 'Kubernetes Dev'
     kubeconfig: ~/.kube/config
-    context: 'sandbox'
+    context: 'dev'
   - name: 'Kubernetes Prod'
     kubeconfig: ~/.kube/config
     context: 'prod'
