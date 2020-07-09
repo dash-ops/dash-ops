@@ -1,3 +1,4 @@
+import { notification } from "antd"
 import { getPlugins } from "../modules/config/configResource"
 
 export function loadModulesConfig() {
@@ -6,7 +7,13 @@ export function loadModulesConfig() {
       return import(`../modules/${plugin.toLowerCase()}`).then((module) => {
         if (typeof module.default === "function") {
           // Module with dynamic route loading
-          return module.default().then((config) => config)
+          return module
+            .default()
+            .then((config) => config)
+            .catch((e) => {
+              notification.error(`Failed to load plugin ${plugin}: ${e.data.error}`)
+              return {}
+            })
         }
         return module.default
       })

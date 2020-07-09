@@ -10,9 +10,9 @@ import (
 
 func TestMakeGithubHandlers(t *testing.T) {
 	r := mux.NewRouter()
-	makeGithubHandlers(r, &oauth2.Config{})
+	makeGithubHandlers(r, dashYaml{}, &oauth2.Config{})
 
-	path, err := r.GetRoute("userGithub").GetPathTemplate()
+	path, err := r.GetRoute("userLogger").GetPathTemplate()
 	assert.Nil(t, err)
 	assert.Equal(t, "/v1/me", path)
 }

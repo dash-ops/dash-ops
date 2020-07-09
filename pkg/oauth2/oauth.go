@@ -39,8 +39,7 @@ func oauthRedirectHandler(dc dashYaml, oauthConfig *oauth2.Config) http.HandlerF
 	}
 }
 
-// OAuthMiddleware should valid authentication
-func OAuthMiddleware(next http.Handler) http.Handler {
+func oAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		const bearerSchema = "Bearer "
 		authHeader := r.Header.Get("Authorization")
@@ -63,7 +62,7 @@ func OAuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// MakeOauthHandlers Add outh endpoints
+// MakeOauthHandlers Add auth endpoints
 func MakeOauthHandlers(r *mux.Router, internal *mux.Router, fileConfig []byte) {
 	dashConfig := loadConfig(fileConfig)
 
@@ -81,8 +80,9 @@ func MakeOauthHandlers(r *mux.Router, internal *mux.Router, fileConfig []byte) {
 		Name("oauth")
 	r.HandleFunc("/oauth/redirect", oauthRedirectHandler(dashConfig, oauthConfig)).
 		Name("oauthRedirect")
+	internal.Use(oAuthMiddleware)
 
 	if dashConfig.Oauth2[0].Provider == "github" {
-		makeGithubHandlers(internal, oauthConfig)
+		makeGithubHandlers(internal, dashConfig, oauthConfig)
 	}
 }

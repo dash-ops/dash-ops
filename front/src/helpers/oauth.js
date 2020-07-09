@@ -28,7 +28,7 @@ export function verifyToken() {
   const accessToken = getUrlAccessToken()
   if (accessToken != null) {
     const path = window.location.pathname === "/login" ? "/" : window.location.pathname
-    window.history.pushState({}, document.title, path)
+    window.history.pushState({ up_plugins: true }, document.title, path)
     setItem(ACCESS_TOKEN_KEY, accessToken)
     return true
   }
