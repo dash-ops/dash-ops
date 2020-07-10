@@ -3,7 +3,11 @@ import PropTypes from "prop-types"
 import { Route, Redirect } from "react-router-dom"
 import { verifyToken } from "../helpers/oauth"
 
-function PrivateRoute({ children, redirect, ...rest }) {
+function InternalRoute({ children, redirect, oAuth2, ...rest }) {
+  if (!oAuth2) {
+    return <Route {...rest}>{children}</Route>
+  }
+
   return (
     <Route
       // eslint-disable-next-line react/jsx-props-no-spreading
@@ -24,13 +28,14 @@ function PrivateRoute({ children, redirect, ...rest }) {
   )
 }
 
-PrivateRoute.propTypes = {
+InternalRoute.propTypes = {
   children: PropTypes.element.isRequired,
   redirect: PropTypes.string,
+  oAuth2: PropTypes.bool,
 }
 
-PrivateRoute.defaultProps = {
+InternalRoute.defaultProps = {
   redirect: "/login",
 }
 
-export default PrivateRoute
+export default InternalRoute

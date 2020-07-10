@@ -1,25 +1,32 @@
+import { notification } from "antd"
 import { getPlugins } from "../modules/config/configResource"
 
 export function loadModulesConfig() {
   return getPlugins().then(({ data }) => {
     const modulesConfig = data.map((plugin) => {
-      if (plugin === "OAuth2") {
-        // ToDo separate part of the authentication in the module settings
-        return []
-      }
       return import(`../modules/${plugin.toLowerCase()}`).then((module) => {
         if (typeof module.default === "function") {
           // Module with dynamic route loading
-          return module.default().then((config) => config)
+          return module
+            .default()
+            .then((config) => config)
+            .catch((e) => {
+              notification.error(`Failed to load plugin ${plugin}: ${e.data.error}`)
+              return {}
+            })
         }
         return module.default
       })
     })
 
     return Promise.all(modulesConfig).then((configs) => {
+      let oAuth2 = { active: false }
       let menus = []
       let routers = []
       configs.map((config) => {
+        if (config.oAuth2) {
+          oAuth2 = config.oAuth2
+        }
         if (config.menus) {
           menus = [...menus, ...config.menus]
         }
@@ -28,7 +35,7 @@ export function loadModulesConfig() {
         }
         return config
       })
-      return { menus, routers }
+      return { oAuth2, menus, routers }
     })
   })
 }

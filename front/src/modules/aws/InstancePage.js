@@ -33,18 +33,22 @@ async function fetchData(dispatch, config) {
 
 async function toStart(instance, setNewState) {
   try {
+    setNewState(instance.instance_id, "pending")
     const response = await startInstance(instance.instance_id)
     setNewState(instance.instance_id, response.data.current_state)
   } catch (e) {
+    setNewState(instance.instance_id, "stopped")
     notification.error({ message: "Failed to try to start Instance" })
   }
 }
 
 async function toStop(instance, setNewState) {
   try {
+    setNewState(instance.instance_id, "stopping")
     const response = await stopInstance(instance.instance_id)
     setNewState(instance.instance_id, response.data.current_state)
   } catch (e) {
+    setNewState(instance.instance_id, "running")
     notification.error({ message: "Failed to try to stop Instance" })
   }
 }
@@ -136,7 +140,6 @@ export default function InstancePage() {
               rowKey="instance_id"
               loading={instances.loading}
               size="small"
-              pagination={false}
               scroll={{ x: 600 }}
             />
           )}

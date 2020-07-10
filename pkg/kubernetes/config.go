@@ -10,10 +10,18 @@ type dashYaml struct {
 }
 
 type kubernetesConfig struct {
-	Name       string `yaml:"name"`
-	Kubeconfig string `yaml:"kubeconfig"`
-	Context    string `yaml:"context"`
-	Listen     string `yaml:"-"`
+	Name       string        `yaml:"name"`
+	Kubeconfig string        `yaml:"kubeconfig"`
+	Context    string        `yaml:"context"`
+	Permission k8sPermission `yaml:"permission"`
+	Listen     string        `yaml:"-"`
+}
+
+type k8sPermission struct {
+	Deployments struct {
+		Start []string `yaml:"start" json:"start"`
+		Stop  []string `yaml:"stop" json:"stop"`
+	} `yaml:"deployments" json:"deployments"`
 }
 
 func loadConfig(file []byte) dashYaml {

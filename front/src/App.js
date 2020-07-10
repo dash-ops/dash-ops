@@ -1,23 +1,28 @@
 import React, { useState, useEffect } from "react"
-import { BrowserRouter as Router, Switch, Route } from "react-router-dom"
+import { Switch, Route } from "react-router-dom"
 import { Layout, notification } from "antd"
 import { loadModulesConfig } from "./helpers/loadModules"
-import PrivateRoute from "./components/PrivateRoute"
+import { verifyToken } from "./helpers/oauth"
+import InternalRoute from "./components/InternalRoute"
 import Sidebar from "./components/Sidebar"
 import Topbar from "./components/Topbar"
 import Footer from "./components/Footer"
+import SiderTrigger from "./components/SiderTrigger"
+import Logo from "./components/Logo"
 import DashboardModule from "./modules/dashboard"
-import Login from "./pages/Login"
 import "./App.css"
 
 export default function App() {
+  const [oAuth2, setOAuth2] = useState({ active: false })
   const [menus, setMenus] = useState([...DashboardModule.menus])
   const [routers, setRouters] = useState([...DashboardModule.routers])
-  const [collapsed, setCollapsed] = useState(true)
+  const [collapsed, setCollapsed] = useState(false)
 
   useEffect(() => {
+    verifyToken()
     loadModulesConfig()
       .then((modules) => {
+        setOAuth2(modules.oAuth2)
         setMenus([...menus, ...modules.menus])
         setRouters([...routers, ...modules.routers])
       })
@@ -32,27 +37,43 @@ export default function App() {
   }
 
   return (
-    <Router>
-      <Switch>
+    <Switch>
+      {oAuth2.active && (
         <Route path="/login">
-          <Login />
+          <oAuth2.LoginPage />
         </Route>
-        <PrivateRoute path="/">
-          <Layout className="dash-layout">
-            <Layout.Sider collapsible collapsed={collapsed} onCollapse={onCollapse}>
+      )}
+      <InternalRoute oAuth2={oAuth2.active} path="/">
+        <Layout className="dash-layout">
+          <Layout.Header className="dash-header">
+            <SiderTrigger collapsed={collapsed} onCollapse={onCollapse} />
+            <Logo />
+            <Topbar oAuth2={oAuth2.active} />
+          </Layout.Header>
+          <Layout>
+            <Layout.Sider
+              trigger={null}
+              breakpoint="lg"
+              collapsedWidth="0"
+              collapsible
+              collapsed={collapsed}
+              onCollapse={onCollapse}
+            >
               <Sidebar menus={menus} />
             </Layout.Sider>
             <Layout>
-              <Layout.Header className="dash-header">
-                <Topbar />
-              </Layout.Header>
               <Layout.Content className="dash-content">
-                <div className="dash-container" style={{ backgroundColor: "#fff" }}>
+                <div className="dash-container">
                   <Switch>
                     {routers.map((route) => (
-                      <PrivateRoute key={route.key} path={route.path} exact={route.exact}>
+                      <InternalRoute
+                        oAuth2={oAuth2.active}
+                        key={route.key}
+                        path={route.path}
+                        exact={route.exact}
+                      >
                         <route.component {...route.props} />
-                      </PrivateRoute>
+                      </InternalRoute>
                     ))}
                   </Switch>
                 </div>
@@ -62,8 +83,8 @@ export default function App() {
               </Layout.Footer>
             </Layout>
           </Layout>
-        </PrivateRoute>
-      </Switch>
-    </Router>
+        </Layout>
+      </InternalRoute>
+    </Switch>
   )
 }

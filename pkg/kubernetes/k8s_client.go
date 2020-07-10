@@ -13,6 +13,7 @@ type K8sClient interface {
 	GetDeployments(filters deploymentFilter) ([]Deployment, error)
 	Scale(name string, ns string, replicas int32) error
 	GetPods(filters podFilter) ([]Pod, error)
+	GetPodLogs(filters podFilter) ([]ContainerLog, error)
 }
 
 type k8sClient struct {

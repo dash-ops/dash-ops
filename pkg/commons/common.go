@@ -3,6 +3,7 @@ package commons
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/apex/log"
 )
@@ -29,4 +30,19 @@ func RespondJSON(w http.ResponseWriter, code int, payload interface{}) {
 // RespondError makes the error response with payload as json format
 func RespondError(w http.ResponseWriter, code int, message string) {
 	RespondJSON(w, code, map[string]string{"error": message})
+}
+
+// HasPermission ...
+func HasPermission(featurePermissions []string, groupsPermission []string) bool {
+	isValid := false
+
+	for i := 0; i < len(featurePermissions); i++ {
+		for _, gP := range groupsPermission {
+			if strings.ToLower(featurePermissions[i]) == strings.ToLower(gP) {
+				isValid = true
+			}
+		}
+	}
+
+	return isValid
 }

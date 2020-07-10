@@ -56,7 +56,6 @@ export default function ClusterPage() {
       title: "Node",
       dataIndex: "name",
       key: "name",
-      fixed: "left",
       width: 300,
       sorter: (a, b) => (a.name > b.name) * 2 - 1,
       sortDirections: ["descend", "ascend"],
@@ -157,7 +156,7 @@ export default function ClusterPage() {
   return (
     <>
       <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
-        <Col xs={18} md={6}>
+        <Col xs={18} md={5} lg={6}>
           <Input.Search
             onChange={(e) => setSearch(e.target.value)}
             onSearch={setSearch}
@@ -168,13 +167,8 @@ export default function ClusterPage() {
         <Col xs={6} md={3} xl={2}>
           <Button onClick={() => setSearch("")}>Clear</Button>
         </Col>
-        <Col xs={24} md={6}></Col>
-        <Col
-          xs={0}
-          md={{ span: 6, offset: 3 }}
-          xl={{ span: 6, offset: 4 }}
-          style={{ textAlign: "right" }}
-        >
+        <Col xs={24} md={8} xl={7}></Col>
+        <Col xs={0} md={8} lg={7} xl={{ span: 6, offset: 3 }} style={{ textAlign: "right" }}>
           <Refresh onReload={onReload} />
         </Col>
       </Row>
@@ -187,7 +181,6 @@ export default function ClusterPage() {
               rowKey="name"
               loading={nodes.loading}
               size="small"
-              pagination={false}
               scroll={{ x: 600 }}
             />
           )}

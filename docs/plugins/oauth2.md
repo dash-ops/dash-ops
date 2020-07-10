@@ -18,6 +18,7 @@ oauth2:
     authURL: 'https://github.com/login/oauth/authorize'
     tokenURL: 'https://github.com/login/oauth/access_token'
     urlLoginSuccess: 'http://localhost:3000'
+    orgPermission: 'dash-ops'
     scopes:
       - user
       - repo
@@ -26,4 +27,4 @@ oauth2:
 
 ## Permissionamento
 
-Você poderá usar os times do Github para atribuir permissões de futuras features.
+Você pode adicionar uma organização no parametro `orgPermission`, vamos usar ela para validar se o usuario que esta tentando efetuar o login esta na organização, caso contrario ele recebera um 401 e será deslogado.

@@ -13,6 +13,7 @@ type dashYaml struct {
 		AuthURL         string   `yaml:"authURL"`
 		TokenURL        string   `yaml:"tokenURL"`
 		URLLoginSuccess string   `yaml:"urlLoginSuccess"`
+		OrgPermission   string   `yaml:"orgPermission"`
 		Scopes          []string `yaml:"scopes"`
 	} `yaml:"oauth2"`
 }

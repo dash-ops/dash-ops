@@ -40,7 +40,6 @@ func main() {
 	if dashConfig.Plugins.Has("OAuth2") {
 		// ToDo transform into isolated plugins
 		oauth2.MakeOauthHandlers(api, internal, fileConfig)
-		internal.Use(oauth2.OAuthMiddleware)
 	}
 	if dashConfig.Plugins.Has("Kubernetes") {
 		// ToDo transform into isolated plugins

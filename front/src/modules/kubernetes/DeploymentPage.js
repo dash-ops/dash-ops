@@ -32,21 +32,23 @@ async function fetchData(dispatch, filter, config) {
   }
 }
 
-async function toUp(deployment, setNewPodCount) {
+async function toUp(context, deployment, setNewPodCount) {
   try {
-    await upDeployment(deployment.name, deployment.namespace)
     setNewPodCount(deployment.name, 1)
+    await upDeployment(context, deployment.name, deployment.namespace)
   } catch (e) {
-    notification.error({ message: `Failed to try to up deployment` })
+    setNewPodCount(deployment.name, 0)
+    notification.error({ message: `Failed to try to up deployment`, description: e.data.error })
   }
 }
 
-async function toDown(deployment, setNewPodCount) {
+async function toDown(context, deployment, setNewPodCount) {
   try {
-    await downDeployment(deployment.name, deployment.namespace)
     setNewPodCount(deployment.name, 0)
+    await downDeployment(context, deployment.name, deployment.namespace)
   } catch (e) {
-    notification.error({ message: `Failed to try to down deployment` })
+    setNewPodCount(deployment.name, 1)
+    notification.error({ message: `Failed to try to down deployment`, description: e.data.error })
   }
 }
 
@@ -96,7 +98,6 @@ export default function DeploymentPage() {
       title: "Name",
       dataIndex: "name",
       key: "name",
-      fixed: "left",
       width: 300,
       sorter: (a, b) => (a.name > b.name) * 2 - 1,
       sortDirections: ["descend", "ascend"],
@@ -119,14 +120,13 @@ export default function DeploymentPage() {
       title: "Action",
       dataIndex: "",
       key: "action",
-      fixed: "right",
       width: 140,
       render: (text, deployment) => (
         <DeploymentActions
           context={context}
           deployment={deployment}
-          toUp={() => toUp(deployment, updatePodCount)}
-          toDown={() => toDown(deployment, updatePodCount)}
+          toUp={() => toUp(context, deployment, updatePodCount)}
+          toDown={() => toDown(context, deployment, updatePodCount)}
         />
       ),
     },
@@ -135,7 +135,7 @@ export default function DeploymentPage() {
   return (
     <>
       <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
-        <Col xs={18} md={6}>
+        <Col xs={18} md={5} lg={6}>
           <Input.Search
             onChange={(e) => setSearch(e.target.value)}
             onSearch={setSearch}
@@ -146,7 +146,7 @@ export default function DeploymentPage() {
         <Col xs={6} md={3} xl={2}>
           <Button onClick={() => setSearch("")}>Clear</Button>
         </Col>
-        <Col xs={24} md={6}>
+        <Col xs={24} md={8} xl={7}>
           <Form.Item label="Namespace">
             <Select
               defaultValue="default"
@@ -162,12 +162,7 @@ export default function DeploymentPage() {
             </Select>
           </Form.Item>
         </Col>
-        <Col
-          xs={0}
-          md={{ span: 6, offset: 3 }}
-          xl={{ span: 6, offset: 4 }}
-          style={{ textAlign: "right" }}
-        >
+        <Col xs={0} md={8} lg={7} xl={{ span: 6, offset: 3 }} style={{ textAlign: "right" }}>
           <Refresh onReload={onReload} />
         </Col>
       </Row>
@@ -182,7 +177,6 @@ export default function DeploymentPage() {
               rowKey="name"
               loading={deployments.loading}
               size="small"
-              pagination={false}
               scroll={{ x: 600 }}
             />
           )}

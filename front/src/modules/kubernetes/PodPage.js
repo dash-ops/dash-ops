@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useReducer } from "react"
 import { Link, useLocation, useHistory, useParams } from "react-router-dom"
-import { Row, Col, Table, Button, Input, notification, Form, Tag, Select } from "antd"
+import { Row, Col, Table, Button, Tooltip, Input, notification, Form, Tag, Select } from "antd"
 import { cancelToken } from "../../helpers/http"
 import useQuery from "../../helpers/useQuery"
 import { getNamespaces } from "./namespaceResource"
@@ -81,18 +81,25 @@ export default function PodPage() {
       title: "Name",
       dataIndex: "name",
       key: "name",
-      fixed: "left",
-      width: 300,
+      width: 400,
       sorter: (a, b) => (a.name > b.name) * 2 - 1,
       sortDirections: ["descend", "ascend"],
     },
     {
       title: "Status",
-      dataIndex: "status",
-      key: "status",
+      dataIndex: "condition_status",
+      key: "condition_status",
       render: (content) => {
-        const color = content === "True" ? "green" : "red"
-        return <Tag color={color}>{content}</Tag>
+        switch (content.status) {
+          case "Running":
+            return <Tag color="green">{content.status}</Tag>
+          case "Succeeded":
+            return <Tag color="blue">{content.status}</Tag>
+          case "Pending":
+            return <Tag color="yellow">{content.status}</Tag>
+          default:
+            return <Tag>{content.status}</Tag>
+        }
       },
     },
     {
@@ -101,17 +108,35 @@ export default function PodPage() {
       key: "restart_count",
     },
     {
-      title: "Node",
-      dataIndex: "node_name",
-      key: "node_name",
-      render: (content) => <Link to={`/k8s/${context}?node=${content}`}>{content}</Link>,
+      title: "Action",
+      dataIndex: "",
+      key: "action",
+      width: 140,
+      render: (text, pod) => (
+        <Button.Group>
+          <Tooltip title="Containers Log">
+            <Link to={`/k8s/${context}/pod/logs?name=${pod.name}&namespace=${namespace}`}>
+              <Button type="primary" ghost size="small">
+                Logs
+              </Button>
+            </Link>
+          </Tooltip>
+          <Tooltip title={`Details ${pod.node_name}`}>
+            <Link to={`/k8s/${context}?node=${pod.node_name}`}>
+              <Button type="primary" ghost size="small">
+                Node
+              </Button>
+            </Link>
+          </Tooltip>
+        </Button.Group>
+      ),
     },
   ]
 
   return (
     <>
       <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
-        <Col xs={18} md={6}>
+        <Col xs={18} md={5} lg={6}>
           <Input.Search
             onChange={(e) => searchHandler(e.target.value)}
             onSearch={searchHandler}
@@ -122,7 +147,7 @@ export default function PodPage() {
         <Col xs={6} md={3} xl={2}>
           <Button onClick={() => searchHandler("")}>Clear</Button>
         </Col>
-        <Col xs={24} md={6}>
+        <Col xs={24} md={8} xl={7}>
           <Form.Item label="Namespace">
             <Select
               defaultValue="default"
@@ -138,12 +163,7 @@ export default function PodPage() {
             </Select>
           </Form.Item>
         </Col>
-        <Col
-          xs={0}
-          md={{ span: 6, offset: 3 }}
-          xl={{ span: 6, offset: 4 }}
-          style={{ textAlign: "right" }}
-        >
+        <Col xs={0} md={8} lg={7} xl={{ span: 6, offset: 3 }} style={{ textAlign: "right" }}>
           <Refresh onReload={onReload} />
         </Col>
       </Row>
@@ -156,7 +176,6 @@ export default function PodPage() {
               rowKey="name"
               loading={pods.loading}
               size="small"
-              pagination={false}
               scroll={{ x: 600 }}
             />
           )}
