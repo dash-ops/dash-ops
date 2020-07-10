@@ -3,6 +3,8 @@ name: DashOps
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'docs/**'
 
 jobs:
   CD:
@@ -27,6 +29,7 @@ jobs:
       uses: mathieudutour/github-tag-action@v4.5
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
+        release_branches: main
 
     - name: Build and push Docker images
       uses: docker/build-push-action@v1

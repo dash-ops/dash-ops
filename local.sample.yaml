@@ -21,11 +21,9 @@ oauth2:
       - repo
       - read:org
 kubernetes:
-  - name: 'Kubernetes Dev'
+  - name: 'Kubernetes Local'
     kubeconfig: ~/.kube/config
-    context: 'dev'
-  - name: 'Kubernetes Prod'
-    kubeconfig: # when empty it get access permission on the cluster
+    context: 'local'
 aws:
   region: us-east-1
   accessKeyId: ${AWS_ACCESS_KEY_ID}
