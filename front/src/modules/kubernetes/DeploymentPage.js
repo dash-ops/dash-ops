@@ -32,21 +32,23 @@ async function fetchData(dispatch, filter, config) {
   }
 }
 
-async function toUp(deployment, setNewPodCount) {
+async function toUp(context, deployment, setNewPodCount) {
   try {
-    await upDeployment(deployment.name, deployment.namespace)
     setNewPodCount(deployment.name, 1)
+    await upDeployment(context, deployment.name, deployment.namespace)
   } catch (e) {
-    notification.error({ message: `Failed to try to up deployment` })
+    setNewPodCount(deployment.name, 0)
+    notification.error({ message: `Failed to try to up deployment`, description: e.data.error })
   }
 }
 
-async function toDown(deployment, setNewPodCount) {
+async function toDown(context, deployment, setNewPodCount) {
   try {
-    await downDeployment(deployment.name, deployment.namespace)
     setNewPodCount(deployment.name, 0)
+    await downDeployment(context, deployment.name, deployment.namespace)
   } catch (e) {
-    notification.error({ message: `Failed to try to down deployment` })
+    setNewPodCount(deployment.name, 1)
+    notification.error({ message: `Failed to try to down deployment`, description: e.data.error })
   }
 }
 
@@ -123,8 +125,8 @@ export default function DeploymentPage() {
         <DeploymentActions
           context={context}
           deployment={deployment}
-          toUp={() => toUp(deployment, updatePodCount)}
-          toDown={() => toDown(deployment, updatePodCount)}
+          toUp={() => toUp(context, deployment, updatePodCount)}
+          toDown={() => toDown(context, deployment, updatePodCount)}
         />
       ),
     },

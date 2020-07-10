@@ -5,15 +5,9 @@ import (
 	"net/http"
 
 	"github.com/dash-ops/dash-ops/pkg/commons"
-	mux_context "github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"golang.org/x/oauth2"
 )
-
-type key string
-
-// TokenKey ...
-const TokenKey key = "token"
 
 func oauthHandler(oauthConfig *oauth2.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +51,8 @@ func oAuthMiddleware(next http.Handler) http.Handler {
 			commons.RespondError(w, http.StatusUnauthorized, "retrieved invalid token")
 			return
 		}
-		mux_context.Set(r, TokenKey, token)
+		ctx := context.WithValue(r.Context(), commons.TokenKey, token)
+		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)
 	})
 }

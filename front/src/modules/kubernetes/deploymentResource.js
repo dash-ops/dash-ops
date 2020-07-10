@@ -9,10 +9,10 @@ export function getDeployments({ context, namespace }, config) {
   return http.get(url, config).then((resp) => (resp.data ? resp : { ...resp, data: [] }))
 }
 
-export function upDeployment(name, namespace) {
-  return http.post(`/v1/k8s/deployment/up/${namespace}/${name}`)
+export function upDeployment(context, name, namespace) {
+  return http.post(`/v1/k8s/${context}/deployment/up/${namespace}/${name}`)
 }
 
-export function downDeployment(name, namespace) {
-  return http.post(`/v1/k8s/deployment/down/${namespace}/${name}`)
+export function downDeployment(context, name, namespace) {
+  return http.post(`/v1/k8s/${context}/deployment/down/${namespace}/${name}`)
 }

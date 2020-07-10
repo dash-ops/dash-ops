@@ -76,8 +76,14 @@ func k8sDeploymentsHandler(k8sClient K8sClient) http.HandlerFunc {
 	}
 }
 
-func k8sDeploymentUpHandler(k8sClient K8sClient) http.HandlerFunc {
+func k8sDeploymentUpHandler(k8sClient K8sClient, permission k8sPermission) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		userData := r.Context().Value(commons.UserDataKey).(commons.UserData)
+		if isValid := commons.HasPermission(permission.Deployments.Start, userData.Groups); !isValid {
+			commons.RespondError(w, http.StatusForbidden, "you do not have permission")
+			return
+		}
+
 		vars := mux.Vars(r)
 		err := k8sClient.Scale(vars["name"], vars["namespace"], 1)
 		if err != nil {
@@ -88,8 +94,14 @@ func k8sDeploymentUpHandler(k8sClient K8sClient) http.HandlerFunc {
 	}
 }
 
-func k8sDeploymentDownHandler(k8sClient K8sClient) http.HandlerFunc {
+func k8sDeploymentDownHandler(k8sClient K8sClient, permission k8sPermission) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		userData := r.Context().Value(commons.UserDataKey).(commons.UserData)
+		if isValid := commons.HasPermission(permission.Deployments.Stop, userData.Groups); !isValid {
+			commons.RespondError(w, http.StatusForbidden, "you do not have permission")
+			return
+		}
+
 		vars := mux.Vars(r)
 		err := k8sClient.Scale(vars["name"], vars["namespace"], 0)
 		if err != nil {
@@ -167,11 +179,11 @@ func MakeKubernetesHandlers(r *mux.Router, fileConfig []byte) {
 			Methods("GET", "OPTIONS").
 			Name("k8sDeployments")
 
-		contextRoute.HandleFunc("/deployment/up/{namespace}/{name}", k8sDeploymentUpHandler(k8sClient)).
+		contextRoute.HandleFunc("/deployment/up/{namespace}/{name}", k8sDeploymentUpHandler(k8sClient, cluster.Permission)).
 			Methods("POST", "OPTIONS").
 			Name("k8sDeploymentUp")
 
-		contextRoute.HandleFunc("/deployment/down/{namespace}/{name}", k8sDeploymentDownHandler(k8sClient)).
+		contextRoute.HandleFunc("/deployment/down/{namespace}/{name}", k8sDeploymentDownHandler(k8sClient, cluster.Permission)).
 			Methods("POST", "OPTIONS").
 			Name("k8sDeploymentDown")
 

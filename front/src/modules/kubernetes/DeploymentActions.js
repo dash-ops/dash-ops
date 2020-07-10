@@ -37,7 +37,7 @@ function DeploymentActions({ context, deployment, toUp, toDown }) {
             ghost
             size="small"
             icon={<PauseCircleOutlined />}
-            disabled={showUpButton}
+            disabled={deployment.pod_count === 0}
             onClick={toDown}
           >
             Down

@@ -10,7 +10,7 @@ import (
 // GithubClient interface
 type GithubClient interface {
 	GetUserLogger(token *oauth2.Token) (*github.User, error)
-	GetOrgsUserLogger(token *oauth2.Token) ([]*github.Organization, error)
+	GetTeamsUserLogger(token *oauth2.Token) ([]*github.Team, error)
 }
 
 type githubClient struct {
@@ -32,9 +32,9 @@ func (gh githubClient) GetUserLogger(token *oauth2.Token) (*github.User, error) 
 	return user, err
 }
 
-func (gh githubClient) GetOrgsUserLogger(token *oauth2.Token) ([]*github.Organization, error) {
+func (gh githubClient) GetTeamsUserLogger(token *oauth2.Token) ([]*github.Team, error) {
 	client := getClient(gh.oauthConfig, token)
 	opt := github.ListOptions{}
-	orgs, _, err := client.Organizations.List(context.Background(), "", &opt)
-	return orgs, err
+	teams, _, err := client.Teams.ListUserTeams(context.Background(), &opt)
+	return teams, err
 }

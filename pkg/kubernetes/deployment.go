@@ -59,7 +59,6 @@ func (kc k8sClient) Scale(name string, ns string, replicas int32) error {
 		return fmt.Errorf("failed to get deploy %s on ns %s: %s", name, ns, err)
 	}
 	deploy.Spec.Replicas = &replicas
-	deployment, err := kc.clientSet.AppsV1().Deployments(deploy.GetNamespace()).Update(deploy)
-	fmt.Println(deployment)
+	_, err = kc.clientSet.AppsV1().Deployments(deploy.GetNamespace()).Update(deploy)
 	return err
 }

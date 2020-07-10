@@ -21,7 +21,7 @@ type k8sPermission struct {
 	Deployments struct {
 		Start []string `yaml:"start" json:"start"`
 		Stop  []string `yaml:"stop" json:"stop"`
-	} `yaml:"deployments"`
+	} `yaml:"deployments" json:"deployments"`
 }
 
 func loadConfig(file []byte) dashYaml {

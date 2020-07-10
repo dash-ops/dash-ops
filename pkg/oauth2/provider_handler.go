@@ -1,18 +1,18 @@
 package oauth2
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/dash-ops/dash-ops/pkg/commons"
-	mux_context "github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"golang.org/x/oauth2"
 )
 
 func meHandler(githubClient GithubClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		token := mux_context.Get(r, TokenKey).(*oauth2.Token)
+		token := r.Context().Value(commons.TokenKey).(*oauth2.Token)
 		user, err := githubClient.GetUserLogger(token)
 		if err != nil {
 			commons.RespondError(w, http.StatusInternalServerError, err.Error())
@@ -25,24 +25,26 @@ func meHandler(githubClient GithubClient) http.HandlerFunc {
 
 func orgPermissionMiddleware(githubClient GithubClient, orgPermission string) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			token := mux_context.Get(req, TokenKey).(*oauth2.Token)
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			token := r.Context().Value(commons.TokenKey).(*oauth2.Token)
 
-			orgs, err := githubClient.GetOrgsUserLogger(token)
+			userData := commons.UserData{Org: orgPermission}
+			teams, err := githubClient.GetTeamsUserLogger(token)
 			if err != nil {
 				commons.RespondError(w, http.StatusUnauthorized, "no organization found to validate your access permission, "+err.Error())
 				return
 			}
 
-			for _, org := range orgs {
-				if *org.Login == orgPermission {
-					next.ServeHTTP(w, req)
-					return
+			for _, team := range teams {
+				if *team.Organization.Login == orgPermission {
+					userData.Groups = append(userData.Groups, fmt.Sprintf("%s%s%s", userData.Org, "*", *team.Slug))
 				}
 			}
 
-			commons.RespondError(w, http.StatusUnauthorized, "you need to be in organization "+orgPermission+" to have access")
-			return
+			ctx := context.WithValue(r.Context(), commons.UserDataKey, userData)
+			r = r.WithContext(ctx)
+
+			next.ServeHTTP(w, r)
 		})
 	}
 }
