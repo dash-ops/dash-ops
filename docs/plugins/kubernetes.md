@@ -47,6 +47,7 @@ kubernetes:
     context: 'dev'
     permission:
       deployments:
+        namespaces: ['default']
         start: ['org*team']
         stop: ['org*team']
 ```

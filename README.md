@@ -32,6 +32,7 @@ oauth2:
     authURL: 'https://github.com/login/oauth/authorize'
     tokenURL: 'https://github.com/login/oauth/access_token'
     urlLoginSuccess: 'http://localhost:8080'
+    orgPermission: 'dash-ops'
     scopes:
       - user
       - repo

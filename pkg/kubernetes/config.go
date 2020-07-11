@@ -19,8 +19,9 @@ type kubernetesConfig struct {
 
 type k8sPermission struct {
 	Deployments struct {
-		Start []string `yaml:"start" json:"start"`
-		Stop  []string `yaml:"stop" json:"stop"`
+		Namespaces []string `yaml:"namespaces" json:"namespaces"`
+		Start      []string `yaml:"start" json:"start"`
+		Stop       []string `yaml:"stop" json:"stop"`
 	} `yaml:"deployments" json:"deployments"`
 }
 

@@ -91,6 +91,11 @@ func k8sDeploymentUpHandler(k8sClient K8sClient, permission k8sPermission) http.
 		}
 
 		vars := mux.Vars(r)
+		if isValid := hasPermissionNamespace(permission.Deployments.Namespaces, vars["namespace"]); !isValid {
+			commons.RespondError(w, http.StatusForbidden, "you do not have permission")
+			return
+		}
+
 		err := k8sClient.Scale(vars["name"], vars["namespace"], 1)
 		if err != nil {
 			commons.RespondError(w, http.StatusInternalServerError, err.Error())
@@ -109,6 +114,11 @@ func k8sDeploymentDownHandler(k8sClient K8sClient, permission k8sPermission) htt
 		}
 
 		vars := mux.Vars(r)
+		if isValid := hasPermissionNamespace(permission.Deployments.Namespaces, vars["namespace"]); !isValid {
+			commons.RespondError(w, http.StatusForbidden, "you do not have permission")
+			return
+		}
+
 		err := k8sClient.Scale(vars["name"], vars["namespace"], 0)
 		if err != nil {
 			commons.RespondError(w, http.StatusInternalServerError, err.Error())
@@ -151,6 +161,18 @@ func k8sPodLogsHandler(k8sClient K8sClient) http.HandlerFunc {
 
 		commons.RespondJSON(w, http.StatusOK, logs)
 	}
+}
+
+func hasPermissionNamespace(namespaces []string, namespace string) bool {
+	isValid := false
+
+	for _, n := range namespaces {
+		if n == namespace {
+			isValid = true
+		}
+	}
+
+	return isValid
 }
 
 // MakeKubernetesHandlers Add kubernetes module endpoints
