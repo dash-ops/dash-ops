@@ -48,12 +48,15 @@ oauth2:
     authURL: 'https://github.com/login/oauth/authorize'
     tokenURL: 'https://github.com/login/oauth/access_token'
     urlLoginSuccess: 'http://localhost:3000'
+    orgPermission: 'dash-ops'
     scopes:
       - user
       - repo
       - read:org
 kubernetes:
-  kubeconfig: ~/.kube/config
+  - name: 'Kubernetes Local'
+    kubeconfig: ~/.kube/config
+    context: 'local'
 aws:
   region: us-east-1
   accessKeyId: ${AWS_ACCESS_KEY_ID}
