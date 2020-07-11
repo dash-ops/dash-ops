@@ -5,9 +5,9 @@ go 1.14
 require (
 	github.com/apex/log v1.1.2
 	github.com/aws/aws-sdk-go v1.20.6
+	github.com/creasty/defaults v1.4.0
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v1.0.0 // indirect
-	github.com/gorilla/context v1.1.1
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
 	github.com/imdario/mergo v0.3.9 // indirect

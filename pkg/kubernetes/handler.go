@@ -19,10 +19,16 @@ func k8sClustersHandler(dashConfig dashYaml) http.HandlerFunc {
 		var clusters []Cluster
 
 		for _, cluster := range dashConfig.Kubernetes {
-			clusters = append(clusters, Cluster{
+			c := Cluster{
 				Name:    cluster.Name,
 				Context: cluster.Context,
-			})
+			}
+
+			if cluster.Context == "" {
+				c.Context = "default"
+			}
+
+			clusters = append(clusters, c)
 		}
 
 		commons.RespondJSON(w, http.StatusOK, clusters)
@@ -161,7 +167,10 @@ func MakeKubernetesHandlers(r *mux.Router, fileConfig []byte) {
 			fmt.Println(err.Error())
 		}
 
-		contextRoute := r.PathPrefix("/k8s/" + cluster.Context).Subrouter()
+		contextRoute := r.PathPrefix("/k8s/default").Subrouter()
+		if cluster.Context != "" {
+			contextRoute = r.PathPrefix("/k8s/" + cluster.Context).Subrouter()
+		}
 
 		contextRoute.HandleFunc("/permissions", k8sPermissionsHandler(cluster.Permission)).
 			Methods("GET", "OPTIONS").
