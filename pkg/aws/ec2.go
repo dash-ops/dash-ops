@@ -59,7 +59,7 @@ func (ac awsClient) GetInstances() ([]Instance, error) {
 				instance.State = *inst.State.Name
 			}
 			if inst.Tags != nil {
-				it := getTagsInstance(inst.Tags, ac.skiplist)
+				it := getTagsInstance(inst.Tags, ac.skipList)
 				instance.Name = it.Name
 				if it.Skip {
 					break
@@ -72,7 +72,7 @@ func (ac awsClient) GetInstances() ([]Instance, error) {
 	return instances, nil
 }
 
-func getTagsInstance(tags []*ec2.Tag, skiplist []string) instanceTags {
+func getTagsInstance(tags []*ec2.Tag, skipList []string) instanceTags {
 	var it instanceTags
 
 	for _, tag := range tags {
@@ -81,8 +81,8 @@ func getTagsInstance(tags []*ec2.Tag, skiplist []string) instanceTags {
 		}
 	}
 
-	for i := range skiplist {
-		if it.Name == skiplist[i] {
+	for i := range skipList {
+		if it.Name == skipList[i] {
 			it.Skip = true
 		}
 	}

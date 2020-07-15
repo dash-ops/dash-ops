@@ -61,8 +61,8 @@ export default function PodLogPage() {
             Go Back
           </Button>
         </Col>
-        <Col xs={6} md={3} xl={2}></Col>
-        <Col xs={24} md={8} xl={7}></Col>
+        <Col xs={6} md={3} xl={2}/>
+        <Col xs={24} md={8} xl={7}/>
         <Col xs={0} md={8} lg={7} xl={{ span: 6, offset: 3 }} style={{ textAlign: "right" }}>
           <Refresh onReload={onReload} />
         </Col>

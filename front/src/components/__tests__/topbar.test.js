@@ -5,7 +5,7 @@ import { MemoryRouter } from "react-router-dom"
 import { notification } from "antd"
 import * as userResource from "../../modules/oauth2/userResource"
 
-import Topbar from "../Topbar"
+import Toolbar from "../Toolbar"
 
 let container = null
 const mockUser = { name: "Bla", avatar_url: "/image.jpg" }
@@ -28,7 +28,7 @@ it("should notify error when session on github invalidates", async () => {
   await act(async () => {
     render(
       <MemoryRouter>
-        <Topbar />
+        <Toolbar />
       </MemoryRouter>,
       container,
     )
@@ -44,7 +44,7 @@ it("should user data when logged in user", async () => {
   await act(async () => {
     render(
       <MemoryRouter>
-        <Topbar />
+        <Toolbar />
       </MemoryRouter>,
       container,
     )

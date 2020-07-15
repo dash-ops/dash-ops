@@ -55,14 +55,14 @@ oauth2:
       - read:org
 kubernetes:
   - name: 'Kubernetes Local'
-    kubeconfig: ~/.kube/config
+    kubeconfig: ${HOME}/.kube/config
     context: 'local'
 aws:
   region: us-east-1
   accessKeyId: ${AWS_ACCESS_KEY_ID}
   secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
   ec2Config:
-    skiplist:
+    skipList:
       - 'EKSWorkerAutoScalingGroupSpot'
 ```
 

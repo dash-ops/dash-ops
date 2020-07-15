@@ -22,7 +22,7 @@ oauth2:
       - read:org
 kubernetes:
   - name: 'Kubernetes Local'
-    kubeconfig: ~/.kube/config
+    kubeconfig: ${HOME}/.kube/config
     context: 'local'
 aws:
   region: us-east-1

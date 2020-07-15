@@ -5,7 +5,7 @@ import { loadModulesConfig } from "./helpers/loadModules"
 import { verifyToken } from "./helpers/oauth"
 import InternalRoute from "./components/InternalRoute"
 import Sidebar from "./components/Sidebar"
-import Topbar from "./components/Topbar"
+import Toolbar from "./components/Toolbar"
 import Footer from "./components/Footer"
 import SiderTrigger from "./components/SiderTrigger"
 import Logo from "./components/Logo"
@@ -48,7 +48,7 @@ export default function App() {
           <Layout.Header className="dash-header">
             <SiderTrigger collapsed={collapsed} onCollapse={onCollapse} />
             <Logo />
-            <Topbar oAuth2={oAuth2.active} />
+            <Toolbar oAuth2={oAuth2.active} />
           </Layout.Header>
           <Layout>
             <Layout.Sider

@@ -13,16 +13,16 @@ func RespondJSON(w http.ResponseWriter, code int, payload interface{}) {
 	r, err := json.Marshal(payload)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		_, errw := w.Write([]byte(err.Error()))
-		if errw != nil {
+		_, err := w.Write([]byte(err.Error()))
+		if err != nil {
 			log.WithError(err).Fatal("write failed")
 		}
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	_, errw := w.Write([]byte(r))
-	if errw != nil {
+	_, err = w.Write([]byte(r))
+	if err != nil {
 		log.WithError(err).Fatal("write failed")
 	}
 }

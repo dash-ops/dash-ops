@@ -27,7 +27,7 @@ Na listagem das instâncias dos EC2 você pode ocultar algumas que não deseja q
 aws:
   ...
   ec2Config:
-    skiplist:
+    skipList:
       - 'EKSWorkerAutoScalingGroupSpot'
 ```
 

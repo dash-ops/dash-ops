@@ -5,7 +5,7 @@ import { LogoutOutlined } from "@ant-design/icons"
 import { cleanToken } from "../helpers/oauth"
 import { getUserData } from "../modules/oauth2/userResource"
 
-function Topbar({ oAuth2 }) {
+function Toolbar({ oAuth2 }) {
   const [user, setUser] = useState()
   const history = useHistory()
 
@@ -53,4 +53,4 @@ function Topbar({ oAuth2 }) {
   )
 }
 
-export default Topbar
+export default Toolbar

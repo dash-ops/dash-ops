@@ -12,7 +12,7 @@ func TestLoadConfig(t *testing.T) {
   accessKeyId: 666
   secretAccessKey: 999
   ec2Config:
-    skiplist:
+    skipList:
       - "test"`)
 
 	dashConfig := loadConfig(fileAwsConfig)
