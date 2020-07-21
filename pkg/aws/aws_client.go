@@ -15,7 +15,7 @@ type AwsClient interface {
 
 type awsClient struct {
 	session  *session.Session
-	skiplist []string
+	skipList []string
 }
 
 // NewAwsClient Create a new aws region access session
@@ -30,6 +30,6 @@ func NewAwsClient(config awsConfig) (AwsClient, error) {
 
 	return awsClient{
 		awsSession,
-		config.EC2Config.Skiplist,
+		config.EC2Config.SkipList,
 	}, nil
 }

@@ -3,6 +3,7 @@ package commons
 import (
 	"encoding/json"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/apex/log"
@@ -13,16 +14,16 @@ func RespondJSON(w http.ResponseWriter, code int, payload interface{}) {
 	r, err := json.Marshal(payload)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		_, errw := w.Write([]byte(err.Error()))
-		if errw != nil {
+		_, err := w.Write([]byte(err.Error()))
+		if err != nil {
 			log.WithError(err).Fatal("write failed")
 		}
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	_, errw := w.Write([]byte(r))
-	if errw != nil {
+	_, err = w.Write([]byte(r))
+	if err != nil {
 		log.WithError(err).Fatal("write failed")
 	}
 }
@@ -45,4 +46,26 @@ func HasPermission(featurePermissions []string, groupsPermission []string) bool 
 	}
 
 	return isValid
+}
+
+// UnderScoreString ...
+func UnderScoreString(str string) string {
+	// convert every letter to lower case
+	newStr := strings.ToLower(str)
+
+	// convert all spaces/tab to underscore
+	regExp := regexp.MustCompile("[[:space:][:blank:]]")
+	newStrByte := regExp.ReplaceAll([]byte(newStr), []byte("_"))
+
+	regExp = regexp.MustCompile("`[^a-z0-9]`i")
+	newStrByte = regExp.ReplaceAll(newStrByte, []byte("_"))
+
+	regExp = regexp.MustCompile("[!/']")
+	newStrByte = regExp.ReplaceAll(newStrByte, []byte("_"))
+
+	// and remove underscore from beginning and ending
+	newStr = strings.TrimPrefix(string(newStrByte), "_")
+	newStr = strings.TrimSuffix(newStr, "_")
+
+	return newStr
 }

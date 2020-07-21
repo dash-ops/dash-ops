@@ -26,9 +26,9 @@ func TestMakeOauthHandlers(t *testing.T) {
 
 	path, err := r.GetRoute("oauth").GetPathTemplate()
 	assert.Nil(t, err)
-	assert.Equal(t, "/api/oauth", path)
+	assert.Equal(t, "/oauth", path)
 
 	path, err = r.GetRoute("oauthRedirect").GetPathTemplate()
 	assert.Nil(t, err)
-	assert.Equal(t, "/api/oauth/redirect", path)
+	assert.Equal(t, "/oauth/redirect", path)
 }

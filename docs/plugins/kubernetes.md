@@ -15,10 +15,10 @@ Em seu arquivo de configuração você poderá adicionar seus clusters do kubern
 ```yaml
 kubernetes:
   - name: 'Kubernetes Dev'
-    kubeconfig: ~/.kube/config
+    kubeconfig: ${HOME}/.kube/config
     context: 'dev'
   - name: 'Kubernetes Prod'
-    kubeconfig: ~/.kube/config
+    kubeconfig: ${HOME}/.kube/config
     context: 'prod'
 ```
 
@@ -43,7 +43,7 @@ Exemplo de como adicionar a permissão:
 ```yaml
 kubernetes:
   - name: 'Kubernetes Dev'
-    kubeconfig: ~/.kube/config
+    kubeconfig: ${HOME}/.kube/config
     context: 'dev'
     permission:
       deployments:

@@ -6,12 +6,12 @@ import (
 	"path/filepath"
 )
 
-type SpaHandler struct {
+type Handler struct {
 	StaticPath string
 	IndexPath  string
 }
 
-func (h SpaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path, err := filepath.Abs(r.URL.Path)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

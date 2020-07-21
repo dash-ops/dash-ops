@@ -50,7 +50,7 @@ func main() {
 		aws.MakeAWSInstanceHandlers(internal, fileConfig)
 	}
 
-	spaHandler := spa.SpaHandler{StaticPath: dashConfig.Front, IndexPath: "index.html"}
+	spaHandler := spa.Handler{StaticPath: dashConfig.Front, IndexPath: "index.html"}
 	router.PathPrefix("/").Handler(spaHandler)
 
 	fmt.Println("DashOps server running!!")

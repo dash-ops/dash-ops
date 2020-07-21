@@ -55,21 +55,31 @@ oauth2:
       - read:org
 kubernetes:
   - name: 'Kubernetes Local'
-    kubeconfig: ~/.kube/config
+    kubeconfig: ${HOME}/.kube/config
     context: 'local'
 aws:
-  region: us-east-1
-  accessKeyId: ${AWS_ACCESS_KEY_ID}
-  secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
-  ec2Config:
-    skiplist:
-      - 'EKSWorkerAutoScalingGroupSpot'
+  - name: 'AWS Tests'
+    region: us-east-1
+    accessKeyId: ${AWS_ACCESS_KEY_ID}
+    secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+    ec2Config:
+      skipList:
+        - 'EKSWorkerAutoScalingGroupSpot'
 ```
 
 Caso deseje personalizar as configurações olhe as docs de cada plugin, em execute o seguinte comando:
 
 ```sh
 go run main.go
+```
+
+Se achar necessario pode usar o [AIR](https://github.com/cosmtrek/air) para rodar o backend com live reload durante o desenvolvimento:
+
+```sh
+# install
+go get -u github.com/cosmtrek/air
+# run
+air
 ```
 
 ### Build

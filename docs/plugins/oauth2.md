@@ -6,6 +6,23 @@
 
 No momento temos a autenticação via Github.
 
+## Github APP
+
+Primeiro precisamos configurar o token de acesso seguido os seguintes passos:
+- Acesse a aba `Settings` da sua organização;
+- No menu lateral clique em `OAuth Apps` na seção `Developer settings;
+- Registre um novo aplicativo, passando o Nome, URL do APP e URL de callback do login, exemplo:
+
+![Github APP Config](../img/github-config.png)
+
+> Nota:
+> Caso você esteja rodando local, precisa referenciar as portas corretas para o front e da API:
+> 
+> ![Github APP Local Config](../img/github-local-config.png)
+
+- Será gerado dois tokens um `Client ID` e `Client Secret`;
+- Copie os código e siga as instruções do proximo passo.
+
 ## Configurações do Plugin
 
 Em seu arquivo de configuração você poderá adicionar seu provider de autenticação, exemplo:
