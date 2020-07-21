@@ -10,13 +10,18 @@ O objetivo aqui é tentar diminuir a carga cognitiva dos engenheiros em cima dos
 
 ## Configurações do Plugin
 
-Em seu arquivo de configurações você precisara adicionar suas credenciais para ter permissões, exemplo:
+Em seu arquivo de configurações você precisara adicionar suas credenciais para ter permissões de acesso, também pode adicionar multiplas contas da AWS se achar necessario, exemplo:
 
 ```yaml
 aws:
-  region: us-east-1
-  accessKeyId: ${AWS_ACCESS_KEY_ID}
-  secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+  - name: 'AWS Prod'
+    region: us-east-1
+    accessKeyId: ${AWS_ACCESS_KEY_ID}
+    secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+  - name: 'AWS Monitoring'
+    region: us-east-1
+    accessKeyId: ${AWS_ACCESS_KEY_MONITORING_ID}
+    secretAccessKey: ${AWS_SECRET_ACCESS_KEY_MONITORING}
 ```
 
 ### EC2

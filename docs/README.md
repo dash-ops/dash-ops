@@ -58,12 +58,13 @@ kubernetes:
     kubeconfig: ${HOME}/.kube/config
     context: 'local'
 aws:
-  region: us-east-1
-  accessKeyId: ${AWS_ACCESS_KEY_ID}
-  secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
-  ec2Config:
-    skipList:
-      - 'EKSWorkerAutoScalingGroupSpot'
+  - name: 'AWS Tests'
+    region: us-east-1
+    accessKeyId: ${AWS_ACCESS_KEY_ID}
+    secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+    ec2Config:
+      skipList:
+        - 'EKSWorkerAutoScalingGroupSpot'
 ```
 
 Caso deseje personalizar as configurações olhe as docs de cada plugin, em execute o seguinte comando:

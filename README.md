@@ -45,12 +45,13 @@ kubernetes:
     kubeconfig: ${HOME}/.kube/config
     context: 'prod'
 aws:
-  region: us-east-1
-  accessKeyId: ${AWS_ACCESS_KEY_ID}
-  secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
-  ec2Config:
-    skipList:
-      - 'EKSWorkerAutoScalingGroupSpot'
+  - name: 'AWS Account'
+    region: us-east-1
+    accessKeyId: ${AWS_ACCESS_KEY_ID}
+    secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+    ec2Config:
+      skipList:
+        - 'EKSWorkerAutoScalingGroupSpot'
 ```
 
 This project has backend in GoLang and frontend with React.
@@ -131,9 +132,10 @@ configMap: |
     - name: 'Kubernetes InCluster'
       kubeconfig:
   aws:
-    region: us-east-1
-    accessKeyId: ${AWS_ACCESS_KEY_ID}
-    secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
+    - name: 'AWS Account'
+      region: us-east-1
+      accessKeyId: ${AWS_ACCESS_KEY_ID}
+      secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
 ```
 
 ### Install
