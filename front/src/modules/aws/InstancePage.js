@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useReducer } from "react"
+import { useParams } from "react-router-dom"
 import { Row, Col, Table, Button, Input, notification } from "antd"
 import { cancelToken } from "../../helpers/http"
 import { getInstances, startInstance, stopInstance } from "./instanceResource"
@@ -21,9 +22,9 @@ function reducer(state, action) {
   }
 }
 
-async function fetchData(dispatch, config) {
+async function fetchData(dispatch, filter, config) {
   try {
-    const result = await getInstances(config)
+    const result = await getInstances(filter, config)
     dispatch({ type: SET_DATA, response: result.data })
   } catch (e) {
     notification.error({ message: "Ops... Failed to fetch API data" })
@@ -54,21 +55,22 @@ async function toStop(instance, setNewState) {
 }
 
 export default function InstancePage() {
+  const { key } = useParams()
   const [search, setSearch] = useState("")
   const [instances, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
     const source = cancelToken.source()
     dispatch({ type: LOADING })
-    fetchData(dispatch, { cancelToken: source.token })
+    fetchData(dispatch, { accountKey: key }, { cancelToken: source.token })
 
     return () => {
       source.cancel()
     }
-  }, [])
+  }, [key])
 
   async function onReload() {
-    fetchData(dispatch)
+    fetchData(dispatch, { accountKey: key })
   }
 
   function updateInstanceState(id, state) {
@@ -104,8 +106,8 @@ export default function InstancePage() {
       render: (text, instance) => (
         <InstanceActions
           instance={instance}
-          toStart={() => toStart(instance, updateInstanceState)}
-          toStop={() => toStop(instance, updateInstanceState)}
+          toStart={() => toStart(key, instance, updateInstanceState)}
+          toStop={() => toStop(key, instance, updateInstanceState)}
         />
       ),
     },
