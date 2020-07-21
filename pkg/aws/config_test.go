@@ -17,7 +17,7 @@ func TestLoadConfig(t *testing.T) {
 
 	dashConfig := loadConfig(fileAwsConfig)
 
-	assert.Equal(t, "us-east-1", dashConfig.AWS.Region)
-	assert.Equal(t, "666", dashConfig.AWS.AccessKeyID)
-	assert.Equal(t, "999", dashConfig.AWS.SecretAccessKey)
+	assert.Equal(t, "us-east-1", dashConfig.AWS[0].Region)
+	assert.Equal(t, "666", dashConfig.AWS[0].AccessKeyID)
+	assert.Equal(t, "999", dashConfig.AWS[0].SecretAccessKey)
 }
