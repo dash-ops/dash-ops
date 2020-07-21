@@ -72,6 +72,15 @@ Caso deseje personalizar as configurações olhe as docs de cada plugin, em exec
 go run main.go
 ```
 
+Se achar necessario pode usar o [AIR](https://github.com/cosmtrek/air) para rodar o backend com live reload durante o desenvolvimento:
+
+```sh
+# install
+go get -u github.com/cosmtrek/air
+# run
+air
+```
+
 ### Build
 
 Para rodar o build do projeto localmente, basta executar o seguinte comando:
