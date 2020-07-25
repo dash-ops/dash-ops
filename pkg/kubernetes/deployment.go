@@ -24,7 +24,7 @@ type deploymentFilter struct {
 	Namespace string
 }
 
-func (kc k8sClient) GetDeployments(filter deploymentFilter) ([]Deployment, error) {
+func (kc client) GetDeployments(filter deploymentFilter) ([]Deployment, error) {
 	var deployments []Deployment
 
 	if filter.Namespace == "" {
@@ -53,7 +53,7 @@ func (kc k8sClient) GetDeployments(filter deploymentFilter) ([]Deployment, error
 	return deployments, nil
 }
 
-func (kc k8sClient) Scale(name string, ns string, replicas int32) error {
+func (kc client) Scale(name string, ns string, replicas int32) error {
 	deploy, err := kc.clientSet.AppsV1().Deployments(ns).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get deploy %s on ns %s: %s", name, ns, err)

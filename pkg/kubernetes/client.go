@@ -6,8 +6,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// K8sClient K8S module interface
-type K8sClient interface {
+// Client K8S module interface
+type Client interface {
 	GetNodes() ([]Node, error)
 	GetNamespaces() ([]Namespace, error)
 	GetDeployments(filters deploymentFilter) ([]Deployment, error)
@@ -16,12 +16,12 @@ type K8sClient interface {
 	GetPodLogs(filters podFilter) ([]ContainerLog, error)
 }
 
-type k8sClient struct {
+type client struct {
 	clientSet *kubernetes.Clientset
 }
 
-// NewK8sClient Create a new k8s client
-func NewK8sClient(config kubernetesConfig) (K8sClient, error) {
+// NewClient Create a new k8s client
+func NewClient(config config) (Client, error) {
 	kConfig, err := getConfig(config)
 	if err != nil {
 		return nil, err
@@ -32,10 +32,10 @@ func NewK8sClient(config kubernetesConfig) (K8sClient, error) {
 		return nil, err
 	}
 
-	return k8sClient{clientSet}, nil
+	return client{clientSet}, nil
 }
 
-func getConfig(config kubernetesConfig) (*rest.Config, error) {
+func getConfig(config config) (*rest.Config, error) {
 	if config.Kubeconfig == "" {
 		return rest.InClusterConfig()
 	}

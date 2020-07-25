@@ -39,7 +39,7 @@ type ContainerLog struct {
 	Log  string `json:"log"`
 }
 
-func (kc k8sClient) GetPods(filter podFilter) ([]Pod, error) {
+func (kc client) GetPods(filter podFilter) ([]Pod, error) {
 	var pods []Pod
 
 	if filter.Namespace == "" {
@@ -71,7 +71,7 @@ func (kc k8sClient) GetPods(filter podFilter) ([]Pod, error) {
 	return pods, nil
 }
 
-func (kc k8sClient) GetPodLogs(filter podFilter) ([]ContainerLog, error) {
+func (kc client) GetPodLogs(filter podFilter) ([]ContainerLog, error) {
 	var logs []ContainerLog
 
 	pod, err := kc.clientSet.CoreV1().Pods(filter.Namespace).Get(filter.Name, metav1.GetOptions{})

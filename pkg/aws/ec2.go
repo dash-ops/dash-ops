@@ -29,7 +29,7 @@ type instanceTags struct {
 	Skip bool
 }
 
-func (ac awsClient) GetInstances() ([]Instance, error) {
+func (ac client) GetInstances() ([]Instance, error) {
 	var instances []Instance
 
 	ec2svc := ec2.New(ac.session)
@@ -90,7 +90,7 @@ func getTagsInstance(tags []*ec2.Tag, skipList []string) instanceTags {
 	return it
 }
 
-func (ac awsClient) StartInstance(instanceID string) (InstanceOutput, error) {
+func (ac client) StartInstance(instanceID string) (InstanceOutput, error) {
 	dryRun := false
 	ec2svc := ec2.New(ac.session)
 	params := &ec2.StartInstancesInput{
@@ -125,7 +125,7 @@ func (ac awsClient) StartInstance(instanceID string) (InstanceOutput, error) {
 	return output, nil
 }
 
-func (ac awsClient) StopInstance(instanceID string) (InstanceOutput, error) {
+func (ac client) StopInstance(instanceID string) (InstanceOutput, error) {
 	dryRun := false
 	ec2svc := ec2.New(ac.session)
 	params := &ec2.StopInstancesInput{

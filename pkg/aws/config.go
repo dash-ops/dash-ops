@@ -7,21 +7,21 @@ import (
 )
 
 type dashYaml struct {
-	AWS []awsConfig `yaml:"aws"`
+	AWS []config `yaml:"aws"`
 }
 
-type awsConfig struct {
+type config struct {
 	Name            string        `yaml:"name"`
 	Region          string        `yaml:"region"`
 	AccessKeyID     string        `yaml:"accessKeyId"`
 	SecretAccessKey string        `yaml:"secretAccessKey"`
-	Permission      awsPermission `yaml:"permission"`
+	Permission      permission `yaml:"permission"`
 	EC2Config       struct {
 		SkipList []string `yaml:"skipList"`
 	} `yaml:"ec2Config"`
 }
 
-type awsPermission struct {
+type permission struct {
 	EC2 struct {
 		Start []string `yaml:"start" json:"start"`
 		Stop  []string `yaml:"stop" json:"stop"`

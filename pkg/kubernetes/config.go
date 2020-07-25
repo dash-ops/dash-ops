@@ -7,18 +7,18 @@ import (
 )
 
 type dashYaml struct {
-	Kubernetes []kubernetesConfig `yaml:"kubernetes"`
+	Kubernetes []config `yaml:"kubernetes"`
 }
 
-type kubernetesConfig struct {
+type config struct {
 	Name       string        `yaml:"name"`
 	Kubeconfig string        `yaml:"kubeconfig"`
 	Context    string        `yaml:"context"`
-	Permission k8sPermission `yaml:"permission"`
+	Permission permission 	 `yaml:"permission"`
 	Listen     string        `yaml:"-"`
 }
 
-type k8sPermission struct {
+type permission struct {
 	Deployments struct {
 		Namespaces []string `yaml:"namespaces" json:"namespaces"`
 		Start      []string `yaml:"start" json:"start"`
