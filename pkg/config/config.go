@@ -2,10 +2,10 @@ package config
 
 import (
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/apex/log"
 	"gopkg.in/yaml.v2"
 )
 
@@ -18,8 +18,10 @@ type DashYaml struct {
 	Plugins Plugins  `yaml:"plugins"`
 }
 
+// Plugins ...
 type Plugins []string
 
+// Has ...
 func (list Plugins) Has(a string) bool {
 	for _, b := range list {
 		if b == a {
@@ -39,7 +41,7 @@ func GetFileGlobalConfig() []byte {
 	filename, _ := filepath.Abs(dashYaml)
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
-		log.WithError(err).Fatal("reading file config")
+		log.Fatalln("reading file config", err)
 	}
 
 	return []byte(os.ExpandEnv(string(file)))
@@ -50,7 +52,7 @@ func GetGlobalConfig(file []byte) DashYaml {
 	dc := DashYaml{}
 	err := yaml.Unmarshal(file, &dc)
 	if err != nil {
-		log.WithError(err).Fatal("parse yaml config")
+		log.Fatalln("parse yaml config", err)
 	}
 
 	return dc

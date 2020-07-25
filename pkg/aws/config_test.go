@@ -8,13 +8,13 @@ import (
 
 func TestLoadConfig(t *testing.T) {
 	fileAwsConfig := []byte(`aws:
-	- name: 'AWS Test'
-		region: us-east-1
-		accessKeyId: 666
-		secretAccessKey: 999
-		ec2Config:
-			skipList:
-				- "test"`)
+  - name: 'AWS Test'
+    region: us-east-1
+    accessKeyId: 666
+    secretAccessKey: 999
+    ec2Config:
+      skipList:
+        - "test"`)
 
 	dashConfig := loadConfig(fileAwsConfig)
 

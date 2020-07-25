@@ -8,9 +8,9 @@ import (
 
 func TestLoadConfig(t *testing.T) {
 	fileK8sConfig := []byte(`kubernetes:
-	- name: Kubernetes Prod
-		kubeconfig: /root/.kube/config
-		context: k8s-prod`)
+  - name: Kubernetes Prod
+    kubeconfig: /root/.kube/config
+    context: k8s-prod`)
 
 	dashConfig := loadConfig(fileK8sConfig)
 
