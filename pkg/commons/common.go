@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+type ResponseError struct {
+	Error string `json:"error"`
+}
+
 // RespondJSON makes the response with payload as json format
 func RespondJSON(w http.ResponseWriter, code int, payload interface{}) {
 	r, err := json.Marshal(payload)
@@ -29,7 +33,7 @@ func RespondJSON(w http.ResponseWriter, code int, payload interface{}) {
 
 // RespondError makes the error response with payload as json format
 func RespondError(w http.ResponseWriter, code int, message string) {
-	RespondJSON(w, code, map[string]string{"error": message})
+	RespondJSON(w, code, ResponseError{Error: message})
 }
 
 // HasPermission ...

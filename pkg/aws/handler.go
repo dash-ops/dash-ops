@@ -77,7 +77,11 @@ func ec2InstanceStopHandler(client Client) http.HandlerFunc {
 
 // MakeAWSInstanceHandlers Add aws module endpoints
 func MakeAWSInstanceHandlers(r *mux.Router, fileConfig []byte) {
-	dashConfig := loadConfig(fileConfig)
+	dashConfig, err := loadConfig(fileConfig)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
 	r.HandleFunc("/aws/accounts", accountsHandler(dashConfig)).
 		Methods("GET", "OPTIONS").
@@ -87,13 +91,14 @@ func MakeAWSInstanceHandlers(r *mux.Router, fileConfig []byte) {
 		client, err := NewClient(account)
 		if err != nil {
 			fmt.Println(err.Error())
+			continue
 		}
 
 		accountRoute := r.PathPrefix("/aws/" + commons.UnderScoreString(account.Name)).Subrouter()
 
 		accountRoute.HandleFunc("/permissions", permissionsHandler(account.Permission)).
 			Methods("GET", "OPTIONS").
-			Name("k8sPermissions")
+			Name("awsPermissions")
 
 		accountRoute.HandleFunc("/ec2/instances", ec2InstancesHandler(client)).
 			Methods("GET", "OPTIONS").

@@ -1,8 +1,6 @@
 package aws
 
 import (
-	"fmt"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
@@ -32,12 +30,10 @@ type instanceTags struct {
 func (ac client) GetInstances() ([]Instance, error) {
 	var instances []Instance
 
-	ec2svc := ec2.New(ac.session)
 	params := &ec2.DescribeInstancesInput{}
 
-	resp, err := ec2svc.DescribeInstances(params)
+	resp, err := ac.ec2.DescribeInstances(params)
 	if err != nil {
-		fmt.Println(err.Error())
 		return nil, err
 	}
 
@@ -92,7 +88,6 @@ func getTagsInstance(tags []*ec2.Tag, skipList []string) instanceTags {
 
 func (ac client) StartInstance(instanceID string) (InstanceOutput, error) {
 	dryRun := false
-	ec2svc := ec2.New(ac.session)
 	params := &ec2.StartInstancesInput{
 		InstanceIds: []*string{
 			aws.String(instanceID),
@@ -101,16 +96,14 @@ func (ac client) StartInstance(instanceID string) (InstanceOutput, error) {
 	}
 
 	output := InstanceOutput{}
-	result, err := ec2svc.StartInstances(params)
+	result, err := ac.ec2.StartInstances(params)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
 			default:
-				fmt.Println(aerr.Error())
 				return output, aerr
 			}
 		}
-		fmt.Println(err.Error())
 		return output, err
 	}
 
@@ -127,7 +120,6 @@ func (ac client) StartInstance(instanceID string) (InstanceOutput, error) {
 
 func (ac client) StopInstance(instanceID string) (InstanceOutput, error) {
 	dryRun := false
-	ec2svc := ec2.New(ac.session)
 	params := &ec2.StopInstancesInput{
 		InstanceIds: []*string{
 			aws.String(instanceID),
@@ -136,16 +128,14 @@ func (ac client) StopInstance(instanceID string) (InstanceOutput, error) {
 	}
 
 	output := InstanceOutput{}
-	result, err := ec2svc.StopInstances(params)
+	result, err := ac.ec2.StopInstances(params)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {
 			default:
-				fmt.Println(aerr.Error())
 				return output, aerr
 			}
 		}
-		fmt.Println(err.Error())
 		return output, err
 	}
 

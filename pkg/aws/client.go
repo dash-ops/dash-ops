@@ -4,6 +4,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
 // Client Aws module interface
@@ -14,22 +15,19 @@ type Client interface {
 }
 
 type client struct {
-	session  *session.Session
+	ec2      *ec2.EC2
 	skipList []string
 }
 
 // NewClient Create a new aws region access session
 func NewClient(config config) (Client, error) {
-	awsSession, err := session.NewSession(&aws.Config{
+	awsSession := session.Must(session.NewSession(&aws.Config{
 		Region:      aws.String(config.Region),
 		Credentials: credentials.NewStaticCredentials(config.AccessKeyID, config.SecretAccessKey, ""),
-	})
-	if err != nil {
-		return nil, err
-	}
+	}))
 
 	return client{
-		awsSession,
+		ec2.New(awsSession),
 		config.EC2Config.SkipList,
 	}, nil
 }
