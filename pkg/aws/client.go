@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
+	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 )
 
 // Client Aws module interface
@@ -15,7 +16,7 @@ type Client interface {
 }
 
 type client struct {
-	ec2      *ec2.EC2
+	ec2      ec2iface.EC2API
 	skipList []string
 }
 

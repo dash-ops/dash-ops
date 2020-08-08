@@ -58,7 +58,7 @@ func (ac client) GetInstances() ([]Instance, error) {
 				it := getTagsInstance(inst.Tags, ac.skipList)
 				instance.Name = it.Name
 				if it.Skip {
-					break
+					continue
 				}
 			}
 			instances = append(instances, instance)
