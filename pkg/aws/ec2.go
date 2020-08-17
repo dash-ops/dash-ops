@@ -2,7 +2,6 @@ package aws
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
@@ -98,12 +97,6 @@ func (ac client) StartInstance(instanceID string) (InstanceOutput, error) {
 	output := InstanceOutput{}
 	result, err := ac.ec2.StartInstances(params)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			default:
-				return output, aerr
-			}
-		}
 		return output, err
 	}
 
@@ -130,12 +123,6 @@ func (ac client) StopInstance(instanceID string) (InstanceOutput, error) {
 	output := InstanceOutput{}
 	result, err := ac.ec2.StopInstances(params)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			default:
-				return output, aerr
-			}
-		}
 		return output, err
 	}
 

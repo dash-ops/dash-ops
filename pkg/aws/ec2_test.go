@@ -141,6 +141,22 @@ func TestStartInstance(t *testing.T) {
 	assert.Equal(t, mockOutput.CurrentState, output.CurrentState)
 }
 
+func TestStartInstanceWithError(t *testing.T) {
+	mockErr := errors.New("message error")
+	mockStartOutput := &ec2.StartInstancesOutput{}
+
+	ec2 := new(mockEc2API)
+	ec2.On("StartInstances").Return(mockStartOutput, mockErr)
+
+	awsClient := client{
+		ec2: ec2,
+	}
+
+	_, err := awsClient.StartInstance("5555555")
+
+	assert.Equal(t, mockErr, err, "return error message")
+}
+
 func TestStopInstance(t *testing.T) {
 	mockOutput := InstanceOutput{
 		CurrentState:  "stopping",
@@ -177,6 +193,22 @@ func TestStopInstance(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, mockOutput.CurrentState, output.CurrentState)
 	assert.Equal(t, mockOutput.CurrentState, output.CurrentState)
+}
+
+func TestStopInstanceWithError(t *testing.T) {
+	mockErr := errors.New("message error")
+	mockStopOutput := &ec2.StopInstancesOutput{}
+
+	ec2 := new(mockEc2API)
+	ec2.On("StopInstances").Return(mockStopOutput, mockErr)
+
+	awsClient := client{
+		ec2: ec2,
+	}
+
+	_, err := awsClient.StopInstance("5555555")
+
+	assert.Equal(t, mockErr, err, "return error message")
 }
 
 func mockEc2DescribeInstance(instances []Instance) *ec2.DescribeInstancesOutput {
