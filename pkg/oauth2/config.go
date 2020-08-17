@@ -1,7 +1,8 @@
 package oauth2
 
 import (
-	"github.com/apex/log"
+	"log"
+
 	"gopkg.in/yaml.v2"
 )
 
@@ -23,7 +24,7 @@ func loadConfig(file []byte) dashYaml {
 
 	err := yaml.Unmarshal(file, &dc)
 	if err != nil {
-		log.WithError(err).Fatal("parse yaml config")
+		log.Fatalln("parse yaml config", err)
 	}
 
 	return dc

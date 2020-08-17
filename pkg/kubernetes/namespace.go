@@ -11,7 +11,7 @@ type Namespace struct {
 	Name string `json:"name"`
 }
 
-func (kc k8sClient) GetNamespaces() ([]Namespace, error) {
+func (kc client) GetNamespaces() ([]Namespace, error) {
 	var list []Namespace
 
 	namespaces, err := kc.clientSet.CoreV1().Namespaces().List(metav1.ListOptions{})

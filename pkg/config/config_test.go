@@ -21,3 +21,10 @@ plugins:
 	assert.Equal(t, "http://localhost:3000", dashConfig.Origin)
 	assert.Equal(t, []string{"Content-Type", "Authorization"}, dashConfig.Headers)
 }
+
+func TestPluginHas(t *testing.T) {
+	plugins := Plugins{"OAuth2", "Kubernetes"}
+
+	assert.True(t, plugins.Has("Kubernetes"))
+	assert.False(t, plugins.Has("AWS"))
+}

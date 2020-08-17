@@ -32,10 +32,10 @@ async function fetchData(dispatch, filter, config) {
   }
 }
 
-async function toStart(instance, setNewState) {
+async function toStart(key, instance, setNewState) {
   try {
     setNewState(instance.instance_id, "pending")
-    const response = await startInstance(instance.instance_id)
+    const response = await startInstance(key, instance.instance_id)
     setNewState(instance.instance_id, response.data.current_state)
   } catch (e) {
     setNewState(instance.instance_id, "stopped")
@@ -43,10 +43,10 @@ async function toStart(instance, setNewState) {
   }
 }
 
-async function toStop(instance, setNewState) {
+async function toStop(key, instance, setNewState) {
   try {
     setNewState(instance.instance_id, "stopping")
-    const response = await stopInstance(instance.instance_id)
+    const response = await stopInstance(key, instance.instance_id)
     setNewState(instance.instance_id, response.data.current_state)
   } catch (e) {
     setNewState(instance.instance_id, "running")

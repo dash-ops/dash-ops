@@ -2,12 +2,15 @@ package commons
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
-
-	"github.com/apex/log"
 )
+
+type ResponseError struct {
+	Error string `json:"error"`
+}
 
 // RespondJSON makes the response with payload as json format
 func RespondJSON(w http.ResponseWriter, code int, payload interface{}) {
@@ -16,7 +19,7 @@ func RespondJSON(w http.ResponseWriter, code int, payload interface{}) {
 		w.WriteHeader(http.StatusInternalServerError)
 		_, err := w.Write([]byte(err.Error()))
 		if err != nil {
-			log.WithError(err).Fatal("write failed")
+			log.Fatalln("write failed", err)
 		}
 		return
 	}
@@ -24,13 +27,13 @@ func RespondJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.WriteHeader(code)
 	_, err = w.Write([]byte(r))
 	if err != nil {
-		log.WithError(err).Fatal("write failed")
+		log.Fatalln("write failed", err)
 	}
 }
 
 // RespondError makes the error response with payload as json format
 func RespondError(w http.ResponseWriter, code int, message string) {
-	RespondJSON(w, code, map[string]string{"error": message})
+	RespondJSON(w, code, ResponseError{Error: message})
 }
 
 // HasPermission ...

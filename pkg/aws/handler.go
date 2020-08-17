@@ -14,7 +14,7 @@ type Account struct {
 	Key  string `json:"key"`
 }
 
-func awsAccountsHandler(dashConfig dashYaml) http.HandlerFunc {
+func accountsHandler(dashConfig dashYaml) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var accounts []Account
 
@@ -31,15 +31,15 @@ func awsAccountsHandler(dashConfig dashYaml) http.HandlerFunc {
 	}
 }
 
-func awsPermissionsHandler(permission awsPermission) http.HandlerFunc {
+func permissionsHandler(permission permission) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		commons.RespondJSON(w, http.StatusOK, permission)
 	}
 }
 
-func ec2InstancesHandler(awsClient AwsClient) http.HandlerFunc {
+func ec2InstancesHandler(client Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		instances, err := awsClient.GetInstances()
+		instances, err := client.GetInstances()
 		if err != nil {
 			commons.RespondError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -49,10 +49,10 @@ func ec2InstancesHandler(awsClient AwsClient) http.HandlerFunc {
 	}
 }
 
-func ec2InstanceStartHandler(awsClient AwsClient) http.HandlerFunc {
+func ec2InstanceStartHandler(client Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		data, err := awsClient.StartInstance(vars["instanceId"])
+		data, err := client.StartInstance(vars["instanceId"])
 		if err != nil {
 			commons.RespondError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -62,10 +62,10 @@ func ec2InstanceStartHandler(awsClient AwsClient) http.HandlerFunc {
 	}
 }
 
-func ec2InstanceStopHandler(awsClient AwsClient) http.HandlerFunc {
+func ec2InstanceStopHandler(client Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		data, err := awsClient.StopInstance(vars["instanceId"])
+		data, err := client.StopInstance(vars["instanceId"])
 		if err != nil {
 			commons.RespondError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -77,33 +77,38 @@ func ec2InstanceStopHandler(awsClient AwsClient) http.HandlerFunc {
 
 // MakeAWSInstanceHandlers Add aws module endpoints
 func MakeAWSInstanceHandlers(r *mux.Router, fileConfig []byte) {
-	dashConfig := loadConfig(fileConfig)
+	dashConfig, err := loadConfig(fileConfig)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
-	r.HandleFunc("/aws/accounts", awsAccountsHandler(dashConfig)).
+	r.HandleFunc("/aws/accounts", accountsHandler(dashConfig)).
 		Methods("GET", "OPTIONS").
 		Name("awsAccounts")
 
 	for _, account := range dashConfig.AWS {
-		awsClient, err := NewAwsClient(account)
+		client, err := NewClient(account)
 		if err != nil {
 			fmt.Println(err.Error())
+			continue
 		}
 
 		accountRoute := r.PathPrefix("/aws/" + commons.UnderScoreString(account.Name)).Subrouter()
 
-		accountRoute.HandleFunc("/permissions", awsPermissionsHandler(account.Permission)).
+		accountRoute.HandleFunc("/permissions", permissionsHandler(account.Permission)).
 			Methods("GET", "OPTIONS").
-			Name("k8sPermissions")
+			Name("awsPermissions")
 
-		accountRoute.HandleFunc("/ec2/instances", ec2InstancesHandler(awsClient)).
+		accountRoute.HandleFunc("/ec2/instances", ec2InstancesHandler(client)).
 			Methods("GET", "OPTIONS").
 			Name("ec2Instances")
 
-		accountRoute.HandleFunc("/ec2/instance/start/{instanceId}", ec2InstanceStartHandler(awsClient)).
+		accountRoute.HandleFunc("/ec2/instance/start/{instanceId}", ec2InstanceStartHandler(client)).
 			Methods("POST", "OPTIONS").
 			Name("ec2InstanceStart")
 
-		accountRoute.HandleFunc("/ec2/instance/stop/{instanceId}", ec2InstanceStopHandler(awsClient)).
+		accountRoute.HandleFunc("/ec2/instance/stop/{instanceId}", ec2InstanceStopHandler(client)).
 			Methods("POST", "OPTIONS").
 			Name("ec2InstanceStop")
 	}

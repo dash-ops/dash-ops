@@ -1,10 +1,7 @@
 package aws
 
 import (
-	"fmt"
-
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ec2"
 )
 
@@ -29,15 +26,13 @@ type instanceTags struct {
 	Skip bool
 }
 
-func (ac awsClient) GetInstances() ([]Instance, error) {
+func (ac client) GetInstances() ([]Instance, error) {
 	var instances []Instance
 
-	ec2svc := ec2.New(ac.session)
 	params := &ec2.DescribeInstancesInput{}
 
-	resp, err := ec2svc.DescribeInstances(params)
+	resp, err := ac.ec2.DescribeInstances(params)
 	if err != nil {
-		fmt.Println(err.Error())
 		return nil, err
 	}
 
@@ -62,7 +57,7 @@ func (ac awsClient) GetInstances() ([]Instance, error) {
 				it := getTagsInstance(inst.Tags, ac.skipList)
 				instance.Name = it.Name
 				if it.Skip {
-					break
+					continue
 				}
 			}
 			instances = append(instances, instance)
@@ -90,9 +85,8 @@ func getTagsInstance(tags []*ec2.Tag, skipList []string) instanceTags {
 	return it
 }
 
-func (ac awsClient) StartInstance(instanceID string) (InstanceOutput, error) {
+func (ac client) StartInstance(instanceID string) (InstanceOutput, error) {
 	dryRun := false
-	ec2svc := ec2.New(ac.session)
 	params := &ec2.StartInstancesInput{
 		InstanceIds: []*string{
 			aws.String(instanceID),
@@ -101,16 +95,8 @@ func (ac awsClient) StartInstance(instanceID string) (InstanceOutput, error) {
 	}
 
 	output := InstanceOutput{}
-	result, err := ec2svc.StartInstances(params)
+	result, err := ac.ec2.StartInstances(params)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			default:
-				fmt.Println(aerr.Error())
-				return output, aerr
-			}
-		}
-		fmt.Println(err.Error())
 		return output, err
 	}
 
@@ -125,9 +111,8 @@ func (ac awsClient) StartInstance(instanceID string) (InstanceOutput, error) {
 	return output, nil
 }
 
-func (ac awsClient) StopInstance(instanceID string) (InstanceOutput, error) {
+func (ac client) StopInstance(instanceID string) (InstanceOutput, error) {
 	dryRun := false
-	ec2svc := ec2.New(ac.session)
 	params := &ec2.StopInstancesInput{
 		InstanceIds: []*string{
 			aws.String(instanceID),
@@ -136,16 +121,8 @@ func (ac awsClient) StopInstance(instanceID string) (InstanceOutput, error) {
 	}
 
 	output := InstanceOutput{}
-	result, err := ec2svc.StopInstances(params)
+	result, err := ac.ec2.StopInstances(params)
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			default:
-				fmt.Println(aerr.Error())
-				return output, aerr
-			}
-		}
-		fmt.Println(err.Error())
 		return output, err
 	}
 

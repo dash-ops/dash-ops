@@ -34,7 +34,7 @@ type NodeAllocatedResources struct {
 	PodFraction            float64 `json:"pod_fraction"`
 }
 
-func (kc k8sClient) GetNodes() ([]Node, error) {
+func (kc client) GetNodes() ([]Node, error) {
 	var list []Node
 
 	nodes, err := kc.clientSet.CoreV1().Nodes().List(metav1.ListOptions{})
