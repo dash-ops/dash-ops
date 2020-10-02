@@ -14,7 +14,7 @@ type Cluster struct {
 	Context string `json:"context"`
 }
 
-func k8sClustersHandler(dashConfig dashYaml) http.HandlerFunc {
+func clustersHandler(dashConfig dashYaml) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var clusters []Cluster
 
@@ -35,13 +35,13 @@ func k8sClustersHandler(dashConfig dashYaml) http.HandlerFunc {
 	}
 }
 
-func k8sPermissionsHandler(permission permission) http.HandlerFunc {
+func permissionsHandler(permission permission) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		commons.RespondJSON(w, http.StatusOK, permission)
 	}
 }
 
-func k8sNodesHandler(client Client) http.HandlerFunc {
+func nodesHandler(client Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		nodes, err := client.GetNodes()
 		if err != nil {
@@ -53,7 +53,7 @@ func k8sNodesHandler(client Client) http.HandlerFunc {
 	}
 }
 
-func k8sNamespacesHandler(client Client) http.HandlerFunc {
+func namespacesHandler(client Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		namespaces, err := client.GetNamespaces()
 		if err != nil {
@@ -65,7 +65,7 @@ func k8sNamespacesHandler(client Client) http.HandlerFunc {
 	}
 }
 
-func k8sDeploymentsHandler(client Client) http.HandlerFunc {
+func deploymentsHandler(client Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
 
@@ -82,7 +82,7 @@ func k8sDeploymentsHandler(client Client) http.HandlerFunc {
 	}
 }
 
-func k8sDeploymentUpHandler(client Client, permission permission) http.HandlerFunc {
+func deploymentUpHandler(client Client, permission permission) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userData := r.Context().Value(commons.UserDataKey).(commons.UserData)
 		if isValid := commons.HasPermission(permission.Deployments.Start, userData.Groups); !isValid {
@@ -105,7 +105,7 @@ func k8sDeploymentUpHandler(client Client, permission permission) http.HandlerFu
 	}
 }
 
-func k8sDeploymentDownHandler(client Client, permission permission) http.HandlerFunc {
+func deploymentDownHandler(client Client, permission permission) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userData := r.Context().Value(commons.UserDataKey).(commons.UserData)
 		if isValid := commons.HasPermission(permission.Deployments.Stop, userData.Groups); !isValid {
@@ -128,7 +128,7 @@ func k8sDeploymentDownHandler(client Client, permission permission) http.Handler
 	}
 }
 
-func k8sPodsHandler(client Client) http.HandlerFunc {
+func podsHandler(client Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
 
@@ -145,7 +145,7 @@ func k8sPodsHandler(client Client) http.HandlerFunc {
 	}
 }
 
-func k8sPodLogsHandler(client Client) http.HandlerFunc {
+func podLogsHandler(client Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		query := r.URL.Query()
@@ -177,9 +177,13 @@ func hasPermissionNamespace(namespaces []string, namespace string) bool {
 
 // MakeKubernetesHandlers Add kubernetes module endpoints
 func MakeKubernetesHandlers(r *mux.Router, fileConfig []byte) {
-	dashConfig := loadConfig(fileConfig)
+	dashConfig, err := loadConfig(fileConfig)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
-	r.HandleFunc("/k8s/clusters", k8sClustersHandler(dashConfig)).
+	r.HandleFunc("/k8s/clusters", clustersHandler(dashConfig)).
 		Methods("GET", "OPTIONS").
 		Name("k8sClusters")
 
@@ -194,35 +198,35 @@ func MakeKubernetesHandlers(r *mux.Router, fileConfig []byte) {
 			contextRoute = r.PathPrefix("/k8s/" + cluster.Context).Subrouter()
 		}
 
-		contextRoute.HandleFunc("/permissions", k8sPermissionsHandler(cluster.Permission)).
+		contextRoute.HandleFunc("/permissions", permissionsHandler(cluster.Permission)).
 			Methods("GET", "OPTIONS").
 			Name("k8sPermissions")
 
-		contextRoute.HandleFunc("/nodes", k8sNodesHandler(client)).
+		contextRoute.HandleFunc("/nodes", nodesHandler(client)).
 			Methods("GET", "OPTIONS").
 			Name("k8sNodes")
 
-		contextRoute.HandleFunc("/namespaces", k8sNamespacesHandler(client)).
+		contextRoute.HandleFunc("/namespaces", namespacesHandler(client)).
 			Methods("GET", "OPTIONS").
 			Name("k8sNamespaces")
 
-		contextRoute.HandleFunc("/deployments", k8sDeploymentsHandler(client)).
+		contextRoute.HandleFunc("/deployments", deploymentsHandler(client)).
 			Methods("GET", "OPTIONS").
 			Name("k8sDeployments")
 
-		contextRoute.HandleFunc("/deployment/up/{namespace}/{name}", k8sDeploymentUpHandler(client, cluster.Permission)).
+		contextRoute.HandleFunc("/deployment/up/{namespace}/{name}", deploymentUpHandler(client, cluster.Permission)).
 			Methods("POST", "OPTIONS").
 			Name("k8sDeploymentUp")
 
-		contextRoute.HandleFunc("/deployment/down/{namespace}/{name}", k8sDeploymentDownHandler(client, cluster.Permission)).
+		contextRoute.HandleFunc("/deployment/down/{namespace}/{name}", deploymentDownHandler(client, cluster.Permission)).
 			Methods("POST", "OPTIONS").
 			Name("k8sDeploymentDown")
 
-		contextRoute.HandleFunc("/pods", k8sPodsHandler(client)).
+		contextRoute.HandleFunc("/pods", podsHandler(client)).
 			Methods("GET", "OPTIONS").
 			Name("k8sPods")
 
-		contextRoute.HandleFunc("/pod/{name}/logs", k8sPodLogsHandler(client)).
+		contextRoute.HandleFunc("/pod/{name}/logs", podLogsHandler(client)).
 			Queries("namespace", "{namespace}").
 			Methods("GET", "OPTIONS").
 			Name("k8sPodLogs")
