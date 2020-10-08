@@ -1,8 +1,6 @@
 package kubernetes
 
 import (
-	"log"
-
 	"gopkg.in/yaml.v2"
 )
 
@@ -11,28 +9,30 @@ type dashYaml struct {
 }
 
 type config struct {
-	Name       string        `yaml:"name"`
-	Kubeconfig string        `yaml:"kubeconfig"`
-	Context    string        `yaml:"context"`
-	Permission permission 	 `yaml:"permission"`
-	Listen     string        `yaml:"-"`
+	Name       string     `yaml:"name"`
+	Kubeconfig string     `yaml:"kubeconfig"`
+	Context    string     `yaml:"context"`
+	Permission permission `yaml:"permission"`
+	Listen     string     `yaml:"-"`
 }
 
 type permission struct {
-	Deployments struct {
-		Namespaces []string `yaml:"namespaces" json:"namespaces"`
-		Start      []string `yaml:"start" json:"start"`
-		Stop       []string `yaml:"stop" json:"stop"`
-	} `yaml:"deployments" json:"deployments"`
+	Deployments deploymentsPermissions `yaml:"deployments" json:"deployments"`
 }
 
-func loadConfig(file []byte) dashYaml {
+type deploymentsPermissions struct {
+	Namespaces []string `yaml:"namespaces" json:"namespaces"`
+	Start      []string `yaml:"start" json:"start"`
+	Stop       []string `yaml:"stop" json:"stop"`
+}
+
+func loadConfig(file []byte) (dashYaml, error) {
 	dc := dashYaml{}
 
 	err := yaml.Unmarshal(file, &dc)
 	if err != nil {
-		log.Fatalln("parse yaml config", err)
+		return dashYaml{}, err
 	}
 
-	return dc
+	return dc, nil
 }

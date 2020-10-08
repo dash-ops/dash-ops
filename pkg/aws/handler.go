@@ -102,14 +102,14 @@ func MakeAWSInstanceHandlers(r *mux.Router, fileConfig []byte) {
 
 		accountRoute.HandleFunc("/ec2/instances", ec2InstancesHandler(client)).
 			Methods("GET", "OPTIONS").
-			Name("ec2Instances")
+			Name("awsEc2Instances")
 
 		accountRoute.HandleFunc("/ec2/instance/start/{instanceId}", ec2InstanceStartHandler(client)).
 			Methods("POST", "OPTIONS").
-			Name("ec2InstanceStart")
+			Name("awsEc2InstanceStart")
 
 		accountRoute.HandleFunc("/ec2/instance/stop/{instanceId}", ec2InstanceStopHandler(client)).
 			Methods("POST", "OPTIONS").
-			Name("ec2InstanceStop")
+			Name("awsEc2InstanceStop")
 	}
 }
