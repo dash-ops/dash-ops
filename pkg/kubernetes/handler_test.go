@@ -1,11 +1,13 @@
 package kubernetes
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/dash-ops/dash-ops/pkg/commons"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -151,6 +153,60 @@ func TestDeploymentsHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "should return status 200")
 }
 
+func TestDeploymentUpHandler(t *testing.T) {
+	mockPermission := permission{
+		Deployments: deploymentsPermissions{
+			Namespaces: []string{"apps"},
+			Start:      []string{"bla"},
+		},
+	}
+
+	mockUserData := commons.UserData{
+		Groups: []string{"bla"},
+	}
+
+	client := new(mockClient)
+	client.On("Scale").Return(nil)
+
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/deployment/up/apps/nginx", nil)
+	ctx := context.WithValue(req.Context(), commons.UserDataKey, mockUserData)
+	req = req.WithContext(ctx)
+
+	router := mux.NewRouter()
+	router.HandleFunc("/deployment/up/{namespace}/{name}", deploymentUpHandler(client, mockPermission))
+	router.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "should return status 200")
+}
+
+func TestDeploymentDownHandler(t *testing.T) {
+	mockPermission := permission{
+		Deployments: deploymentsPermissions{
+			Namespaces: []string{"apps"},
+			Stop:       []string{"bla"},
+		},
+	}
+
+	mockUserData := commons.UserData{
+		Groups: []string{"bla"},
+	}
+
+	client := new(mockClient)
+	client.On("Scale").Return(nil)
+
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/deployment/down/apps/nginx", nil)
+	ctx := context.WithValue(req.Context(), commons.UserDataKey, mockUserData)
+	req = req.WithContext(ctx)
+
+	router := mux.NewRouter()
+	router.HandleFunc("/deployment/down/{namespace}/{name}", deploymentDownHandler(client, mockPermission))
+	router.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code, "should return status 200")
+}
+
 func TestPodsHandler(t *testing.T) {
 	mockPods := []Pod{
 		{Name: "project01",
@@ -170,6 +226,26 @@ func TestPodsHandler(t *testing.T) {
 	json.NewDecoder(rr.Body).Decode(&pods)
 
 	assert.Equal(t, mockPods, pods, "return pods kubernetes")
+	assert.Equal(t, http.StatusOK, rr.Code, "should return status 200")
+}
+
+func TestPodLogsHandler(t *testing.T) {
+	client := new(mockClient)
+	client.On("GetPodLogs").Return([]ContainerLog{
+		{
+			Name: "Apps-001",
+			Log:  "xpto",
+		},
+	}, nil)
+
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/pod/nginx/logs?namespace=default", nil)
+
+	router := mux.NewRouter()
+	router.HandleFunc("/pod/{name}/logs", podLogsHandler(client)).
+		Queries("namespace", "{namespace}")
+	router.ServeHTTP(rr, req)
+
 	assert.Equal(t, http.StatusOK, rr.Code, "should return status 200")
 }
 
