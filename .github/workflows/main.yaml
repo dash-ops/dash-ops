@@ -15,7 +15,9 @@ jobs:
 
     - name: Setup Go environment
       uses: actions/setup-go@v2.0.3
-    - run: CGO_ENABLED=0 go build -ldflags="-s -w" -o dash-ops .
+    - run: |
+        go test -v ./...
+        CGO_ENABLED=0 go build -ldflags="-s -w" -o dash-ops .
 
     - name: Setup Node.js environment
       uses: actions/setup-node@v1.4.2
