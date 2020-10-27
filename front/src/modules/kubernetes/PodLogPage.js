@@ -1,4 +1,4 @@
-import React, { useEffect, useReducer } from "react"
+import { useEffect, useReducer } from "react";
 import { useParams, useHistory } from "react-router-dom"
 import { Row, Col, Collapse, Button, notification } from "antd"
 import { CaretLeftOutlined } from "@ant-design/icons"

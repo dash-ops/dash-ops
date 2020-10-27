@@ -1,4 +1,3 @@
-import React from "react"
 import { CloudOutlined } from "@ant-design/icons"
 import InstancePage from "./InstancePage"
 import { getAccounts } from "./accountResource"

@@ -1,4 +1,3 @@
-import React from "react"
 import { DeploymentUnitOutlined } from "@ant-design/icons"
 import ClusterPage from "./ClusterPage"
 import DeploymentPage from "./DeploymentPage"

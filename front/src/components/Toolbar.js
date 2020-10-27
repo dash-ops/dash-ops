@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback } from "react";
 import { useHistory } from "react-router-dom"
 import { Menu, Avatar, notification } from "antd"
 import { LogoutOutlined } from "@ant-design/icons"
