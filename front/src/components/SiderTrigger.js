@@ -1,4 +1,3 @@
-import React from "react"
 import { MenuUnfoldOutlined, MenuFoldOutlined } from "@ant-design/icons"
 import "./SiderTrigger.css"
 

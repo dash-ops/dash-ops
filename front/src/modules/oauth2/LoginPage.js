@@ -1,4 +1,3 @@
-import React from "react"
 import { useLocation } from "react-router-dom"
 import { Row, Col, Card, Button } from "antd"
 import { GithubFilled } from "@ant-design/icons"

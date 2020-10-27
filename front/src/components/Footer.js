@@ -1,4 +1,3 @@
-import React from "react"
 import { GithubOutlined } from "@ant-design/icons"
 
 function Footer() {
