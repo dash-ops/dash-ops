@@ -3,6 +3,9 @@
   "plugins": ["jsx-a11y", "prettier"],
   "rules": {
     "semi": 0,
+    "react/jsx-uses-react": "off",
+    "react/react-in-jsx-scope": "off",
+    "import/prefer-default-export": "off",
     "react/jsx-filename-extension": [
       1,
       {

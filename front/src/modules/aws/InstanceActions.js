@@ -22,7 +22,13 @@ function InstanceActions({ instance, toStart, toStop }) {
   return (
     <Button.Group>
       <Tooltip title="SSH access">
-        <Button type="primary" ghost size="small" icon={<DesktopOutlined />} onClick={() => ssh(instance)} />
+        <Button
+          type="primary"
+          ghost
+          size="small"
+          icon={<DesktopOutlined />}
+          onClick={() => ssh(instance)}
+        />
       </Tooltip>
       {showPlayButton && (
         <Tooltip title="Start instance" placement="topRight">

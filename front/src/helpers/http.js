@@ -15,10 +15,10 @@ http.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.message === "Network Error") {
-      return Promise.reject(error.message)
+      return Promise.reject(error)
     }
     if (axios.isCancel(error)) {
-      return Promise.reject("Request canceled")
+      return Promise.reject(new Error("Request canceled"))
     }
     if (error.response.status === 401) {
       notification.error({
@@ -27,7 +27,7 @@ http.interceptors.response.use(
       })
       cleanToken()
     }
-    return Promise.reject(error.response)
+    return Promise.reject(new Error(error.response))
   },
 )
 

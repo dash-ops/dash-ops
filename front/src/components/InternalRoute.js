@@ -4,6 +4,7 @@ import { verifyToken } from "../helpers/oauth"
 
 function InternalRoute({ children, redirect, oAuth2, ...rest }) {
   if (!oAuth2) {
+    // eslint-disable-next-line react/jsx-props-no-spreading
     return <Route {...rest}>{children}</Route>
   }
 
@@ -29,8 +30,8 @@ function InternalRoute({ children, redirect, oAuth2, ...rest }) {
 
 InternalRoute.propTypes = {
   children: PropTypes.element.isRequired,
+  oAuth2: PropTypes.bool.isRequired,
   redirect: PropTypes.string,
-  oAuth2: PropTypes.bool,
 }
 
 InternalRoute.defaultProps = {

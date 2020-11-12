@@ -1,4 +1,4 @@
-import { useState, useEffect, useReducer } from "react";
+import { useState, useEffect, useReducer } from "react"
 import { Link, useLocation, useHistory, useParams } from "react-router-dom"
 import { Row, Col, Table, Button, Tooltip, Input, notification, Form, Tag, Select } from "antd"
 import { cancelToken } from "../../helpers/http"
@@ -155,8 +155,8 @@ export default function PodPage() {
               onChange={setNamespace}
               style={{ width: "100%" }}
             >
-              {namespaces.map((ns, index) => (
-                <Select.Option key={index} value={ns.name}>
+              {namespaces.map((ns) => (
+                <Select.Option key={ns.name} value={ns.name}>
                   {ns.name}
                 </Select.Option>
               ))}

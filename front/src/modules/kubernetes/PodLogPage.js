@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer } from "react"
 import { useParams, useHistory } from "react-router-dom"
 import { Row, Col, Collapse, Button, notification } from "antd"
 import { CaretLeftOutlined } from "@ant-design/icons"
@@ -61,8 +61,8 @@ export default function PodLogPage() {
             Go Back
           </Button>
         </Col>
-        <Col xs={6} md={3} xl={2}/>
-        <Col xs={24} md={8} xl={7}/>
+        <Col xs={6} md={3} xl={2} />
+        <Col xs={24} md={8} xl={7} />
         <Col xs={0} md={8} lg={7} xl={{ span: 6, offset: 3 }} style={{ textAlign: "right" }}>
           <Refresh onReload={onReload} />
         </Col>
@@ -71,8 +71,8 @@ export default function PodLogPage() {
         <Col flex="auto" style={{ marginTop: 10 }}>
           {logs.data !== [] && (
             <Collapse defaultActiveKey={["0"]}>
-              {logs.data.map((l, index) => (
-                <Collapse.Panel header={`Container: ${l.name}`} key={index}>
+              {logs.data.map((l) => (
+                <Collapse.Panel header={`Container: ${l.name}`} key={l.name}>
                   <pre>
                     <code>{l.log}</code>
                   </pre>

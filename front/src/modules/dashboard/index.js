@@ -1,5 +1,5 @@
-import DashboardPage from "./DashboardPage"
 import { DashboardOutlined } from "@ant-design/icons"
+import DashboardPage from "./DashboardPage"
 
 export default {
   menus: [

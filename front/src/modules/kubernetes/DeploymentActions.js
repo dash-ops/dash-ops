@@ -48,10 +48,14 @@ function DeploymentActions({ context, deployment, toUp, toDown }) {
 }
 
 DeploymentActions.propTypes = {
+  context: PropTypes.string.isRequired,
   deployment: PropTypes.shape({
     name: PropTypes.string,
     namespace: PropTypes.string,
     pod_count: PropTypes.number,
+    pod_info: PropTypes.shape({
+      current: PropTypes.number,
+    }),
   }).isRequired,
   toUp: PropTypes.func.isRequired,
   toDown: PropTypes.func.isRequired,

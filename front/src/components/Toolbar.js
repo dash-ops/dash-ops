@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react"
+import PropTypes from "prop-types"
 import { useHistory } from "react-router-dom"
 import { Menu, Avatar, notification } from "antd"
 import { LogoutOutlined } from "@ant-design/icons"
@@ -51,6 +52,10 @@ function Toolbar({ oAuth2 }) {
       )}
     </Menu>
   )
+}
+
+Toolbar.propTypes = {
+  oAuth2: PropTypes.bool.isRequired,
 }
 
 export default Toolbar

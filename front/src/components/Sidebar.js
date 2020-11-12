@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"
 import PropTypes from "prop-types"
 import { Link, useLocation } from "react-router-dom"
 import { Menu } from "antd"

@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"
+import PropTypes from "prop-types"
 import { Switch, Route, Link, useParams, useLocation } from "react-router-dom"
 import { Row, Col, Menu } from "antd"
 
-export default function ContentWithMenu({ pages }) {
+function ContentWithMenu({ pages }) {
   const { context } = useParams()
   const location = useLocation()
   const [current, setCurrent] = useState("/")
@@ -41,3 +42,13 @@ export default function ContentWithMenu({ pages }) {
     </Row>
   )
 }
+
+ContentWithMenu.propTypes = {
+  pages: PropTypes.arrayOf({
+    name: PropTypes.string,
+    path: PropTypes.string,
+    exact: PropTypes.bool,
+  }).isRequired,
+}
+
+export default ContentWithMenu

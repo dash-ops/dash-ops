@@ -1,10 +1,13 @@
-import { useState, useEffect, useReducer } from "react";
+/* eslint-disable camelcase */
+/* eslint-disable react/prop-types */
+import { useState, useEffect, useReducer } from "react"
 import { useParams } from "react-router-dom"
-import { Row, Col, Table, Tag, Progress, notification, Input, Button } from "antd"
+import { Row, Col, Table, Tag, notification, Input, Button } from "antd"
 import { cancelToken } from "../../helpers/http"
 import useQuery from "../../helpers/useQuery"
 import { getNodes } from "./nodesResource"
 import Refresh from "../../components/Refresh"
+import ProgressData from "./ProgressData"
 
 const INITIAL_STATE = { data: [], loading: false }
 const LOADING = "LOADING"
@@ -73,73 +76,25 @@ export default function ClusterPage() {
       title: "CPU requests",
       dataIndex: "allocated_resources",
       key: "allocated_resources",
-      render: ({ cpu_requests_fraction }) => (
-        <div style={{ maxWidth: 170 }}>
-          <Progress
-            percent={cpu_requests_fraction.toFixed(1)}
-            size="small"
-            strokeColor={{
-              "0%": "#ffad20",
-              "100%": "#ff4d4f",
-            }}
-            status="active"
-          />
-        </div>
-      ),
+      render: ({ cpu_requests_fraction }) => <ProgressData percent={cpu_requests_fraction} />,
     },
     {
       title: "CPU limits",
       dataIndex: "allocated_resources",
       key: "allocated_resources",
-      render: ({ cpu_limits_fraction }) => (
-        <div style={{ maxWidth: 170 }}>
-          <Progress
-            percent={cpu_limits_fraction.toFixed(1)}
-            size="small"
-            strokeColor={{
-              "0%": "#ffad20",
-              "100%": "#ff4d4f",
-            }}
-            status="active"
-          />
-        </div>
-      ),
+      render: ({ cpu_limits_fraction }) => <ProgressData percent={cpu_limits_fraction} />,
     },
     {
       title: "Memory requests",
       dataIndex: "allocated_resources",
       key: "allocated_resources",
-      render: ({ memory_requests_fraction }) => (
-        <div style={{ maxWidth: 170 }}>
-          <Progress
-            percent={memory_requests_fraction.toFixed(1)}
-            size="small"
-            strokeColor={{
-              "0%": "#ffad20",
-              "100%": "#ff4d4f",
-            }}
-            status="active"
-          />
-        </div>
-      ),
+      render: ({ memory_requests_fraction }) => <ProgressData percent={memory_requests_fraction} />,
     },
     {
       title: "Memory limit",
       dataIndex: "allocated_resources",
       key: "allocated_resources",
-      render: ({ memory_limits_fraction }) => (
-        <div style={{ maxWidth: 170 }}>
-          <Progress
-            percent={memory_limits_fraction.toFixed(1)}
-            size="small"
-            strokeColor={{
-              "0%": "#ffad20",
-              "100%": "#ff4d4f",
-            }}
-            status="active"
-          />
-        </div>
-      ),
+      render: ({ memory_limits_fraction }) => <ProgressData percent={memory_limits_fraction} />,
     },
     {
       title: "Pods Allocate/Capacity",
@@ -167,7 +122,7 @@ export default function ClusterPage() {
         <Col xs={6} md={3} xl={2}>
           <Button onClick={() => setSearch("")}>Clear</Button>
         </Col>
-        <Col xs={24} md={8} xl={7}></Col>
+        <Col xs={24} md={8} xl={7} />
         <Col xs={0} md={8} lg={7} xl={{ span: 6, offset: 3 }} style={{ textAlign: "right" }}>
           <Refresh onReload={onReload} />
         </Col>
