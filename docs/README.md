@@ -90,6 +90,20 @@ Para rodar o build do projeto localmente, basta executar o seguinte comando:
 CGO_ENABLED=0 go build -ldflags="-s -w" -o dash-ops .
 ```
 
+### Testes
+
+Para rodar a stack de testes execute o seguinte comando:
+
+```sh
+go test -v ./...
+```
+
+e para visualizar o coverage:
+
+```sh
+go test -v ./... -coverprofile=coverage.out && go tool cover -html=coverage.out
+```
+
 ## Frontend
 
 Nosso frontend foi todo criado com React, nele tentamos simplicar o uso das APIs e futuros plugins.
