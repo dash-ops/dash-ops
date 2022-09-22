@@ -1,4 +1,4 @@
-import { useState, useEffect, useReducer } from "react"
+import { useState, useEffect, useReducer, useCallback } from "react"
 import { Link, useLocation, useHistory, useParams } from "react-router-dom"
 import { Row, Col, Table, Button, Tooltip, Input, notification, Form, Tag, Select } from "antd"
 import { cancelToken } from "../../helpers/http"
@@ -67,11 +67,11 @@ export default function PodPage() {
     }
   }, [context, namespace]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function onReload() {
+  const onReload = useCallback(async () => {
     fetchData(dispatch, { context, namespace })
-  }
+  }, [context, namespace])
 
-  function searchHandler(value) {
+  const searchHandler = (value) => {
     history.push(`${location.pathname}?name=${value}&namespace=${namespace}`)
     setSearch(value)
   }

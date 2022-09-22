@@ -1,4 +1,4 @@
-import { useEffect, useReducer } from "react"
+import { useCallback, useEffect, useReducer } from "react"
 import { useParams, useHistory } from "react-router-dom"
 import { Row, Col, Collapse, Button, notification } from "antd"
 import { CaretLeftOutlined } from "@ant-design/icons"
@@ -49,9 +49,9 @@ export default function PodLogPage() {
     }
   }, [context, name, namespace])
 
-  async function onReload() {
+  const onReload = useCallback(async () => {
     fetchData(dispatch, { context, name, namespace })
-  }
+  }, [context, name, namespace])
 
   return (
     <>

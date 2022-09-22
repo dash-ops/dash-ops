@@ -1,4 +1,4 @@
-import { useState, useEffect, useReducer } from "react"
+import { useState, useEffect, useReducer, useCallback } from "react"
 import { useParams } from "react-router-dom"
 import { Row, Col, Table, Button, Input, notification } from "antd"
 import { cancelToken } from "../../helpers/http"
@@ -69,11 +69,11 @@ export default function InstancePage() {
     }
   }, [key])
 
-  async function onReload() {
+  const onReload = useCallback(async () => {
     fetchData(dispatch, { accountKey: key })
-  }
+  }, [key])
 
-  function updateInstanceState(id, state) {
+  const updateInstanceState = (id, state) => {
     const newInstances = instances.data.map((inst) =>
       inst.instance_id === id ? { ...inst, state } : inst,
     )

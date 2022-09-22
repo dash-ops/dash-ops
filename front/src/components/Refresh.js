@@ -5,8 +5,7 @@ import { ReloadOutlined } from "@ant-design/icons"
 import { setItem, getItem } from "../helpers/localStorage"
 import useInterval from "../helpers/useInterval"
 
-function Refresh(props) {
-  const { onReload } = props
+function Refresh({ onReload }) {
   const initState = getItem("auto-refresh") === "true"
   const [isAutoRefresh, setIsAutoRefresh] = useState(initState)
 
@@ -17,7 +16,7 @@ function Refresh(props) {
     isAutoRefresh ? 10000 : null,
   )
 
-  function onAutoRefresh(e) {
+  const onAutoRefresh = (e) => {
     setIsAutoRefresh(e.target.checked)
     setItem("auto-refresh", e.target.checked)
   }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useReducer } from "react"
+import { useState, useEffect, useReducer, useCallback } from "react"
 import { useParams } from "react-router-dom"
 import { Row, Col, Table, Button, Input, notification, Form, Tag, Select } from "antd"
 import { cancelToken } from "../../helpers/http"
@@ -82,11 +82,11 @@ export default function DeploymentPage() {
     }
   }, [context, namespace])
 
-  async function onReload() {
+  const onReload = useCallback(async () => {
     fetchData(dispatch, { context, namespace })
-  }
+  }, [context, namespace])
 
-  function updatePodCount(name, podCount) {
+  const updatePodCount = (name, podCount) => {
     const newDeployments = deployments.data.map((dep) =>
       dep.name === name ? { ...dep, pod_count: podCount } : dep,
     )

@@ -1,6 +1,6 @@
 /* eslint-disable camelcase */
 /* eslint-disable react/prop-types */
-import { useState, useEffect, useReducer } from "react"
+import { useState, useEffect, useReducer, useCallback } from "react"
 import { useParams } from "react-router-dom"
 import { Row, Col, Table, Tag, notification, Input, Button } from "antd"
 import { cancelToken } from "../../helpers/http"
@@ -50,9 +50,9 @@ export default function ClusterPage() {
     }
   }, [context])
 
-  async function onReload() {
+  const onReload = useCallback(async () => {
     fetchData(dispatch, { context })
-  }
+  }, [context])
 
   const columns = [
     {
