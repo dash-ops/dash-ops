@@ -77,7 +77,5 @@ func MakeOauthHandlers(r *mux.Router, internal *mux.Router, fileConfig []byte) {
 		Name("oauthRedirect")
 	internal.Use(oAuthMiddleware)
 
-	if dashConfig.Oauth2[0].Provider == "github" {
-		makeGithubHandlers(internal, dashConfig, oauthConfig)
-	}
+	makeOauthProvideHandlers(internal, dashConfig, oauthConfig)
 }
