@@ -11,58 +11,93 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type ProviderClients struct {
+type providerClients struct {
 	github gh.Client
+	google ggl.Client
 }
 
-type User struct {
-	ID   *int64  `json:"id,omitempty"`
-	Name *string `json:"name,omitempty"`
-}
+// func (pc providerClients) getProvider(p string) (interface{}, error){
+// 	if (p == "github") {
+// 		return pc.github
+// 	}
+// }
 
-type Team struct {
-	ID           *int64        `json:"id,omitempty"`
-	Name         *string       `json:"name,omitempty"`
-	Slug         *string       `json:"slug,omitempty"`
-	Organization *Organization `json:"organization,omitempty"`
-}
+// type User struct {
+// 	ID   *int64  `json:"id,omitempty"`
+// 	Name *string `json:"name,omitempty"`
+// }
 
-type Organization struct {
-	Login *string `json:"login,omitempty"`
-	ID    *int64  `json:"id,omitempty"`
-	Name  *string `json:"name,omitempty"`
-}
+// type Team struct {
+// 	ID           *int64        `json:"id,omitempty"`
+// 	Name         *string       `json:"name,omitempty"`
+// 	Slug         *string       `json:"slug,omitempty"`
+// 	Organization *Organization `json:"organization,omitempty"`
+// }
 
-func NewProviderClient(dashConfig dashYaml, oauthConfig *oauth2.Config) (ProviderClients, error) {
-	if dashConfig.Oauth2[0].Provider == "github" {
-		provider, err := gh.NewClient(oauthConfig)
-		if err != nil {
-			return ProviderClients{}, fmt.Errorf("failed to load github oauth provider")
-		}
+// type Organization struct {
+// 	Login *string `json:"login,omitempty"`
+// 	ID    *int64  `json:"id,omitempty"`
+// 	Name  *string `json:"name,omitempty"`
+// }
 
-		return ProviderClients{github: provider}, nil
-	}
-	return ProviderClients{}, fmt.Errorf("failed to load oauth provider")
-}
+// func NewProviderClient(p string, oauthConfig *oauth2.Config) (ProviderClients, error) {
+// 	if p == "github" {
+// 		provider, err := gh.NewClient(oauthConfig)
+// 		if err != nil {
+// 			return ProviderClients{}, fmt.Errorf("failed to load github oauth provider")
+// 		}
 
-func meHandler(providerClients ProviderClients) http.HandlerFunc {
+// 		return ProviderClients{github: provider}, nil
+// 	}
+// 	return ProviderClients{}, fmt.Errorf("failed to load oauth provider")
+// }
+
+func meHandler(dashConfig dashYaml, configs oauth2Configs) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		token := r.Context().Value(commons.TokenKey).(*oauth2.Token)
-		user, err := providerClients.github.GetUserLogger(token)
-		if err != nil {
-			commons.RespondError(w, http.StatusInternalServerError, err.Error())
-			return
-		}
+		
+		oauth2Provider := r.Context().Value(commons.Oauth2ProviderKey)
+		if (oauth2Provider == "github") {
+			provider, err := gh.NewClient(configs.github)
+			if err != nil {
+				commons.RespondError(w, http.StatusInternalServerError, err.Error())
+			}
+			
+			user, err := provider.GetUserLogger(token)
+			if err != nil {
+				commons.RespondError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
 
-		commons.RespondJSON(w, http.StatusOK, user)
+			commons.RespondJSON(w, http.StatusOK, user)
+		}
+		// if (oauth2Provider == "google") {
+		// 	provider, err := ggl.NewClient(configs.google)
+		// 	if err != nil {
+		// 		commons.RespondError(w, http.StatusInternalServerError, err.Error())
+		// 	}
+			
+		// 	user, err := provider.GetUserLogger(token)
+		// 	if err != nil {
+		// 		commons.RespondError(w, http.StatusInternalServerError, err.Error())
+		// 		return
+		// 	}
+		// }
 	}
 }
 
-func orgPermissionMiddleware(providerClients ProviderClients, orgPermission string) mux.MiddlewareFunc {
+func orgPermissionMiddleware(dashConfig dashYaml, configs oauth2Configs) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token := r.Context().Value(commons.TokenKey).(*oauth2.Token)
 
+			auth2Provider := r.Context().Value(commons.Oauth2ProviderKey)
+		if (oauth2Provider == "github") {
+			provider, err := gh.NewClient(configs.github)
+			if err != nil {
+				commons.RespondError(w, http.StatusInternalServerError, err.Error())
+			}
+			
 			userData := commons.UserData{Org: orgPermission}
 			teams, err := providerClients.github.GetTeamsUserLogger(token)
 			if err != nil {
@@ -84,17 +119,12 @@ func orgPermissionMiddleware(providerClients ProviderClients, orgPermission stri
 	}
 }
 
-func makeOauthProvideHandlers(r *mux.Router, dashConfig dashYaml, oauthConfig *oauth2.Config) {
-	providerClient, err := NewProviderClient(dashConfig, oauthConfig)
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	r.HandleFunc("/me", meHandler(providerClient)).
+func makeOauthProvideHandlers(r *mux.Router, dashConfig dashYaml, configs oauth2Configs) {
+	r.HandleFunc("/me", meHandler(dashConfig, configs)).
 		Methods("GET", "OPTIONS").
 		Name("userLogger")
 
 	if dashConfig.Oauth2[0].OrgPermission != "" {
-		r.Use(orgPermissionMiddleware(providerClient, dashConfig.Oauth2[0].OrgPermission))
+		r.Use(orgPermissionMiddleware(dashConfig, configs))
 	}
 }

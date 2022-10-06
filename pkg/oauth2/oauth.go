@@ -7,18 +7,38 @@ import (
 	"github.com/dash-ops/dash-ops/pkg/commons"
 	"github.com/gorilla/mux"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
-func oauthHandler(oauthConfig *oauth2.Config) http.HandlerFunc {
+type oauth2Configs struct {
+	github *oauth2.Config
+	google *oauth2.Config
+}
+
+func (configs oauth2Configs) getProvider(provider string) *oauth2.Config {
+	if provider == "github" {
+		return configs.github
+	}
+	if provider == "google" {
+		return configs.google
+	}
+	return nil
+}
+
+func oauthHandler(configs oauth2Configs) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		url := oauthConfig.AuthCodeURL(r.URL.Query().Get("redirect_url"))
+		vars := mux.Vars(r)
+		provider := configs.getProvider(vars["provider"])
+		url := provider.AuthCodeURL(r.URL.Query().Get("redirect_url"))
 		http.Redirect(w, r, url, http.StatusPermanentRedirect)
 	}
 }
 
-func oauthRedirectHandler(dc dashYaml, oauthConfig *oauth2.Config) http.HandlerFunc {
+func oauthRedirectHandler(dc dashYaml, configs oauth2Configs) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		token, err := oauthConfig.Exchange(context.Background(), r.URL.Query().Get("code"))
+		vars := mux.Vars(r)
+		provider := configs.getProvider(vars["provider"])
+		token, err := provider.Exchange(context.Background(), r.URL.Query().Get("code"))
 		if err != nil {
 			commons.RespondError(w, http.StatusUnauthorized, "there was an issue getting your token, "+err.Error())
 			return
@@ -51,8 +71,14 @@ func oAuthMiddleware(next http.Handler) http.Handler {
 			commons.RespondError(w, http.StatusUnauthorized, "retrieved invalid token")
 			return
 		}
-		ctx := context.WithValue(r.Context(), commons.TokenKey, token)
-		r = r.WithContext(ctx)
+		oauth2Provider := r.URL.Query().Get("provider")
+		if oauth2Provider == "" {
+			commons.RespondError(w, http.StatusUnauthorized, "retrieved invalid oauth2 provider")
+			return
+		}
+		tokenCtx := context.WithValue(r.Context(), commons.TokenKey, token)
+		providerCtx := context.WithValue(r.Context(), commons.Oauth2ProviderKey, oauth2Provider)
+		r = r.WithContext(tokenCtx).WithContext(providerCtx)
 		next.ServeHTTP(w, r)
 	})
 }
@@ -61,21 +87,37 @@ func oAuthMiddleware(next http.Handler) http.Handler {
 func MakeOauthHandlers(r *mux.Router, internal *mux.Router, fileConfig []byte) {
 	dashConfig := loadConfig(fileConfig)
 
-	oauthConfig := &oauth2.Config{
-		ClientID:     dashConfig.Oauth2[0].ClientID,
-		ClientSecret: dashConfig.Oauth2[0].ClientSecret,
-		Scopes:       dashConfig.Oauth2[0].Scopes,
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  dashConfig.Oauth2[0].AuthURL,
-			TokenURL: dashConfig.Oauth2[0].TokenURL,
-		},
+	var configs oauth2Configs
+	for i := 0; i < len(dashConfig.Oauth2); i++ {
+		if dashConfig.Oauth2[i].Provider == "github" {
+			config := &oauth2.Config{
+				ClientID:     dashConfig.Oauth2[i].ClientID,
+				ClientSecret: dashConfig.Oauth2[i].ClientSecret,
+				Scopes:       dashConfig.Oauth2[i].Scopes,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  dashConfig.Oauth2[i].AuthURL,
+					TokenURL: dashConfig.Oauth2[i].TokenURL,
+				},
+			}
+			configs.github = config
+		}
+
+		if dashConfig.Oauth2[i].Provider == "google" {
+			config := &oauth2.Config{
+				ClientID:     dashConfig.Oauth2[i].ClientID,
+				ClientSecret: dashConfig.Oauth2[i].ClientSecret,
+				Scopes:       dashConfig.Oauth2[i].Scopes,
+				Endpoint:     google.Endpoint,
+			}
+			configs.google = config
+		}
 	}
 
-	r.HandleFunc("/oauth", oauthHandler(oauthConfig)).
+	r.HandleFunc("/oauth/{provider}", oauthHandler(configs)).
 		Name("oauth")
-	r.HandleFunc("/oauth/redirect", oauthRedirectHandler(dashConfig, oauthConfig)).
+	r.HandleFunc("/oauth/{provider}/redirect", oauthRedirectHandler(dashConfig, configs)).
 		Name("oauthRedirect")
 	internal.Use(oAuthMiddleware)
 
-	makeOauthProvideHandlers(internal, dashConfig, oauthConfig)
+	makeOauthProvideHandlers(internal, dashConfig, configs)
 }
