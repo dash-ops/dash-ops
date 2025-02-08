@@ -6,7 +6,7 @@ Para rodar o front do projeto localmente, basta executar os seguintes comandos:
 
 ```sh
 cd front
-yarn install
+yarn
 yarn start
 ```
 
