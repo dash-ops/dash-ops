@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 
@@ -49,7 +50,7 @@ func (kc client) GetPods(filter podFilter) ([]Pod, error) {
 	podsList, err := kc.clientSet.
 		CoreV1().
 		Pods(filter.Namespace).
-		List(metav1.ListOptions{})
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get pods: %s", err)
 	}
@@ -74,7 +75,7 @@ func (kc client) GetPods(filter podFilter) ([]Pod, error) {
 func (kc client) GetPodLogs(filter podFilter) ([]ContainerLog, error) {
 	var logs []ContainerLog
 
-	pod, err := kc.clientSet.CoreV1().Pods(filter.Namespace).Get(filter.Name, metav1.GetOptions{})
+	pod, err := kc.clientSet.CoreV1().Pods(filter.Namespace).Get(context.TODO(), filter.Name, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get pod: %s", err)
 	}
@@ -83,7 +84,7 @@ func (kc client) GetPodLogs(filter podFilter) ([]ContainerLog, error) {
 		podLogOpts := v1.PodLogOptions{Container: container.Name}
 
 		req := kc.clientSet.CoreV1().Pods(filter.Namespace).GetLogs(filter.Name, &podLogOpts)
-		podLogs, err := req.Stream()
+		podLogs, err := req.Stream(context.TODO())
 		if err != nil {
 			return nil, fmt.Errorf("Error in opening stream: %s", err)
 		}

@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"context"
 	"fmt"
 
 	apiv1 "k8s.io/api/core/v1"
@@ -34,7 +35,7 @@ func (kc client) GetDeployments(filter deploymentFilter) ([]Deployment, error) {
 	deploys, err := kc.clientSet.
 		AppsV1().
 		Deployments(filter.Namespace).
-		List(metav1.ListOptions{})
+		List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get deployments: %s", err)
 	}
@@ -54,11 +55,11 @@ func (kc client) GetDeployments(filter deploymentFilter) ([]Deployment, error) {
 }
 
 func (kc client) Scale(name string, ns string, replicas int32) error {
-	deploy, err := kc.clientSet.AppsV1().Deployments(ns).Get(name, metav1.GetOptions{})
+	deploy, err := kc.clientSet.AppsV1().Deployments(ns).Get(context.TODO(), name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get deploy %s on ns %s: %s", name, ns, err)
 	}
 	deploy.Spec.Replicas = &replicas
-	_, err = kc.clientSet.AppsV1().Deployments(deploy.GetNamespace()).Update(deploy)
+	_, err = kc.clientSet.AppsV1().Deployments(deploy.GetNamespace()).Update(context.TODO(), deploy, metav1.UpdateOptions{})
 	return err
 }

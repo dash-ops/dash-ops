@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"context"
 	"fmt"
 
 	v1 "k8s.io/api/core/v1"
@@ -36,8 +37,7 @@ type NodeAllocatedResources struct {
 
 func (kc client) GetNodes() ([]Node, error) {
 	var list []Node
-
-	nodes, err := kc.clientSet.CoreV1().Nodes().List(metav1.ListOptions{})
+	nodes, err := kc.clientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get nodes: %s", err)
 	}
@@ -77,7 +77,7 @@ func getNodePods(client *kubernetes.Clientset, node v1.Node) (*v1.PodList, error
 		return nil, err
 	}
 
-	return client.CoreV1().Pods(v1.NamespaceAll).List(metav1.ListOptions{
+	return client.CoreV1().Pods(v1.NamespaceAll).List(context.TODO(), metav1.ListOptions{
 		FieldSelector: fieldSelector.String(),
 	})
 }

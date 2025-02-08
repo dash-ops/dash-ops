@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"context"
 	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,7 +15,7 @@ type Namespace struct {
 func (kc client) GetNamespaces() ([]Namespace, error) {
 	var list []Namespace
 
-	namespaces, err := kc.clientSet.CoreV1().Namespaces().List(metav1.ListOptions{})
+	namespaces, err := kc.clientSet.CoreV1().Namespaces().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get namespace: %s", err)
 	}
