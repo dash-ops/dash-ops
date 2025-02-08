@@ -3,7 +3,7 @@ origin: http://localhost:5173
 headers:
   - 'Content-Type'
   - 'Authorization'
-front: front/build
+front: front/dist
 plugins:
   - 'OAuth2'
   - 'Kubernetes'
