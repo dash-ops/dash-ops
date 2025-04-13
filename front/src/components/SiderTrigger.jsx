@@ -10,7 +10,7 @@ function SiderTrigger({ collapsed, onCollapse }) {
 }
 
 SiderTrigger.propTypes = {
-  collapsed: PropTypes.number.isRequired,
+  collapsed: PropTypes.bool.isRequired,
   onCollapse: PropTypes.func.isRequired,
 }
 

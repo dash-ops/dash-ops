@@ -23,7 +23,6 @@ export default function App() {
     verifyToken()
     loadModulesConfig()
       .then((modules) => {
-        console.log(modules)
         setOAuth2(modules.oAuth2)
         setMenus([...menus, ...modules.menus])
         setRouters([...routers, ...modules.routers])
@@ -71,8 +70,7 @@ export default function App() {
                         <Route
                           key={route.key}
                           path={route.path}
-                          exact={route.exact}
-                          element={route.component}
+                          element={route.element}
                         />
                       ))}
                     </Routes>

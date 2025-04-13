@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 /* eslint-disable react/prop-types */
 import { useState, useEffect, useReducer, useCallback } from "react"
-import { useParams } from "react-router"
+import { useParams, useSearchParams } from "react-router"
 import { Row, Col, Table, Tag, notification, Input, Button } from "antd"
 import { cancelToken } from "../../helpers/http"
 import { getNodes } from "./nodesResource"
@@ -35,8 +35,8 @@ async function fetchData(dispatch, filter, config) {
 
 export default function ClusterPage() {
   const { context } = useParams()
-  const [node] = useSearchParams()
-  const [search, setSearch] = useState(node ?? "")
+  const [searchParams] = useSearchParams()
+  const [search, setSearch] = useState(searchParams.get("node") ?? "")
   const [nodes, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
@@ -110,34 +110,27 @@ export default function ClusterPage() {
   return (
     <>
       <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
-        <Col xs={18} md={5} lg={6}>
+        <Col xs={24} md={8} xl={7}>
           <Input.Search
-            onChange={(e) => setSearch(e.target.value)}
-            onSearch={setSearch}
+            placeholder="Search by node name"
             value={search}
-            enterButton
+            onChange={(e) => setSearch(e.target.value)}
           />
         </Col>
-        <Col xs={6} md={3} xl={2}>
-          <Button onClick={() => setSearch("")}>Clear</Button>
-        </Col>
-        <Col xs={24} md={8} xl={7} />
         <Col xs={0} md={8} lg={7} xl={{ span: 6, offset: 3 }} style={{ textAlign: "right" }}>
           <Refresh onReload={onReload} />
         </Col>
       </Row>
       <Row>
         <Col flex="auto" style={{ marginTop: 10 }}>
-          {nodes.data.length > 0 && (
-            <Table
-              dataSource={nodes.data.filter((n) => search === "" || n.name.includes(search))}
-              columns={columns}
-              rowKey="name"
-              loading={nodes.loading}
-              size="small"
-              scroll={{ x: 600 }}
-            />
-          )}
+          <Table
+            dataSource={nodes.data.filter((node) =>
+              node.name.toLowerCase().includes(search.toLowerCase())
+            )}
+            columns={columns}
+            rowKey="name"
+            loading={nodes.loading}
+          />
         </Col>
       </Row>
     </>
