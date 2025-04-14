@@ -5,6 +5,6 @@ RUN apk add --update ca-certificates && \
 EXPOSE 8080
 
 COPY dash-ops /
-COPY front/build /app
+COPY front/dist /app
 
 CMD ["/dash-ops"]

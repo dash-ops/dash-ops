@@ -16,13 +16,13 @@ jobs:
     - name: Setup Go environment
       uses: actions/setup-go@v3
       with:
-        go-version: '^1.19.2'
+        go-version: '^1.23.4'
     - run: CGO_ENABLED=0 go build -ldflags="-s -w" -o dash-ops .
 
     - name: Setup Node.js environment
       uses: actions/setup-node@v3
       with:
-        node-version: 16
+        node-version: 22
     - run: |
         cd front
         yarn

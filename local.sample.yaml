@@ -1,9 +1,9 @@
 port: 8080
-origin: http://localhost:3000
+origin: http://localhost:5173
 headers:
   - 'Content-Type'
   - 'Authorization'
-front: front/build
+front: front/dist
 plugins:
   - 'OAuth2'
   - 'Kubernetes'
@@ -14,7 +14,7 @@ oauth2:
     clientSecret: ${GITHUB_CLIENT_SECRET}
     authURL: 'https://github.com/login/oauth/authorize'
     tokenURL: 'https://github.com/login/oauth/access_token'
-    urlLoginSuccess: 'http://localhost:3000'
+    urlLoginSuccess: 'http://localhost:5173'
     orgPermission: 'dash-ops'
     scopes:
       - user

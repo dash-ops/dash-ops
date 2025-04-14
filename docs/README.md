@@ -32,7 +32,7 @@ Para rodar o projeto localmente é necessario criar o arquivo de configurações
 
 ```yaml
 port: 8080
-origin: http://localhost:3000
+origin: http://localhost:5173
 headers:
   - 'Content-Type'
   - 'Authorization'
@@ -128,8 +128,8 @@ Para rodar o front do projeto localmente, basta executar os seguintes comandos:
 
 ```sh
 cd front
-yarn install
-yarn start
+yarn
+yarn dev
 ```
 
 ### Build
