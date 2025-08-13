@@ -25,7 +25,7 @@ async function fetchData(dispatch, filter, config) {
   try {
     const result = await getPodLogs(filter, config)
     dispatch({ type: SET_DATA, response: result.data })
-  } catch (e) {
+  } catch {
     notification.error({ message: "Ops... Failed to fetch API data" })
     dispatch({ type: SET_DATA, response: [] })
   }

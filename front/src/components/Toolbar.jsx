@@ -25,7 +25,7 @@ function Toolbar({ oAuth2 }) {
       try {
         const result = await getUserData()
         setUser(result.data)
-      } catch (e) {
+      } catch {
         notification.error({ message: "Failed to fetch user data" })
       }
     }
