@@ -1,10 +1,9 @@
-/* eslint-disable react/jsx-props-no-spreading */
-import { useState, useEffect } from "react"
+
+import { useState, useEffect, useRef } from "react"
 import { Routes, Route } from "react-router"
 import { Layout, notification } from "antd"
 import { loadModulesConfig } from "./helpers/loadModules"
 import { verifyToken } from "./helpers/oauth"
-// import InternalRoute from "./components/InternalRoute"
 import Sidebar from "./components/Sidebar"
 import Toolbar from "./components/Toolbar"
 import Footer from "./components/Footer"
@@ -18,19 +17,23 @@ export default function App() {
   const [menus, setMenus] = useState([...DashboardModule.menus])
   const [routers, setRouters] = useState([...DashboardModule.routers])
   const [collapsed, setCollapsed] = useState(false)
+  const initialized = useRef(false)
 
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+    
     verifyToken()
     loadModulesConfig()
       .then((modules) => {
         setOAuth2(modules.oAuth2)
-        setMenus([...menus, ...modules.menus])
-        setRouters([...routers, ...modules.routers])
+        setMenus([...DashboardModule.menus, ...modules.menus])
+        setRouters([...DashboardModule.routers, ...modules.routers])
       })
       .catch(() => {
         notification.error({ message: "Failed to load plugins" })
       })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [])
 
   const onCollapse = (data) => {

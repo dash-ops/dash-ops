@@ -38,13 +38,13 @@ function ContentWithMenu({ pages }) {
       <Col xs={24} md={19} lg={20} xl={21}>
         <Routes>
           {pages.map((page) => {
-            const path = page.path.split("/").pop() || "/"
-            const Component = page.component
+            const path = page.path.replace(":context", context)
+            const route = page.path.split(":context").pop()
             return (
               <Route
                 key={path}
-                path={path}
-                element={<Component />}
+                path={route}
+                element={page.element}
               />
             )
           })}
@@ -60,7 +60,7 @@ ContentWithMenu.propTypes = {
       name: PropTypes.string.isRequired,
       path: PropTypes.string.isRequired,
       menu: PropTypes.bool,
-      component: PropTypes.elementType.isRequired,
+      element: PropTypes.object.isRequired,
     })
   ).isRequired,
 }
