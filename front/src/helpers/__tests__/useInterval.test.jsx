@@ -1,6 +1,6 @@
 import { render, cleanup } from '@testing-library/react';
+import PropTypes from 'prop-types';
 import useInterval from '../useInterval';
-import React from 'react';
 
 vi.useFakeTimers();
 
@@ -12,6 +12,10 @@ it('should callback after delay', () => {
   const TestHookComponent = ({ callback }) => {
     useInterval(callback, 100);
     return null;
+  };
+  
+  TestHookComponent.propTypes = {
+    callback: PropTypes.func.isRequired,
   };
 
   render(<TestHookComponent callback={callback} />);

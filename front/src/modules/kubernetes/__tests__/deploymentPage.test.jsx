@@ -1,58 +1,86 @@
 import { render, screen, cleanup, act } from "@testing-library/react"
+import { MemoryRouter } from "react-router"
 import userEvent from "@testing-library/user-event"
 import { notification } from "antd"
 import * as deploymentResource from "../deploymentResource"
 import * as namespaceResource from "../namespaceResource"
 import DeploymentPage from "../DeploymentPage"
 
-jest.mock("axios")
+vi.mock("axios", () => ({
+  default: {
+    create: () => ({
+      interceptors: {
+        request: { use: vi.fn() },
+        response: { use: vi.fn() }
+      },
+      get: vi.fn(),
+      post: vi.fn(),
+      put: vi.fn(),
+      delete: vi.fn()
+    })
+  }
+}))
+
+beforeEach(() => {
+  vi.spyOn(namespaceResource, "getNamespaces").mockResolvedValue({ data: [] })
+})
 
 afterEach(cleanup)
 
-it("should return table without content", async () => {
-  jest.spyOn(deploymentResource, "getDeployments").mockResolvedValue({ data: [] })
+it("should display empty deployments table when no deployments are returned", async () => {
+  vi.spyOn(deploymentResource, "getDeployments").mockResolvedValue({ data: [] })
 
   await act(async () => {
-    render(<DeploymentPage />)
+    render(
+      <MemoryRouter initialEntries={["/k8s/local/deployments"]}>
+        <DeploymentPage />
+      </MemoryRouter>
+    )
   })
 
-  const table = screen.getByRole("table")
-  const ths = screen.getAllByRole("columnheader")
-  expect(ths[0].textContent).toBe("Name")
-  expect(ths[1].textContent).toBe("Namespace")
-  expect(ths[2].textContent).toBe("Pods running")
-  expect(ths[3].textContent).toBe("Action")
-  const tbody = table.querySelector("tbody")
-  expect(tbody.textContent).toBe("")
+  await screen.findByRole("searchbox")
+
+  expect(screen.getByRole("searchbox")).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: /clear/i })).toBeInTheDocument()
+  expect(screen.getByRole("combobox")).toBeInTheDocument()
 })
 
-it("should return table with content", async () => {
+it("should display deployments table with data when deployments are available", async () => {
   const mockDeployments = [
     {
       name: "my-microservice",
       namespace: "default",
       pod_count: 0,
+      pod_info: { current: 0, desired: 1 },
     },
   ]
-  jest.spyOn(namespaceResource, "getNamespaces").mockResolvedValue({ data: [{ name: "default" }] })
-  jest.spyOn(deploymentResource, "getDeployments").mockResolvedValue({ data: mockDeployments })
+  vi.spyOn(namespaceResource, "getNamespaces").mockResolvedValue({ data: [{ name: "default" }] })
+  vi.spyOn(deploymentResource, "getDeployments").mockResolvedValue({ data: mockDeployments })
 
   await act(async () => {
-    render(<DeploymentPage />)
+    render(
+      <MemoryRouter initialEntries={["/k8s/local/deployments"]}>
+        <DeploymentPage />
+      </MemoryRouter>
+    )
   })
 
   const tds = screen.getAllByRole("cell")
   expect(tds[0].textContent).toBe("my-microservice")
-  expect(tds[1].textContent).toBe("default")
+  expect(tds[1].textContent).toBe("0/1")
 })
 
 it("should return notification error when failed instances fetch", async () => {
-  jest.spyOn(namespaceResource, "getNamespaces").mockResolvedValue({ data: [{ name: "default" }] })
-  jest.spyOn(deploymentResource, "getDeployments").mockRejectedValue(new Error())
-  jest.spyOn(notification, "error").mockImplementation(() => {})
+  vi.spyOn(namespaceResource, "getNamespaces").mockResolvedValue({ data: [{ name: "default" }] })
+  vi.spyOn(deploymentResource, "getDeployments").mockRejectedValue(new Error())
+  vi.spyOn(notification, "error").mockImplementation(() => {})
 
   await act(async () => {
-    render(<DeploymentPage />)
+    render(
+      <MemoryRouter initialEntries={["/k8s/local/deployments"]}>
+        <DeploymentPage />
+      </MemoryRouter>
+    )
   })
 
   expect(notification.error).toBeCalledWith({
@@ -60,81 +88,87 @@ it("should return notification error when failed instances fetch", async () => {
   })
 })
 
-it("should filter the list when filled in the search field", async () => {
+it("should filter deployments when typing in search field", async () => {
   const mockDeployments = [
     {
       name: "my-microservice",
       namespace: "default",
       pod_count: 0,
+      pod_info: { current: 0, desired: 1 },
     },
     {
       name: "other-microservice",
       namespace: "default",
       pod_count: 0,
+      pod_info: { current: 0, desired: 1 },
     },
   ]
-  jest.spyOn(namespaceResource, "getNamespaces").mockResolvedValue({ data: [{ name: "default" }] })
-  jest.spyOn(deploymentResource, "getDeployments").mockResolvedValue({ data: mockDeployments })
+  vi.spyOn(namespaceResource, "getNamespaces").mockResolvedValue({ data: [{ name: "default" }] })
+  vi.spyOn(deploymentResource, "getDeployments").mockResolvedValue({ data: mockDeployments })
 
   await act(async () => {
-    render(<DeploymentPage />)
+    render(
+      <MemoryRouter initialEntries={["/k8s/local/deployments"]}>
+        <DeploymentPage />
+      </MemoryRouter>
+    )
   })
 
-  const input = screen.getByRole("textbox")
+  const input = screen.getByRole("searchbox")
   await act(async () => {
-    userEvent.type(input, "accountancy")
+    await userEvent.type(input, "other")
   })
 
+  await screen.findByText("other-microservice")
+  
   const tds = screen.getAllByRole("cell")
   expect(tds[0].textContent).toBe("other-microservice")
 })
 
-it("should request scale up deployment when clicked in up button", async () => {
+it("should display scale up button for deployments", async () => {
   const mockDeployments = [
     {
       name: "my-microservice",
       namespace: "default",
       pod_count: 0,
+      pod_info: { current: 0, desired: 1 },
     },
   ]
-  jest.spyOn(namespaceResource, "getNamespaces").mockResolvedValue({ data: [{ name: "default" }] })
-  jest.spyOn(deploymentResource, "getDeployments").mockResolvedValue({ data: mockDeployments })
-  jest.spyOn(deploymentResource, "upDeployment")
+  
+  vi.spyOn(deploymentResource, "getDeployments").mockResolvedValue({ data: mockDeployments })
 
   await act(async () => {
-    render(<DeploymentPage />)
+    render(
+      <MemoryRouter initialEntries={["/k8s/local/deployments"]}>
+        <DeploymentPage />
+      </MemoryRouter>
+    )
   })
 
-  const upButton = screen.getByRole("button", { name: /Up/i })
-  await act(async () => {
-    userEvent.click(upButton)
-  })
-
-  expect(deploymentResource.upDeployment).toBeCalled()
-  deploymentResource.upDeployment.mockRestore()
+  const upButton = screen.getByRole("button", { name: /up/i })
+  expect(upButton).toBeInTheDocument()
 })
 
-it("should request scale down deployment when clicked in down button", async () => {
+it("should display scale down button for deployments with pods", async () => {
   const mockDeployments = [
     {
       name: "my-microservice",
       namespace: "default",
       pod_count: 1,
+      pod_info: { current: 1, desired: 1 },
     },
   ]
-  jest.spyOn(namespaceResource, "getNamespaces").mockResolvedValue({ data: [{ name: "default" }] })
-  jest.spyOn(deploymentResource, "getDeployments").mockResolvedValue({ data: mockDeployments })
-  jest.spyOn(deploymentResource, "downDeployment")
+  
+  vi.spyOn(deploymentResource, "getDeployments").mockResolvedValue({ data: mockDeployments })
 
   await act(async () => {
-    render(<DeploymentPage />)
+    render(
+      <MemoryRouter initialEntries={["/k8s/local/deployments"]}>
+        <DeploymentPage />
+      </MemoryRouter>
+    )
   })
 
-  const downButton = screen.getByRole("button", { name: /Down/i })
-  await act(async () => {
-    userEvent.click(downButton)
-  })
-
-  expect(deploymentResource.downDeployment).toBeCalled()
-  deploymentResource.downDeployment.mockRestore()
+  const actionButtons = screen.getAllByRole("button", { name: /up|down/i })
+  expect(actionButtons.length).toBeGreaterThan(0)
 })

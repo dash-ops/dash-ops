@@ -11,9 +11,9 @@ const mockInstance = {
 
 afterEach(cleanup)
 
-it("should call start instance when clicked on play button", async () => {
+it("should call start callback when play button is clicked on stopped instance", async () => {
   const mockCp = { ...mockInstance, state: "stopped" }
-  const toStart = jest.fn()
+  const toStart = vi.fn()
 
   render(<InstanceActions instance={mockCp} toStart={toStart} toStop={() => {}} />)
 
@@ -23,9 +23,9 @@ it("should call start instance when clicked on play button", async () => {
   expect(toStart).toBeCalled()
 })
 
-it("should call stop instance when clicked on stop button", async () => {
+it("should call stop callback when stop button is clicked on running instance", async () => {
   const mockCp = { ...mockInstance, state: "running" }
-  const toStop = jest.fn()
+  const toStop = vi.fn()
 
   render(<InstanceActions instance={mockCp} toStart={() => {}} toStop={toStop} />)
 
@@ -35,7 +35,7 @@ it("should call stop instance when clicked on stop button", async () => {
   expect(toStop).toBeCalled()
 })
 
-it("should return new location address when clicked on ssh button", async () => {
+it("should navigate to SSH URL when desktop button is clicked", async () => {
   const originalLocation = window.location
   delete window.location
   window.location = new URL("http://mock-location.com")
@@ -49,9 +49,9 @@ it("should return new location address when clicked on ssh button", async () => 
   window.location = originalLocation
 })
 
-it("should return notification when clicked on ssh button and instance plataform is windows", async () => {
+it("should show error notification when desktop button is clicked on Windows instance", async () => {
   const mockCp = { ...mockInstance, platform: "windows" }
-  jest.spyOn(notification, "error").mockImplementation(() => {})
+  vi.spyOn(notification, "error").mockImplementation(() => {})
 
   render(<InstanceActions instance={mockCp} toStart={() => {}} toStop={() => {}} />)
 
