@@ -20,14 +20,15 @@ http.interceptors.response.use(
     if (axios.isCancel(error)) {
       return Promise.reject(new Error('Request canceled'));
     }
-    if (error.response.status === 401) {
+    if (error.response && error.response.status === 401) {
       notification.error({
         message: 'Unauthorized request',
         description: error.response.data.error,
       });
       cleanToken();
+      return Promise.reject(error);
     }
-    return Promise.reject(new Error(error.response));
+    return Promise.reject(error);
   }
 );
 
