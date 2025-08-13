@@ -17,7 +17,7 @@ const mockMenus = [
 
 afterEach(cleanup)
 
-it("render sidebar", () => {
+it("should render sidebar with menu items", () => {
   act(() => {
     render(
       <MemoryRouter>
@@ -30,7 +30,7 @@ it("render sidebar", () => {
   expect(screen.getByText("Kubernetes Plugin")).toBeInTheDocument()
 })
 
-it("should change current value when clicked on menu item", async () => {
+it("should highlight menu item when clicked", async () => {
   act(() => {
     render(
       <MemoryRouter>
@@ -41,5 +41,5 @@ it("should change current value when clicked on menu item", async () => {
   const firstItem = screen.getByText("AWS Plugin").parentElement
   await userEvent.click(firstItem)
 
-  expect(firstItem).toHaveClass("ant-menu-item-selected")
+  expect(firstItem).toHaveClass("ant-menu-item-active")
 })

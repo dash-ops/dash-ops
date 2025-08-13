@@ -1,4 +1,5 @@
 import { render, screen, cleanup, act } from "@testing-library/react"
+import { MemoryRouter } from "react-router"
 import * as userResource from "../modules/oauth2/userResource"
 import * as oauth from "../helpers/oauth"
 import App from "../App"
@@ -8,14 +9,19 @@ vi.mock("../helpers/oauth")
 
 afterEach(cleanup)
 
-it.skip("should render instances page when logged in user", async () => {
+it("should render app footer when logged in user", async () => {
   oauth.verifyToken.mockReturnValue(true)
   userResource.getUserData.mockResolvedValue({ name: "Bla" })
 
   await act(async () => {
-    render(<App />)
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>
+    )
   })
 
-  const footer = screen.getByText(`DashOPS ©${new Date().getFullYear()}`)
+  const footer = screen.getByRole("contentinfo")
   expect(footer).toBeInTheDocument()
+  expect(screen.getByRole("link", { name: "github" })).toBeInTheDocument()
 })

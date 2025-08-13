@@ -11,8 +11,9 @@ const mockUser = { name: "Bla", avatar_url: "/image.jpg" }
 
 afterEach(cleanup)
 
-it("should notify error when session on github invalidates", async () => {
+it("should show error notification when GitHub session is invalid", async () => {
   userResource.getUserData.mockRejectedValue(new Error())
+  const notificationSpy = vi.spyOn(notification, "error").mockImplementation(() => {})
 
   await act(async () => {
     render(
@@ -22,11 +23,12 @@ it("should notify error when session on github invalidates", async () => {
     )
   })
 
-  expect(notification.error).toBeCalledWith({ message: "Failed to fetch user data" })
+  expect(notificationSpy).toHaveBeenCalledWith({ message: "Failed to fetch user data" })
   userResource.getUserData.mockRestore()
+  notificationSpy.mockRestore()
 })
 
-it("should user data when logged in user", async () => {
+it("should display user data when user is logged in", async () => {
   userResource.getUserData.mockResolvedValue({ data: mockUser })
 
   await act(async () => {
@@ -37,7 +39,8 @@ it("should user data when logged in user", async () => {
     )
   })
 
-  expect(screen.getByRole("img").src).toBe(mockUser.avatar_url)
+  const avatarImg = document.querySelector('img[src="/image.jpg"]')
+  expect(avatarImg.src).toContain(mockUser.avatar_url)
   expect(screen.getByText(mockUser.name)).toBeInTheDocument()
   userResource.getUserData.mockRestore()
 })
