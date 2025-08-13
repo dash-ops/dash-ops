@@ -1,7 +1,7 @@
 import { useState, useEffect, useReducer, useCallback } from "react"
 import { useParams } from "react-router"
 import { Row, Col, Table, Button, Input, notification, Form, Tag, Select } from "antd"
-import { cancelToken } from "../../helpers/http"
+// import { cancelToken } from "../../helpers/http" // Deprecated - using AbortController instead
 import { getNamespaces } from "./namespaceResource"
 import { getDeployments, upDeployment, downDeployment } from "./deploymentResource"
 import Refresh from "../../components/Refresh"
@@ -27,6 +27,10 @@ async function fetchData(dispatch, filter, config) {
     const result = await getDeployments(filter, config)
     dispatch({ type: SET_DATA, response: result.data })
   } catch (e) {
+    if (e.message === 'Request canceled') {
+      return;
+    }
+    console.error('Fetch error:', e);
     notification.error({ message: "Ops... Failed to fetch API data" })
     dispatch({ type: SET_DATA, response: [] })
   }
@@ -60,31 +64,42 @@ export default function DeploymentPage() {
   const [deployments, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
-    const source = cancelToken.source()
-    getNamespaces({ context }, { cancelToken: source.token })
+    const controller = new AbortController()
+    const signal = controller.signal
+    
+    getNamespaces({ context }, { signal })
       .then((result) => {
         setNamespaces(result.data)
       })
-      .catch(() => {})
+      .catch((e) => {
+        if (e.message !== 'Request canceled') {
+          console.error('Error fetching namespaces:', e);
+        }
+      })
 
     return () => {
-      source.cancel()
+      controller.abort()
     }
   }, [context])
 
   useEffect(() => {
-    const source = cancelToken.source()
+    const controller = new AbortController()
+    const signal = controller.signal
     dispatch({ type: LOADING })
-    fetchData(dispatch, { context, namespace }, { cancelToken: source.token })
+    fetchData(dispatch, { context, namespace }, { signal })
 
     return () => {
-      source.cancel()
+      controller.abort()
     }
   }, [context, namespace])
 
   const onReload = useCallback(async () => {
     fetchData(dispatch, { context, namespace })
   }, [context, namespace])
+
+  const handleNamespaceChange = (newNamespace) => {
+    setNamespace(newNamespace)
+  }
 
   const updatePodCount = (name, podCount) => {
     const newDeployments = deployments.data.map((dep) =>
@@ -151,7 +166,7 @@ export default function DeploymentPage() {
             <Select
               defaultValue="default"
               value={namespace}
-              onChange={setNamespace}
+              onChange={handleNamespaceChange}
               style={{ width: "100%" }}
             >
               {namespaces.map((ns) => (

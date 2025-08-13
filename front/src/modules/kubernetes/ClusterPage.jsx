@@ -1,9 +1,7 @@
-/* eslint-disable camelcase */
-/* eslint-disable react/prop-types */
+
 import { useState, useEffect, useReducer, useCallback } from "react"
 import { useParams, useSearchParams } from "react-router"
-import { Row, Col, Table, Tag, notification, Input, Button } from "antd"
-import { cancelToken } from "../../helpers/http"
+import { Row, Col, Table, Tag, notification, Input } from "antd"
 import { getNodes } from "./nodesResource"
 import Refresh from "../../components/Refresh"
 import ProgressData from "./ProgressData"
@@ -23,35 +21,40 @@ function reducer(state, action) {
   }
 }
 
-async function fetchData(dispatch, filter, config) {
-  try {
-    const result = await getNodes(filter, config)
-    dispatch({ type: SET_DATA, response: result.data })
-  } catch (e) {
-    notification.error({ message: "Ops... Failed to fetch API data" })
-    dispatch({ type: SET_DATA, response: [] })
-  }
-}
-
 export default function ClusterPage() {
   const { context } = useParams()
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState(searchParams.get("node") ?? "")
   const [nodes, dispatch] = useReducer(reducer, INITIAL_STATE)
 
-  useEffect(() => {
-    const source = cancelToken.source()
-    dispatch({ type: LOADING })
-    fetchData(dispatch, { context }, { cancelToken: source.token })
-
-    return () => {
-      source.cancel()
+  const fetchData = useCallback(async (config) => {
+    try {
+      dispatch({ type: LOADING })
+      const result = await getNodes({ context }, config)
+      dispatch({ type: SET_DATA, response: result.data })
+    } catch (e) {
+      if (e.message === 'Request canceled') {
+        return;
+      }
+      console.error('Fetch error:', e);
+      notification.error({ message: "Ops... Failed to fetch API data" })
+      dispatch({ type: SET_DATA, response: [] })
     }
   }, [context])
 
-  const onReload = useCallback(async () => {
-    fetchData(dispatch, { context })
-  }, [context])
+  useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+    fetchData({ signal })
+
+    return () => {
+      controller.abort()
+    }
+  }, [fetchData])
+
+  const onReload = useCallback(() => {
+    fetchData()
+  }, [fetchData])
 
   const columns = [
     {

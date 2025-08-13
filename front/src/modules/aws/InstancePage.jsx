@@ -1,7 +1,7 @@
 import { useState, useEffect, useReducer, useCallback } from "react"
 import { useParams } from "react-router"
 import { Row, Col, Table, Button, Input, notification } from "antd"
-import { cancelToken } from "../../helpers/http"
+// import { cancelToken } from "../../helpers/http" // Deprecated - using AbortController instead
 import { getInstances, startInstance, stopInstance } from "./instanceResource"
 import Refresh from "../../components/Refresh"
 import InstanceActions from "./InstanceActions"
@@ -26,7 +26,11 @@ async function fetchData(dispatch, filter, config) {
   try {
     const result = await getInstances(filter, config)
     dispatch({ type: SET_DATA, response: result.data })
-  } catch (e) {
+  } catch (error) {
+    if (error.message === 'Request canceled') {
+      return;
+    }
+    console.error('Fetch error:', error);
     notification.error({ message: "Ops... Failed to fetch API data" })
     dispatch({ type: SET_DATA, response: [] })
   }
@@ -37,7 +41,7 @@ async function toStart(key, instance, setNewState) {
     setNewState(instance.instance_id, "pending")
     const response = await startInstance(key, instance.instance_id)
     setNewState(instance.instance_id, response.data.current_state)
-  } catch (e) {
+  } catch {
     setNewState(instance.instance_id, "stopped")
     notification.error({ message: "Failed to try to start Instance" })
   }
@@ -48,7 +52,7 @@ async function toStop(key, instance, setNewState) {
     setNewState(instance.instance_id, "stopping")
     const response = await stopInstance(key, instance.instance_id)
     setNewState(instance.instance_id, response.data.current_state)
-  } catch (e) {
+  } catch {
     setNewState(instance.instance_id, "running")
     notification.error({ message: "Failed to try to stop Instance" })
   }
@@ -60,12 +64,13 @@ export default function InstancePage() {
   const [instances, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
-    const source = cancelToken.source()
+    const controller = new AbortController()
+    const signal = controller.signal
     dispatch({ type: LOADING })
-    fetchData(dispatch, { accountKey: key }, { cancelToken: source.token })
+    fetchData(dispatch, { accountKey: key }, { signal })
 
     return () => {
-      source.cancel()
+      controller.abort()
     }
   }, [key])
 
