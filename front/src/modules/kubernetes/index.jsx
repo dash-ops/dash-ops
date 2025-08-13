@@ -6,7 +6,7 @@ import PodLogPage from "./PodLogPage"
 import ContentWithMenu from "./ContentWithMenu"
 import { getClusters } from "./clusterResource"
 
-export default async () => {
+const KubernetesModule = async () => {
   const { data } = await getClusters()
   const menus = data.map(({ name, context }) => ({
     label: name,
@@ -20,25 +20,25 @@ export default async () => {
       name: "Cluster",
       path: "/k8s/:context",
       menu: true,
-      component: ClusterPage,
+      element: <ClusterPage />,
     },
     {
       name: "Deployments",
       path: "/k8s/:context/deployments",
       menu: true,
-      component: DeploymentPage,
+      element: <DeploymentPage />,
     },
     {
       name: "Pods",
       path: "/k8s/:context/pods",
       menu: true,
-      component: PodPage,
+      element: <PodPage />,
     },
     {
       name: "PodLogs",
       path: "/k8s/:context/pod/logs",
       menu: false,
-      component: PodLogPage,
+      element: <PodLogPage />,
     },
   ]
 
@@ -46,10 +46,12 @@ export default async () => {
     menus,
     routers: [
       {
-        key: "k8s",
+        key: 'k8s',
         path: "/k8s/:context/*",
         element: <ContentWithMenu pages={pages} />,
       },
     ],
   }
 }
+
+export default KubernetesModule;

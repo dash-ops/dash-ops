@@ -14,8 +14,7 @@ export default {
     {
       key: "dashboard",
       path: "/",
-      exact: true,
-      component: <DashboardPage />,
+      element: <DashboardPage />,
     },
   ],
 }

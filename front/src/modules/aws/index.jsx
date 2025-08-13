@@ -3,7 +3,7 @@ import InstancePage from "./InstancePage"
 import { getAccounts } from "./accountResource"
 import ContentWithMenu from "../kubernetes/ContentWithMenu"
 
-export default async () => {
+const AwsModule = async () => {
   const { data } = await getAccounts()
   const menus = data.map(({ name }) => ({
     label: name,
@@ -32,3 +32,5 @@ export default async () => {
     ],
   }
 }
+
+export default AwsModule;
