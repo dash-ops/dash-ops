@@ -1,51 +1,61 @@
-import { getItem, setItem, removeItem } from "./localStorage"
+import { getItem, setItem, removeItem } from './localStorage';
 
-const ACCESS_TOKEN_KEY = "access_token"
+const ACCESS_TOKEN_KEY = 'access_token';
 
 function getUrlVars() {
-  const vars = {}
+  const vars = {};
   window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, (m, key, value) => {
-    vars[key] = value
-  })
-  return vars
+    vars[key] = value;
+  });
+  return vars;
 }
 
 function getUrlAccessToken() {
   if (window.location.href.indexOf(ACCESS_TOKEN_KEY) > -1) {
-    return getUrlVars().access_token
+    return getUrlVars().access_token;
   }
-  return null
+  return null;
 }
 
 export function getToken() {
-  return getItem(ACCESS_TOKEN_KEY)
+  return getItem(ACCESS_TOKEN_KEY);
 }
 
 export function verifyToken() {
   if (getToken() != null) {
-    return true
+    return true;
   }
-  const accessToken = getUrlAccessToken()
+  const accessToken = getUrlAccessToken();
   if (accessToken != null) {
-    const path = window.location.pathname === "/login" ? "/" : window.location.pathname
-    window.history.pushState({}, document.title, path)
-    setItem(ACCESS_TOKEN_KEY, accessToken)
-    return true
+    const path =
+      window.location.pathname === '/login' ? '/' : window.location.pathname;
+    window.history.pushState({}, document.title, path);
+    setItem(ACCESS_TOKEN_KEY, accessToken);
+    return true;
   }
-  return false
+
+  // Redirect to login if no token is found
+  if (window.location.pathname !== '/login') {
+    const currentPath = window.location.pathname;
+    window.location.href = `/login?redirect_url=${encodeURIComponent(
+      currentPath
+    )}`;
+  }
+
+  return false;
 }
 
 export function getConfigBearerToken() {
-  const token = getToken()
+  const token = getToken();
   return token
     ? {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       }
-    : null
+    : null;
 }
 
 export function cleanToken() {
-  removeItem(ACCESS_TOKEN_KEY)
+  removeItem(ACCESS_TOKEN_KEY);
 }

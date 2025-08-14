@@ -5,7 +5,7 @@ import { GithubFilled } from "@ant-design/icons"
 function LoginPage() {
   const location = useLocation()
   const from = location.state || "/"
-  const urlLoginGithub = `${import.meta.env.API_URL}/oauth?redirect_url=${from}`
+  const urlLoginGithub = `${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/oauth?redirect_url=${from}`
 
   return (
     <Row gutter={16}>
