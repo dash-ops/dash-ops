@@ -9,6 +9,7 @@ No momento temos a autenticação via Github.
 ## Github APP
 
 Primeiro precisamos configurar o token de acesso seguido os seguintes passos:
+
 - Acesse a aba `Settings` da sua organização;
 - No menu lateral clique em `OAuth Apps` na seção `Developer settings;
 - Registre um novo aplicativo, passando o Nome, URL do APP e URL de callback do login, exemplo:
@@ -17,7 +18,7 @@ Primeiro precisamos configurar o token de acesso seguido os seguintes passos:
 
 > Nota:
 > Caso você esteja rodando local, precisa referenciar as portas corretas para o front e da API:
-> 
+>
 > ![Github APP Local Config](../img/github-local-config.png)
 
 - Será gerado dois tokens um `Client ID` e `Client Secret`;
@@ -34,13 +35,25 @@ oauth2:
     clientSecret: ${GITHUB_CLIENT_SECRET}
     authURL: 'https://github.com/login/oauth/authorize'
     tokenURL: 'https://github.com/login/oauth/access_token'
-    urlLoginSuccess: 'http://localhost:3000'
+    redirectURL: 'http://localhost:8080/api/oauth/redirect'
+    urlLoginSuccess: 'http://localhost:5173'
     orgPermission: 'dash-ops'
     scopes:
       - user
       - repo
       - read:org
 ```
+
+### Parâmetros de Configuração:
+
+- **`clientId`**: Client ID gerado pelo GitHub OAuth App
+- **`clientSecret`**: Client Secret gerado pelo GitHub OAuth App
+- **`authURL`**: URL de autorização do GitHub
+- **`tokenURL`**: URL para troca do código por token
+- **`redirectURL`**: URL de callback configurada no GitHub OAuth App (deve apontar para a API)
+- **`urlLoginSuccess`**: URL para onde o usuário será redirecionado após login bem-sucedido (frontend)
+- **`orgPermission`**: Nome da organização GitHub para validação de permissão
+- **`scopes`**: Escopos de permissão solicitados ao GitHub
 
 ## Permissionamento
 

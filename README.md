@@ -31,6 +31,7 @@ oauth2:
     clientSecret: ${GITHUB_CLIENT_SECRET}
     authURL: 'https://github.com/login/oauth/authorize'
     tokenURL: 'https://github.com/login/oauth/access_token'
+    redirectURL: 'http://localhost:8080/api/oauth/redirect'
     urlLoginSuccess: 'http://localhost:8080'
     orgPermission: 'dash-ops'
     scopes:
@@ -123,6 +124,7 @@ configMap: |
       clientSecret: ${GITHUB_CLIENT_SECRET}
       authURL: "https://github.com/login/oauth/authorize"
       tokenURL: "https://github.com/login/oauth/access_token"
+      redirectURL: "http://dash-ops.dev/api/oauth/redirect"
       urlLoginSuccess: "http://dash-ops.dev"
       scopes: 
         - user

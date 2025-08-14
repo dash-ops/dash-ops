@@ -14,6 +14,7 @@ oauth2:
     clientSecret: ${GITHUB_CLIENT_SECRET}
     authURL: 'https://github.com/login/oauth/authorize'
     tokenURL: 'https://github.com/login/oauth/access_token'
+    redirectURL: 'http://localhost:8080/api/oauth/redirect'
     urlLoginSuccess: 'http://localhost:5173'
     orgPermission: 'dash-ops'
     scopes:
