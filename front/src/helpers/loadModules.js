@@ -3,7 +3,6 @@ import { getPlugins } from '../modules/config/configResource';
 
 export function loadModulesConfig() {
   return getPlugins().then(({ data }) => {
-    console.log('Plugins loaded:', data);
     const modulesConfig = data.map((plugin) => {
       const pluginName = plugin.toLowerCase();
 

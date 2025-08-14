@@ -26,8 +26,6 @@ export default function App() {
     verifyToken()
     loadModulesConfig()
       .then((modules) => {
-        console.log('Modules loaded:', modules)
-        console.log('OAuth2 config:', modules.oAuth2)
         setOAuth2(modules.oAuth2)
         setMenus([...DashboardModule.menus, ...modules.menus])
         setRouters([...DashboardModule.routers, ...modules.routers])
@@ -43,7 +41,7 @@ export default function App() {
     setCollapsed(data)
   }
 
-  console.log('Current oAuth2 state:', oAuth2)
+
   
   return (
     <Routes>

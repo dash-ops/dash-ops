@@ -1,23 +1,25 @@
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import PropTypes from "prop-types"
-import { useNavigate } from "react-router"
+import { useNavigate, Link } from "react-router"
 import { Menu, Avatar, notification } from "antd"
-import { LogoutOutlined } from "@ant-design/icons"
+import { LogoutOutlined, UserOutlined } from "@ant-design/icons"
 import { cleanToken } from "../helpers/oauth"
 import { getUserData } from "../modules/oauth2/userResource"
 
 function Toolbar({ oAuth2 }) {
   const [user, setUser] = useState()
   const navigate = useNavigate()
+  const userDataFetched = useRef(false)
 
   const logout = useCallback(() => {
     setUser(null)
     cleanToken()
+    userDataFetched.current = false // Reset cache on logout
     navigate("/login")
   }, [navigate])
 
   useEffect(() => {
-    if (!oAuth2) {
+    if (!oAuth2 || userDataFetched.current) {
       return
     }
 
@@ -25,13 +27,14 @@ function Toolbar({ oAuth2 }) {
       try {
         const result = await getUserData()
         setUser(result.data)
+        userDataFetched.current = true // Mark as fetched
       } catch {
         notification.error({ message: "Failed to fetch user data" })
       }
     }
 
     fetchData()
-  }, [logout, oAuth2])
+  }, [oAuth2])
 
   const menuItems = user
     ? [
@@ -43,18 +46,27 @@ function Toolbar({ oAuth2 }) {
               <span style={{ padding: "10px" }}>{user.name}</span>
             </>
           ),
-          children: [
-            {
-              key: "logout",
-              label: (
-                <>
-                  <LogoutOutlined />
-                  Logout
-                </>
-              ),
-              onClick: logout,
-            },
-          ],
+                      children: [
+              {
+                key: "profile",
+                label: (
+                  <Link to="/profile" style={{ color: 'inherit', textDecoration: 'none' }}>
+                    <UserOutlined />
+                    Profile
+                  </Link>
+                ),
+              },
+              {
+                key: "logout",
+                label: (
+                  <>
+                    <LogoutOutlined />
+                    Logout
+                  </>
+                ),
+                onClick: logout,
+              },
+            ],
         },
       ]
     : []

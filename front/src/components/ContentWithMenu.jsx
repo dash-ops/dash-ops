@@ -69,8 +69,4 @@ ContentWithMenu.propTypes = {
   paramName: PropTypes.string, // Nome do parâmetro da URL (ex: "context", "key")
 }
 
-ContentWithMenu.defaultProps = {
-  paramName: "context", // Default para manter compatibilidade com Kubernetes
-}
-
 export default ContentWithMenu
