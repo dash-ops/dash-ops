@@ -80,12 +80,10 @@ func MakeOauthHandlers(r *mux.Router, internal *mux.Router, fileConfig []byte) {
 		},
 	}
 
-	log.Printf("Registering OAuth routes on router")
 	r.HandleFunc("/oauth", oauthHandler(oauthConfig)).
 		Name("oauth")
 	r.HandleFunc("/oauth/redirect", oauthRedirectHandler(dashConfig, oauthConfig)).
 		Name("oauthRedirect")
-	log.Printf("OAuth routes registered: /oauth and /oauth/redirect")
 	internal.Use(oAuthMiddleware)
 
 	makeOauthProvideHandlers(internal, dashConfig, oauthConfig)
