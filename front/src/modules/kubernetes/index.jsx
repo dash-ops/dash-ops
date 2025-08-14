@@ -3,7 +3,7 @@ import ClusterPage from "./ClusterPage"
 import DeploymentPage from "./DeploymentPage"
 import PodPage from "./PodPage"
 import PodLogPage from "./PodLogPage"
-import ContentWithMenu from "./ContentWithMenu"
+import ContentWithMenu from "../../components/ContentWithMenu"
 import { getClusters } from "./clusterResource"
 
 const KubernetesModule = async () => {
