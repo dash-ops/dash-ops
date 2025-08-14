@@ -26,11 +26,14 @@ export default function App() {
     verifyToken()
     loadModulesConfig()
       .then((modules) => {
+        console.log('Modules loaded:', modules)
+        console.log('OAuth2 config:', modules.oAuth2)
         setOAuth2(modules.oAuth2)
         setMenus([...DashboardModule.menus, ...modules.menus])
         setRouters([...DashboardModule.routers, ...modules.routers])
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error('Failed to load modules:', error)
         notification.error({ message: "Failed to load plugins" })
       })
 
@@ -40,6 +43,8 @@ export default function App() {
     setCollapsed(data)
   }
 
+  console.log('Current oAuth2 state:', oAuth2)
+  
   return (
     <Routes>
       {oAuth2.active && (

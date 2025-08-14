@@ -3,24 +3,34 @@ import { getPlugins } from '../modules/config/configResource';
 
 export function loadModulesConfig() {
   return getPlugins().then(({ data }) => {
+    console.log('Plugins loaded:', data);
     const modulesConfig = data.map((plugin) => {
-      return import(`../modules/${plugin.toLowerCase()}/index.jsx`).then(
-        (module) => {
-          if (typeof module.default === 'function') {
-            // Module with dynamic route loading
-            return module
-              .default()
-              .then((config) => config)
-              .catch((e) => {
-                notification.error(
-                  `Failed to load plugin ${plugin}: ${e.data.error}`
-                );
-                return {};
-              });
+      const pluginName = plugin.toLowerCase();
+
+      // Try .jsx first, then .js
+      const tryImport = (extension) => {
+        return import(`../modules/${pluginName}/index.${extension}`).then(
+          (module) => {
+            if (typeof module.default === 'function') {
+              // Module with dynamic route loading
+              return module
+                .default()
+                .then((config) => config)
+                .catch((e) => {
+                  notification.error(
+                    `Failed to load plugin ${plugin}: ${
+                      e.data?.error || e.message
+                    }`
+                  );
+                  return {};
+                });
+            }
+            return module.default;
           }
-          return module.default;
-        }
-      );
+        );
+      };
+
+      return tryImport('jsx').catch(() => tryImport('js'));
     });
 
     return Promise.all(modulesConfig).then((configs) => {
