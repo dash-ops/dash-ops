@@ -1,15 +1,15 @@
 import { CloudOutlined } from "@ant-design/icons"
 import InstancePage from "./InstancePage"
 import { getAccounts } from "./accountResource"
-import ContentWithMenu from "../kubernetes/ContentWithMenu"
+import ContentWithMenu from "../../components/ContentWithMenu"
 
 const AwsModule = async () => {
   const { data } = await getAccounts()
-  const menus = data.map(({ name }) => ({
+  const menus = data.map(({ name, key }) => ({
     label: name,
     icon: <CloudOutlined />,
-    key: `aws-${name}`,
-    link: `/aws/${name}`,
+    key: `aws-${key}`,
+    link: `/aws/${key}`,
   }))
 
   const pages = [
@@ -17,7 +17,7 @@ const AwsModule = async () => {
       name: "EC2 Instances",
       path: "/aws/:key/ec2",
       menu: true,
-      component: InstancePage,
+      element: <InstancePage />,
     },
   ]
 
@@ -27,7 +27,7 @@ const AwsModule = async () => {
       {
         key: "aws",
         path: "/aws/:key/*",
-        element: <ContentWithMenu pages={pages} />,
+        element: <ContentWithMenu pages={pages} paramName="key" />,
       },
     ],
   }
