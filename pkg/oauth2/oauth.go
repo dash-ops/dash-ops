@@ -2,6 +2,7 @@ package oauth2
 
 import (
 	"context"
+	"log"
 	"net/http"
 
 	"github.com/dash-ops/dash-ops/pkg/commons"
@@ -29,7 +30,14 @@ func oauthRedirectHandler(dc dashYaml, oauthConfig *oauth2.Config) http.HandlerF
 			return
 		}
 
-		http.Redirect(w, r, dc.Oauth2[0].URLLoginSuccess+r.URL.Query().Get("state")+"?access_token="+token.AccessToken, http.StatusPermanentRedirect)
+		state := r.URL.Query().Get("state")
+		baseURL := dc.Oauth2[0].URLLoginSuccess
+		if state != "" {
+			baseURL += state
+		}
+		redirectURL := baseURL + "?access_token=" + token.AccessToken
+		log.Printf("State: '%s', Base URL: '%s', Final URL: '%s'", state, dc.Oauth2[0].URLLoginSuccess, redirectURL)
+		http.Redirect(w, r, redirectURL, http.StatusPermanentRedirect)
 	}
 }
 
@@ -65,16 +73,19 @@ func MakeOauthHandlers(r *mux.Router, internal *mux.Router, fileConfig []byte) {
 		ClientID:     dashConfig.Oauth2[0].ClientID,
 		ClientSecret: dashConfig.Oauth2[0].ClientSecret,
 		Scopes:       dashConfig.Oauth2[0].Scopes,
+		RedirectURL:  dashConfig.Oauth2[0].RedirectURL,
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  dashConfig.Oauth2[0].AuthURL,
 			TokenURL: dashConfig.Oauth2[0].TokenURL,
 		},
 	}
 
+	log.Printf("Registering OAuth routes on router")
 	r.HandleFunc("/oauth", oauthHandler(oauthConfig)).
 		Name("oauth")
 	r.HandleFunc("/oauth/redirect", oauthRedirectHandler(dashConfig, oauthConfig)).
 		Name("oauthRedirect")
+	log.Printf("OAuth routes registered: /oauth and /oauth/redirect")
 	internal.Use(oAuthMiddleware)
 
 	makeOauthProvideHandlers(internal, dashConfig, oauthConfig)

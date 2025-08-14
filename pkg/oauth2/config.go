@@ -13,6 +13,7 @@ type dashYaml struct {
 		ClientSecret    string   `yaml:"clientSecret"`
 		AuthURL         string   `yaml:"authURL"`
 		TokenURL        string   `yaml:"tokenURL"`
+		RedirectURL     string   `yaml:"redirectURL"`
 		URLLoginSuccess string   `yaml:"urlLoginSuccess"`
 		OrgPermission   string   `yaml:"orgPermission"`
 		Scopes          []string `yaml:"scopes"`
