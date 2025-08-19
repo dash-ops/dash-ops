@@ -1,0 +1,17 @@
+{
+  "id": "550e8400-e29b-41d4-a716-446655440001",
+  "name": "user-authentication-service",
+  "displayName": "User Authentication Service",
+  "description": "Serviço responsável pela autenticação e autorização de usuários",
+  "tier": "tier-1",
+  "team": "Platform Team",
+  "squad": "Auth Squad",
+  "owner": "platform-team@company.com",
+  "tags": ["traces", "metrics"],
+  "regions": ["us-east-1", "eu-west-1", "ap-southeast-1"],
+  "ingressType": "external",
+  "status": "active",
+  "createdAt": "2024-01-15T10:30:00Z",
+  "updatedAt": "2024-01-20T14:45:00Z",
+  "metadata": {}
+}

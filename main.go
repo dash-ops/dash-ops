@@ -14,6 +14,7 @@ import (
 	"github.com/dash-ops/dash-ops/pkg/config"
 	"github.com/dash-ops/dash-ops/pkg/kubernetes"
 	"github.com/dash-ops/dash-ops/pkg/oauth2"
+	"github.com/dash-ops/dash-ops/pkg/servicecatalog"
 	"github.com/dash-ops/dash-ops/pkg/spa"
 )
 
@@ -48,6 +49,10 @@ func main() {
 	if dashConfig.Plugins.Has("AWS") {
 		// ToDo transform into isolated plugins
 		aws.MakeAWSInstanceHandlers(internal, fileConfig)
+	}
+	if dashConfig.Plugins.Has("ServiceCatalog") {
+		// ToDo transform into isolated plugins
+		servicecatalog.MakeServiceCatalogHandlers(internal, fileConfig)
 	}
 
 	spaHandler := spa.Handler{StaticPath: dashConfig.Front, IndexPath: "index.html"}

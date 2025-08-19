@@ -1,0 +1,20 @@
+{
+  "id": "550e8400-e29b-41d4-a716-446655440002",
+  "name": "payment-processing-api",
+  "displayName": "Payment Processing API",
+  "description": "API para processamento de pagamentos e transações financeiras",
+  "tier": "tier-1",
+  "team": "Payments Team",
+  "squad": "Core Payments",
+  "owner": "payments-team@company.com",
+  "tags": ["metrics", "alerts"],
+  "regions": ["us-east-1", "eu-west-1"],
+  "ingressType": "internal",
+  "status": "active",
+  "createdAt": "2024-01-10T08:15:00Z",
+  "updatedAt": "2024-01-22T16:30:00Z",
+  "metadata": {
+    "pci_compliant": "true",
+    "encryption": "AES-256"
+  }
+}

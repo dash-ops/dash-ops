@@ -1,0 +1,70 @@
+# Service Catalog Configuration Example
+# This file shows how to configure the Service Catalog plugin in dash-ops.yaml
+
+port: 8080
+origin: http://localhost:5173
+headers:
+  - 'Content-Type'
+  - 'Authorization'
+front: front/dist
+
+plugins:
+  - 'OAuth2'
+  - 'Kubernetes'
+  - 'AWS'
+  - 'ServiceCatalog'  # Enable Service Catalog plugin
+
+# OAuth2 configuration (required for permissions)
+oauth2:
+  - provider: github
+    clientId: YOUR_GITHUB_CLIENT_ID
+    clientSecret: YOUR_GITHUB_CLIENT_SECRET
+    authURL: 'https://github.com/login/oauth/authorize'
+    tokenURL: 'https://github.com/login/oauth/access_token'
+    redirectURL: 'http://localhost:8080/api/oauth/redirect'
+    urlLoginSuccess: 'http://localhost:5173'
+    orgPermission: 'your-org-name'
+    scopes:
+      - user
+      - repo
+      - read:org
+
+# Service Catalog plugin configuration
+serviceCatalog:
+  - name: "Service Catalog"
+    storage: "file"                    # Storage backend: file or database
+    catalogPath: "./catalog/services"  # Directory for service definitions
+    permission:
+      # Teams that can view services
+      read: 
+        - "your-org*dev-team"
+        - "your-org*platform-team"
+        - "your-org*sre-team"
+      # Teams that can create/update services
+      write: 
+        - "your-org*platform-team"
+        - "your-org*lead-developers"
+      # Teams with full admin access
+      admin: 
+        - "your-org*platform-team"
+
+# Optional: Kubernetes configuration for integration
+kubernetes:
+  - name: 'Kubernetes Production'
+    kubeconfig: ${HOME}/.kube/config
+    context: 'production-cluster'
+    permission:
+      deployments:
+        start: ["your-org*platform-team"]
+        stop: ["your-org*platform-team"]
+
+# Optional: AWS configuration for integration
+aws:
+  - name: 'AWS Production'
+    region: us-east-1
+    accessKeyId: YOUR_AWS_ACCESS_KEY
+    secretAccessKey: YOUR_AWS_SECRET_KEY
+    permission:
+      ec2:
+        start: ["your-org*platform-team"]
+        stop: ["your-org*platform-team"]

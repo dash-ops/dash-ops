@@ -1,0 +1,20 @@
+{
+  "id": "550e8400-e29b-41d4-a716-446655440004",
+  "name": "analytics-data-pipeline",
+  "displayName": "Analytics Data Pipeline",
+  "description": "Pipeline de dados para coleta e processamento de analytics",
+  "tier": "tier-3",
+  "team": "Data Team",
+  "squad": "Analytics Squad",
+  "owner": "data-team@company.com",
+  "tags": ["metrics"],
+  "regions": ["us-east-1", "eu-west-1"],
+  "ingressType": "internal",
+  "status": "active",
+  "createdAt": "2024-01-08T11:30:00Z",
+  "updatedAt": "2024-01-19T13:15:00Z",
+  "metadata": {
+    "data_retention": "90_days",
+    "processing_schedule": "hourly"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "id": "critical-api-001",
+  "name": "core-user-api",
+  "displayName": "Core User API",
+  "description": "Critical API that handles user authentication, profile management, and core user operations. This service is essential for all user-facing features.",
+  "tier": "tier-1",
+  "team": "Platform Team",
+  "squad": "Core Services",
+  "owner": "platform-team@company.com",
+  "tags": [
+    "authentication",
+    "api",
+    "microservice",
+    "critical",
+    "user-management"
+  ],
+  "regions": ["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"],
+  "ingressType": "external",
+  "status": "active",
+  "createdAt": "2024-01-01T00:00:00Z",
+  "updatedAt": "2024-01-25T10:30:00Z",
+  "metadata": {
+    "sla_uptime": "99.99%",
+    "max_response_time": "100ms",
+    "security_level": "high",
+    "compliance": ["SOC2", "GDPR", "CCPA"],
+    "monitoring": {
+      "health_check": "/health",
+      "metrics_endpoint": "/metrics",
+      "log_level": "info"
+    },
+    "scaling": {
+      "min_replicas": 3,
+      "max_replicas": 20,
+      "target_cpu": 70
+    }
+  }
+}

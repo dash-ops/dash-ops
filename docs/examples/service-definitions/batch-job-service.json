@@ -1,0 +1,41 @@
+{
+  "id": "batch-job-001",
+  "name": "daily-report-generator",
+  "displayName": "Daily Report Generator",
+  "description": "Batch job that generates daily business reports, analytics summaries, and sends them to stakeholders via email.",
+  "tier": "tier-3",
+  "team": "Data Team",
+  "squad": "Reporting Squad",
+  "owner": "data-team@company.com",
+  "tags": ["batch-job", "reporting", "analytics", "scheduled", "email"],
+  "regions": ["us-east-1"],
+  "ingressType": "internal",
+  "status": "active",
+  "createdAt": "2024-01-08T08:00:00Z",
+  "updatedAt": "2024-01-24T07:30:00Z",
+  "metadata": {
+    "sla_uptime": "95%",
+    "execution_time": "30min",
+    "schedule": "daily at 06:00 UTC",
+    "job_type": "batch",
+    "monitoring": {
+      "health_check": "/health",
+      "metrics_endpoint": "/metrics",
+      "log_level": "info"
+    },
+    "resources": {
+      "cpu": "2 cores",
+      "memory": "4GB",
+      "storage": "10GB"
+    },
+    "outputs": [
+      "daily_sales_report.pdf",
+      "user_activity_summary.csv",
+      "system_health_report.json"
+    ],
+    "notifications": [
+      "success: data-team@company.com",
+      "failure: platform-team@company.com"
+    ]
+  }
+}

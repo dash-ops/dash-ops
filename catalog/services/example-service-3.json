@@ -1,0 +1,20 @@
+{
+  "id": "550e8400-e29b-41d4-a716-446655440003",
+  "name": "notification-service",
+  "displayName": "Notification Service",
+  "description": "Serviço de notificações em tempo real via email, SMS e push",
+  "tier": "tier-2",
+  "team": "Communication Team",
+  "squad": "Messaging Squad",
+  "owner": "communication-team@company.com",
+  "tags": ["traces"],
+  "regions": ["us-east-1"],
+  "ingressType": "internal",
+  "status": "active",
+  "createdAt": "2024-01-12T14:20:00Z",
+  "updatedAt": "2024-01-18T09:45:00Z",
+  "metadata": {
+    "supported_channels": "email,sms,push",
+    "rate_limit": "1000/minute"
+  }
+}

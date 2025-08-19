@@ -2,6 +2,7 @@ package commons
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"regexp"
@@ -36,13 +37,19 @@ func RespondError(w http.ResponseWriter, code int, message string) {
 	RespondJSON(w, code, ResponseError{Error: message})
 }
 
+// DecodeJSON decodes JSON from request body
+func DecodeJSON(body io.ReadCloser, v interface{}) error {
+	defer body.Close()
+	return json.NewDecoder(body).Decode(v)
+}
+
 // HasPermission ...
 func HasPermission(featurePermissions []string, groupsPermission []string) bool {
 	isValid := false
 
 	for i := 0; i < len(featurePermissions); i++ {
 		for _, gP := range groupsPermission {
-			if strings.ToLower(featurePermissions[i]) == strings.ToLower(gP) {
+			if strings.EqualFold(featurePermissions[i], gP) {
 				isValid = true
 			}
 		}
