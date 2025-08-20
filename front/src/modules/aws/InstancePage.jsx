@@ -1,6 +1,9 @@
 import { useState, useEffect, useReducer, useCallback } from "react"
 import { useParams } from "react-router"
-import { Row, Col, Table, Button, Input, notification } from "antd"
+import { toast } from "sonner"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 // import { cancelToken } from "../../helpers/http" // Deprecated - using AbortController instead
 import { getInstances, startInstance, stopInstance } from "./instanceResource"
 import Refresh from "../../components/Refresh"
@@ -31,7 +34,7 @@ async function fetchData(dispatch, filter, config) {
       return;
     }
     console.error('Fetch error:', error);
-    notification.error({ message: "Ops... Failed to fetch API data" })
+    toast.error("Ops... Failed to fetch API data")
     dispatch({ type: SET_DATA, response: [] })
   }
 }
@@ -43,7 +46,7 @@ async function toStart(key, instance, setNewState) {
     setNewState(instance.instance_id, response.data.current_state)
   } catch {
     setNewState(instance.instance_id, "stopped")
-    notification.error({ message: "Failed to try to start Instance" })
+    toast.error("Failed to try to start Instance")
   }
 }
 
@@ -54,7 +57,7 @@ async function toStop(key, instance, setNewState) {
     setNewState(instance.instance_id, response.data.current_state)
   } catch {
     setNewState(instance.instance_id, "running")
-    notification.error({ message: "Failed to try to stop Instance" })
+    toast.error("Failed to try to stop Instance")
   }
 }
 
@@ -85,73 +88,84 @@ export default function InstancePage() {
     dispatch({ type: SET_DATA, response: newInstances })
   }
 
-  const columns = [
-    {
-      title: "Instance",
-      dataIndex: "name",
-      key: "name",
-      fixed: "left",
-      width: 300,
-      sorter: (a, b) => (a.name > b.name) * 2 - 1,
-      sortDirections: ["descend", "ascend"],
-    },
-    { title: "Instance Id", dataIndex: "instance_id", key: "instance_id" },
-    {
-      title: "State",
-      dataIndex: "state",
-      key: "state",
-      render: (state) => !state || <InstanceTag state={state} />,
-    },
-    {
-      title: "Action",
-      dataIndex: "",
-      key: "action",
-      fixed: "right",
-      width: 120,
-      render: (text, instance) => (
-        <InstanceActions
-          instance={instance}
-          toStart={() => toStart(key, instance, updateInstanceState)}
-          toStop={() => toStop(key, instance, updateInstanceState)}
-        />
-      ),
-    },
-  ]
+  const filteredData = instances.data.filter(
+    (instance) => search === "" || instance.name.includes(search)
+  )
 
   return (
-    <>
-      <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
-        <Col xs={18} md={6}>
-          <Input.Search
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="md:col-span-1">
+          <Input
+            placeholder="Search instances..."
             onChange={(e) => setSearch(e.target.value)}
-            onSearch={setSearch}
             value={search}
-            enterButton
           />
-        </Col>
-        <Col xs={6} md={6}>
-          <Button onClick={() => setSearch("")}>Clear</Button>
-        </Col>
-        <Col xs={0} md={{ span: 6, offset: 6 }} style={{ textAlign: "right" }}>
+        </div>
+        <div>
+          <Button 
+            variant="outline" 
+            onClick={() => setSearch("")}
+            className="w-full md:w-auto"
+          >
+            Clear
+          </Button>
+        </div>
+        <div className="hidden md:block" />
+        <div className="flex justify-end">
           <Refresh onReload={onReload} />
-        </Col>
-      </Row>
-      <Row>
-        <Col flex="auto" style={{ marginTop: 10 }}>
-          {instances.data.length > 0 && (
-            <Table
-              dataSource={instances.data.filter(
-                (instance) => search === "" || instance.name.includes(search),
+        </div>
+      </div>
+
+      {instances.data.length > 0 && (
+        <div className="border rounded-lg overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[300px]">Instance</TableHead>
+                <TableHead>Instance Id</TableHead>
+                <TableHead>State</TableHead>
+                <TableHead className="w-[120px] text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {instances.loading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+                      <span className="ml-2">Loading...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : filteredData.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8">
+                    <span className="text-muted-foreground">No instances found</span>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredData.map((instance) => (
+                  <TableRow key={instance.instance_id}>
+                    <TableCell className="font-medium">{instance.name}</TableCell>
+                    <TableCell className="text-sm font-mono">{instance.instance_id}</TableCell>
+                    <TableCell>
+                      {instance.state && <InstanceTag state={instance.state} />}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <InstanceActions
+                        instance={instance}
+                        toStart={() => toStart(key, instance, updateInstanceState)}
+                        toStop={() => toStop(key, instance, updateInstanceState)}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
-              columns={columns}
-              rowKey="instance_id"
-              loading={instances.loading}
-              size="small"
-              scroll={{ x: 600 }}
-            />
-          )}
-        </Col>
-      </Row>
-    </>
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
   )
 }

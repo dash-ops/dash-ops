@@ -1,15 +1,13 @@
 import PropTypes from "prop-types"
-import { Button, Tooltip, notification } from "antd"
-import { DesktopOutlined, PlayCircleOutlined, PauseCircleOutlined } from "@ant-design/icons"
+import { toast } from "sonner"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Monitor, Play, Square } from "lucide-react"
 
 function ssh(instance) {
   if (instance.platform === "windows") {
-    notification.error({
-      message: `Sorry... I'm afraid I can't do that...`,
-      description: `
-        Windows does not provides a method to connect a Remote Desktop via URL.
-        You can try to connect via command line using on Windows: mstsc /v:${instance.name}
-      `,
+    toast.error(`Sorry... I'm afraid I can't do that...`, {
+      description: `Windows does not provides a method to connect a Remote Desktop via URL. You can try to connect via command line using on Windows: mstsc /v:${instance.name}`,
     })
     return
   }
@@ -20,45 +18,64 @@ function InstanceActions({ instance, toStart, toStop }) {
   const showPlayButton = instance.state !== "running"
 
   return (
-    <Button.Group>
-      <Tooltip title="SSH access">
-        <Button
-          type="primary"
-          ghost
-          size="small"
-          icon={<DesktopOutlined />}
-          onClick={() => ssh(instance)}
-        />
-      </Tooltip>
-      {showPlayButton && (
-        <Tooltip title="Start instance" placement="topRight">
-          <Button
-            type="primary"
-            ghost
-            size="small"
-            icon={<PlayCircleOutlined />}
-            disabled={instance.state !== "stopped"}
-            onClick={toStart}
-          >
-            Start
-          </Button>
+    <TooltipProvider>
+      <div className="flex gap-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => ssh(instance)}
+            >
+              <Monitor className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>SSH access</p>
+          </TooltipContent>
         </Tooltip>
-      )}
-      {!showPlayButton && (
-        <Tooltip title="Stop instance" placement="topRight">
-          <Button
-            type="danger"
-            ghost
-            size="small"
-            icon={<PauseCircleOutlined />}
-            disabled={showPlayButton}
-            onClick={toStop}
-          >
-            Stop
-          </Button>
-        </Tooltip>
-      )}
-    </Button.Group>
+        
+        {showPlayButton && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={instance.state !== "stopped"}
+                onClick={toStart}
+                className="gap-1"
+              >
+                <Play className="h-4 w-4" />
+                Start
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Start instance</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+        
+        {!showPlayButton && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={showPlayButton}
+                onClick={toStop}
+                className="gap-1"
+              >
+                <Square className="h-4 w-4" />
+                Stop
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Stop instance</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+    </TooltipProvider>
   )
 }
 

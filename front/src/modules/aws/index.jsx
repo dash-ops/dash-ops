@@ -1,4 +1,4 @@
-import { CloudOutlined } from "@ant-design/icons"
+import { Cloud } from "lucide-react"
 import InstancePage from "./InstancePage"
 import { getAccounts } from "./accountResource"
 import ContentWithMenu from "../../components/ContentWithMenu"
@@ -7,7 +7,7 @@ const AwsModule = async () => {
   const { data } = await getAccounts()
   const menus = data.map(({ name, key }) => ({
     label: name,
-    icon: <CloudOutlined />,
+    icon: <Cloud className="h-4 w-4" />,
     key: `aws-${key}`,
     link: `/aws/${key}`,
   }))
