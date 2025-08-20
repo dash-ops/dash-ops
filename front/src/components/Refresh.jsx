@@ -1,7 +1,8 @@
 import { useState } from "react"
 import PropTypes from "prop-types"
-import { Button, Checkbox } from "antd"
-import { ReloadOutlined } from "@ant-design/icons"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import { RefreshCw } from "lucide-react"
 import { setItem, getItem } from "../helpers/localStorage"
 import useInterval from "../helpers/useInterval"
 
@@ -16,18 +17,30 @@ function Refresh({ onReload }) {
     isAutoRefresh ? 10000 : null,
   )
 
-  const onAutoRefresh = (e) => {
-    setIsAutoRefresh(e.target.checked)
-    setItem("auto-refresh", e.target.checked)
+  const onAutoRefresh = (checked) => {
+    setIsAutoRefresh(checked)
+    setItem("auto-refresh", checked)
   }
 
   return (
-    <>
-      <Checkbox checked={isAutoRefresh} onChange={onAutoRefresh}>
-        Auto Refresh 10s
-      </Checkbox>
-      <Button icon={<ReloadOutlined />} onClick={onReload} />
-    </>
+    <div className="flex items-center gap-2">
+      <div className="flex items-center space-x-2">
+        <Checkbox 
+          id="auto-refresh"
+          checked={isAutoRefresh} 
+          onCheckedChange={onAutoRefresh}
+        />
+        <label 
+          htmlFor="auto-refresh" 
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
+          Auto Refresh 10s
+        </label>
+      </div>
+      <Button variant="outline" size="sm" onClick={onReload}>
+        <RefreshCw className="h-4 w-4" />
+      </Button>
+    </div>
   )
 }
 

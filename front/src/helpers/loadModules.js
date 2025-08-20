@@ -1,4 +1,4 @@
-import { notification } from 'antd';
+import { toast } from 'sonner';
 import { getPlugins } from '../modules/config/configResource';
 
 export function loadModulesConfig() {
@@ -16,7 +16,7 @@ export function loadModulesConfig() {
                 .default()
                 .then((config) => config)
                 .catch((e) => {
-                  notification.error(
+                  toast.error(
                     `Failed to load plugin ${plugin}: ${
                       e.data?.error || e.message
                     }`

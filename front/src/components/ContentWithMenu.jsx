@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react"
 import PropTypes from "prop-types"
 import { Routes, Route, useParams, useLocation, useNavigate } from "react-router"
-import { Row, Col, Menu } from "antd"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 function ContentWithMenu({ pages, paramName = "context" }) {
   const params = useParams()
@@ -16,29 +17,37 @@ function ContentWithMenu({ pages, paramName = "context" }) {
     setCurrent(location.pathname)
   }, [location.pathname])
 
-  const onClick = (e) => {
-    navigate(e.key)
+  const onClick = (path) => {
+    navigate(path)
   }
 
   const menuItems = pages
     .filter((page) => page.menu)
     .map((page) => ({
-      key: page.path.replace(`:${paramName}`, paramValue),
-      label: page.name,
+      path: page.path.replace(`:${paramName}`, paramValue),
+      name: page.name,
     }))
 
   return (
-    <Row gutter={16}>
-      <Col xs={24} md={5} lg={4} xl={3}>
-        <Menu
-          onClick={onClick}
-          selectedKeys={[current]}
-          mode="inline"
-          theme="light"
-          items={menuItems}
-        />
-      </Col>
-      <Col xs={24} md={19} lg={20} xl={21}>
+    <div className="grid grid-cols-1 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-4 px-2 py-4">
+      <div className="md:col-span-1 xl:col-span-1">
+        <nav className="space-y-1">
+          {menuItems.map((item) => (
+            <Button
+              key={item.path}
+              variant={current === item.path ? "default" : "ghost"}
+              className={cn(
+                "w-full justify-start",
+                current === item.path && "bg-primary text-primary-foreground"
+              )}
+              onClick={() => onClick(item.path)}
+            >
+              {item.name}
+            </Button>
+          ))}
+        </nav>
+      </div>
+      <div className="md:col-span-4 lg:col-span-5 xl:col-span-6">
         <Routes>
           {pages.map((page) => {
             const path = page.path.replace(`:${paramName}`, paramValue)
@@ -52,8 +61,8 @@ function ContentWithMenu({ pages, paramName = "context" }) {
             )
           })}
         </Routes>
-      </Col>
-    </Row>
+      </div>
+    </div>
   )
 }
 

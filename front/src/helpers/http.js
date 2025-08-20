@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { notification } from 'antd';
+import { toast } from 'sonner';
 import { getConfigBearerToken, cleanToken } from './oauth';
 
 const http = axios.create({
@@ -21,10 +21,7 @@ http.interceptors.response.use(
       return Promise.reject(new Error('Request canceled'));
     }
     if (error.response && error.response.status === 401) {
-      notification.error({
-        message: 'Unauthorized request',
-        description: error.response.data.error,
-      });
+      toast.error(`Unauthorized request: ${error.response.data.error}`);
       cleanToken();
       return Promise.reject(error);
     }
