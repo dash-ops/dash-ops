@@ -1,6 +1,7 @@
 import { useLocation } from "react-router"
-import { Row, Col, Card, Button } from "antd"
-import { GithubFilled } from "@ant-design/icons"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Github } from "lucide-react"
 
 function LoginPage() {
   const location = useLocation()
@@ -8,17 +9,29 @@ function LoginPage() {
   const urlLoginGithub = `${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/oauth?redirect_url=${from}`
 
   return (
-    <Row gutter={16}>
-      <Col span={8} />
-      <Col span={8}>
-        <Card title="Dash-OPS - Beta" bordered={false} style={{ top: 40 }}>
-          <Button type="primary" block icon={<GithubFilled />} size="large" href={urlLoginGithub}>
-            Login
-          </Button>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-md">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-center text-2xl font-bold">
+              DashOPS - Beta
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              className="w-full gap-2" 
+              size="lg" 
+              asChild
+            >
+              <a href={urlLoginGithub}>
+                <Github className="h-5 w-5" />
+                Login with GitHub
+              </a>
+            </Button>
+          </CardContent>
         </Card>
-      </Col>
-      <Col span={8} />
-    </Row>
+      </div>
+    </div>
   )
 }
 

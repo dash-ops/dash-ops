@@ -1,11 +1,11 @@
-import { DashboardOutlined } from "@ant-design/icons"
+import { LayoutDashboard } from "lucide-react"
 import DashboardPage from "./DashboardPage"
 
 export default {
   menus: [
     {
       label: "Dashboard",
-      icon: <DashboardOutlined />,
+      icon: <LayoutDashboard className="h-4 w-4" />,
       key: "dashboard",
       link: "/",
     },
