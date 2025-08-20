@@ -1,6 +1,12 @@
 import { useState, useEffect, useReducer, useCallback } from "react"
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router"
-import { Row, Col, Table, Button, Tooltip, Input, notification, Form, Tag, Select } from "antd"
+import { toast } from "sonner"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 // import { cancelToken } from "../../helpers/http" // Deprecated - using AbortController instead
 import { getNamespaces } from "./namespaceResource"
 import { getPods } from "./podsResource"
@@ -30,7 +36,7 @@ async function fetchData(dispatch, filter, config) {
       return;
     }
     console.error('Fetch error:', e);
-    notification.error({ message: "Ops... Failed to fetch API data" })
+    toast.error("Ops... Failed to fetch API data")
     dispatch({ type: SET_DATA, response: [] })
   }
 }
@@ -90,111 +96,136 @@ export default function PodPage() {
     navigate(`${location.pathname}?name=${search}&namespace=${newNamespace}`)
   }
 
-  const columns = [
-    {
-      title: "Name",
-      dataIndex: "name",
-      key: "name",
-      width: 400,
-      sorter: (a, b) => (a.name > b.name) * 2 - 1,
-      sortDirections: ["descend", "ascend"],
-    },
-    {
-      title: "Status",
-      dataIndex: "condition_status",
-      key: "condition_status",
-      render: (content) => {
-        switch (content.status) {
-          case "Running":
-            return <Tag color="green">{content.status}</Tag>
-          case "Succeeded":
-            return <Tag color="blue">{content.status}</Tag>
-          case "Pending":
-            return <Tag color="yellow">{content.status}</Tag>
-          default:
-            return <Tag>{content.status}</Tag>
-        }
-      },
-    },
-    {
-      title: "Restart",
-      dataIndex: "restart_count",
-      key: "restart_count",
-    },
-    {
-      title: "Action",
-      dataIndex: "",
-      key: "action",
-      width: 140,
-      render: (text, pod) => (
-        <Button.Group>
-          <Tooltip title="Containers Log">
-            <Link to={`/k8s/${context}/pod/logs?name=${pod.name}&namespace=${namespace}`}>
-              <Button type="primary" ghost size="small">
-                Logs
-              </Button>
-            </Link>
-          </Tooltip>
-          <Tooltip title={`Details ${pod.node_name}`}>
-            <Link to={`/k8s/${context}?node=${pod.node_name}`}>
-              <Button type="primary" ghost size="small">
-                Node
-              </Button>
-            </Link>
-          </Tooltip>
-        </Button.Group>
-      ),
-    },
-  ]
+  const filteredData = pods.data.filter((p) => search === "" || p.name.includes(search))
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "Running":
+        return "default"
+      case "Succeeded":
+        return "secondary"
+      case "Pending":
+        return "outline"
+      default:
+        return "destructive"
+    }
+  }
 
   return (
-    <>
-      <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
-        <Col xs={18} md={5} lg={6}>
-          <Input.Search
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div className="md:col-span-3">
+          <Input
+            placeholder="Search pods..."
             onChange={(e) => searchHandler(e.target.value)}
-            onSearch={searchHandler}
             value={search}
-            enterButton
           />
-        </Col>
-        <Col xs={6} md={3} xl={2}>
-          <Button onClick={() => searchHandler("")}>Clear</Button>
-        </Col>
-        <Col xs={24} md={8} xl={7}>
-          <Form.Item label="Namespace">
-            <Select
-              defaultValue="default"
-              value={namespace}
-              onChange={handleNamespaceChange}
-              style={{ width: "100%" }}
-            >
-              {namespaces.map((ns) => (
-                <Select.Option key={ns.name} value={ns.name}>
-                  {ns.name}
-                </Select.Option>
-              ))}
+        </div>
+        <div className="md:col-span-1">
+          <Button 
+            variant="outline" 
+            onClick={() => searchHandler("")}
+            className="w-full"
+          >
+            Clear
+          </Button>
+        </div>
+        <div className="md:col-span-3">
+          <div className="space-y-1">
+            <Select value={namespace} onValueChange={handleNamespaceChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select namespace" />
+              </SelectTrigger>
+              <SelectContent>
+                {namespaces.map((ns) => (
+                  <SelectItem key={ns.name} value={ns.name}>
+                    {ns.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
-          </Form.Item>
-        </Col>
-        <Col xs={0} md={8} lg={7} xl={{ span: 6, offset: 3 }} style={{ textAlign: "right" }}>
+          </div>
+        </div>
+        <div className="hidden md:block md:col-span-2" />
+        <div className="md:col-span-3 flex justify-end">
           <Refresh onReload={onReload} />
-        </Col>
-      </Row>
-      <Row>
-        <Col flex="auto" style={{ marginTop: 10 }}>
-          {pods.data.length > 0 && (
-            <Table
-              dataSource={pods.data.filter((p) => search === "" || p.name.includes(search))}
-              columns={columns}
-              rowKey="name"
-              loading={pods.loading}
-              size="small"
-              scroll={{ x: 600 }}
-            />
-          )}
-        </Col>
-      </Row>
-    </>
+        </div>
+      </div>
+
+      {pods.data.length > 0 && (
+        <div className="border rounded-lg overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[400px]">Name</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Restart</TableHead>
+                <TableHead className="w-[140px] text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {pods.loading ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+                      <span className="ml-2">Loading...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : filteredData.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-8">
+                    <span className="text-muted-foreground">No pods found</span>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredData.map((pod) => (
+                  <TableRow key={pod.name}>
+                    <TableCell className="font-medium">{pod.name}</TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusColor(pod.condition_status.status)}>
+                        {pod.condition_status.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{pod.restart_count}</TableCell>
+                    <TableCell className="text-right">
+                      <TooltipProvider>
+                        <div className="flex gap-1 justify-end">
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="outline" size="sm" asChild>
+                                <Link to={`/k8s/${context}/pod/logs?name=${pod.name}&namespace=${namespace}`}>
+                                  Logs
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Containers Log</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="outline" size="sm" asChild>
+                                <Link to={`/k8s/${context}?node=${pod.node_name}`}>
+                                  Node
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Details {pod.node_name}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      </TooltipProvider>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
   )
 }

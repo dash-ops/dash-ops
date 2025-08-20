@@ -1,4 +1,4 @@
-import { DeploymentUnitOutlined } from "@ant-design/icons"
+import { Container } from "lucide-react"
 import ClusterPage from "./ClusterPage"
 import DeploymentPage from "./DeploymentPage"
 import PodPage from "./PodPage"
@@ -10,7 +10,7 @@ const KubernetesModule = async () => {
   const { data } = await getClusters()
   const menus = data.map(({ name, context }) => ({
     label: name,
-    icon: <DeploymentUnitOutlined />,
+    icon: <Container className="h-4 w-4" />,
     key: `k8s-${context}`,
     link: `/k8s/${context}`,
   }))

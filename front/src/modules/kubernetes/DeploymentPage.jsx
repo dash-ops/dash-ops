@@ -1,7 +1,11 @@
 import { useState, useEffect, useReducer, useCallback } from "react"
 import { useParams } from "react-router"
-import { Row, Col, Table, Button, Input, notification, Form, Tag, Select } from "antd"
-// import { cancelToken } from "../../helpers/http" // Deprecated - using AbortController instead
+import { toast } from "sonner"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getNamespaces } from "./namespaceResource"
 import { getDeployments, upDeployment, downDeployment } from "./deploymentResource"
 import Refresh from "../../components/Refresh"
@@ -31,7 +35,7 @@ async function fetchData(dispatch, filter, config) {
       return;
     }
     console.error('Fetch error:', e);
-    notification.error({ message: "Ops... Failed to fetch API data" })
+    toast.error("Ops... Failed to fetch API data")
     dispatch({ type: SET_DATA, response: [] })
   }
 }
@@ -42,7 +46,7 @@ async function toUp(context, deployment, setNewPodCount) {
     await upDeployment(context, deployment.name, deployment.namespace)
   } catch (e) {
     setNewPodCount(deployment.name, 0)
-    notification.error({ message: `Failed to try to up deployment`, description: e.data.error })
+    toast.error(`Failed to try to up deployment: ${e.data.error}`)
   }
 }
 
@@ -52,7 +56,7 @@ async function toDown(context, deployment, setNewPodCount) {
     await downDeployment(context, deployment.name, deployment.namespace)
   } catch (e) {
     setNewPodCount(deployment.name, 1)
-    notification.error({ message: `Failed to try to down deployment`, description: e.data.error })
+    toast.error(`Failed to try to down deployment: ${e.data.error}`)
   }
 }
 
@@ -108,95 +112,103 @@ export default function DeploymentPage() {
     dispatch({ type: SET_DATA, response: newDeployments })
   }
 
-  const columns = [
-    {
-      title: "Name",
-      dataIndex: "name",
-      key: "name",
-      width: 300,
-      sorter: (a, b) => (a.name > b.name) * 2 - 1,
-      sortDirections: ["descend", "ascend"],
-    },
-    {
-      title: "Pods Info",
-      dataIndex: "pod_info",
-      key: "pod_info",
-      sorter: (a, b) => (a.pod_info.current > b.pod_info.current) * 2 - 1,
-      render: (content) => {
-        const color = content.current > 0 ? "green" : "red"
-        return (
-          <Tag color={color}>
-            {content.current}/{content.desired}
-          </Tag>
-        )
-      },
-    },
-    {
-      title: "Action",
-      dataIndex: "",
-      key: "action",
-      width: 140,
-      render: (text, deployment) => (
-        <DeploymentActions
-          context={context}
-          deployment={deployment}
-          toUp={() => toUp(context, deployment, updatePodCount)}
-          toDown={() => toDown(context, deployment, updatePodCount)}
-        />
-      ),
-    },
-  ]
+  const filteredData = deployments.data.filter(
+    (deployment) => search === "" || deployment.name.includes(search)
+  )
 
   return (
-    <>
-      <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
-        <Col xs={18} md={5} lg={6}>
-          <Input.Search
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div className="md:col-span-3">
+          <Input
+            placeholder="Search deployments..."
             onChange={(e) => setSearch(e.target.value)}
-            onSearch={setSearch}
             value={search}
-            enterButton
           />
-        </Col>
-        <Col xs={6} md={3} xl={2}>
-          <Button onClick={() => setSearch("")}>Clear</Button>
-        </Col>
-        <Col xs={24} md={8} xl={7}>
-          <Form.Item label="Namespace">
-            <Select
-              defaultValue="default"
-              value={namespace}
-              onChange={handleNamespaceChange}
-              style={{ width: "100%" }}
-            >
-              {namespaces.map((ns) => (
-                <Select.Option key={ns.name} value={ns.name}>
-                  {ns.name}
-                </Select.Option>
-              ))}
+        </div>
+        <div className="md:col-span-1">
+          <Button 
+            variant="outline" 
+            onClick={() => setSearch("")}
+            className="w-full"
+          >
+            Clear
+          </Button>
+        </div>
+        <div className="md:col-span-3">
+          <div className="space-y-1">
+            <Select value={namespace} onValueChange={handleNamespaceChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select namespace" />
+              </SelectTrigger>
+              <SelectContent>
+                {namespaces.map((ns) => (
+                  <SelectItem key={ns.name} value={ns.name}>
+                    {ns.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
-          </Form.Item>
-        </Col>
-        <Col xs={0} md={8} lg={7} xl={{ span: 6, offset: 3 }} style={{ textAlign: "right" }}>
+          </div>
+        </div>
+        <div className="hidden md:block md:col-span-2" />
+        <div className="md:col-span-3 flex justify-end">
           <Refresh onReload={onReload} />
-        </Col>
-      </Row>
-      <Row>
-        <Col flex="auto" style={{ marginTop: 10 }}>
-          {deployments.data.length > 0 && (
-            <Table
-              dataSource={deployments.data.filter(
-                (deployment) => search === "" || deployment.name.includes(search),
+        </div>
+      </div>
+
+      {deployments.data.length > 0 && (
+        <div className="border rounded-lg overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[300px]">Name</TableHead>
+                <TableHead>Pods Info</TableHead>
+                <TableHead className="w-[140px] text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {deployments.loading ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center py-8">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+                      <span className="ml-2">Loading...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : filteredData.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={3} className="text-center py-8">
+                    <span className="text-muted-foreground">No deployments found</span>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredData.map((deployment) => (
+                  <TableRow key={deployment.name}>
+                    <TableCell className="font-medium">{deployment.name}</TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={deployment.pod_info.current > 0 ? "default" : "destructive"}
+                      >
+                        {deployment.pod_info.current}/{deployment.pod_info.desired}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DeploymentActions
+                        context={context}
+                        deployment={deployment}
+                        toUp={() => toUp(context, deployment, updatePodCount)}
+                        toDown={() => toDown(context, deployment, updatePodCount)}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
-              columns={columns}
-              rowKey="name"
-              loading={deployments.loading}
-              size="small"
-              scroll={{ x: 600 }}
-            />
-          )}
-        </Col>
-      </Row>
-    </>
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </div>
   )
 }

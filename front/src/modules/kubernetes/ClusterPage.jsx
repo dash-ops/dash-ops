@@ -1,7 +1,10 @@
 
 import { useState, useEffect, useReducer, useCallback } from "react"
 import { useParams, useSearchParams } from "react-router"
-import { Row, Col, Table, Tag, notification, Input } from "antd"
+import { toast } from "sonner"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import { getNodes } from "./nodesResource"
 import Refresh from "../../components/Refresh"
 import ProgressData from "./ProgressData"
@@ -37,7 +40,7 @@ export default function ClusterPage() {
         return;
       }
       console.error('Fetch error:', e);
-      notification.error({ message: "Ops... Failed to fetch API data" })
+      toast.error("Ops... Failed to fetch API data")
       dispatch({ type: SET_DATA, response: [] })
     }
   }, [context])
@@ -56,86 +59,85 @@ export default function ClusterPage() {
     fetchData()
   }, [fetchData])
 
-  const columns = [
-    {
-      title: "Node",
-      dataIndex: "name",
-      key: "name",
-      width: 300,
-      sorter: (a, b) => (a.name > b.name) * 2 - 1,
-      sortDirections: ["descend", "ascend"],
-    },
-    {
-      title: "Ready",
-      dataIndex: "ready",
-      key: "ready",
-      render: (content) => {
-        const color = content === "True" ? "green" : "red"
-        return <Tag color={color}>{content}</Tag>
-      },
-    },
-    {
-      title: "CPU requests",
-      dataIndex: "allocated_resources",
-      key: "allocated_resources",
-      render: ({ cpu_requests_fraction }) => <ProgressData percent={cpu_requests_fraction} />,
-    },
-    {
-      title: "CPU limits",
-      dataIndex: "allocated_resources",
-      key: "allocated_resources",
-      render: ({ cpu_limits_fraction }) => <ProgressData percent={cpu_limits_fraction} />,
-    },
-    {
-      title: "Memory requests",
-      dataIndex: "allocated_resources",
-      key: "allocated_resources",
-      render: ({ memory_requests_fraction }) => <ProgressData percent={memory_requests_fraction} />,
-    },
-    {
-      title: "Memory limit",
-      dataIndex: "allocated_resources",
-      key: "allocated_resources",
-      render: ({ memory_limits_fraction }) => <ProgressData percent={memory_limits_fraction} />,
-    },
-    {
-      title: "Pods Allocate/Capacity",
-      dataIndex: "allocated_resources",
-      key: "allocated_resources",
-      render: ({ allocated_pods, pod_capacity }) => (
-        <div style={{ textAlign: "center" }}>
-          {allocated_pods}/{pod_capacity}
-        </div>
-      ),
-    },
-  ]
+  const filteredData = nodes.data.filter((node) =>
+    node.name.toLowerCase().includes(search.toLowerCase())
+  )
 
   return (
-    <>
-      <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
-        <Col xs={24} md={8} xl={7}>
-          <Input.Search
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-1">
+          <Input
             placeholder="Search by node name"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-        </Col>
-        <Col xs={0} md={8} lg={7} xl={{ span: 6, offset: 3 }} style={{ textAlign: "right" }}>
+        </div>
+        <div className="hidden md:block" />
+        <div className="flex justify-end">
           <Refresh onReload={onReload} />
-        </Col>
-      </Row>
-      <Row>
-        <Col flex="auto" style={{ marginTop: 10 }}>
-          <Table
-            dataSource={nodes.data.filter((node) =>
-              node.name.toLowerCase().includes(search.toLowerCase())
+        </div>
+      </div>
+      
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[300px]">Node</TableHead>
+              <TableHead>Ready</TableHead>
+              <TableHead>CPU requests</TableHead>
+              <TableHead>CPU limits</TableHead>
+              <TableHead>Memory requests</TableHead>
+              <TableHead>Memory limit</TableHead>
+              <TableHead className="text-center">Pods Allocate/Capacity</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {nodes.loading ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8">
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+                    <span className="ml-2">Loading...</span>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : filteredData.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8">
+                  <span className="text-muted-foreground">No nodes found</span>
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredData.map((node) => (
+                <TableRow key={node.name}>
+                  <TableCell className="font-medium">{node.name}</TableCell>
+                  <TableCell>
+                    <Badge variant={node.ready === "True" ? "default" : "destructive"}>
+                      {node.ready}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <ProgressData percent={node.allocated_resources?.cpu_requests_fraction} />
+                  </TableCell>
+                  <TableCell>
+                    <ProgressData percent={node.allocated_resources?.cpu_limits_fraction} />
+                  </TableCell>
+                  <TableCell>
+                    <ProgressData percent={node.allocated_resources?.memory_requests_fraction} />
+                  </TableCell>
+                  <TableCell>
+                    <ProgressData percent={node.allocated_resources?.memory_limits_fraction} />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {node.allocated_resources?.allocated_pods}/{node.allocated_resources?.pod_capacity}
+                  </TableCell>
+                </TableRow>
+              ))
             )}
-            columns={columns}
-            rowKey="name"
-            loading={nodes.loading}
-          />
-        </Col>
-      </Row>
-    </>
+          </TableBody>
+        </Table>
+      </div>
+    </div>
   )
 }

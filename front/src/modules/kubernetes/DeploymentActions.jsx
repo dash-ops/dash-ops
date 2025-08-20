@@ -1,49 +1,69 @@
 import PropTypes from "prop-types"
 import { NavLink } from "react-router"
-import { Button, Tooltip } from "antd"
-import { PlayCircleOutlined, PauseCircleOutlined } from "@ant-design/icons"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Play, Pause } from "lucide-react"
 
 function DeploymentActions({ context, deployment, toUp, toDown }) {
   const showUpButton = deployment.pod_info.current === 0
 
   return (
-    <Button.Group>
-      <Tooltip title={showUpButton ? "No Pods" : "Pods"}>
-        <NavLink to={`/k8s/${context}/pods?name=${deployment.name}&namespace=${deployment.namespace}`}>
-          <Button type="primary" ghost size="small" disabled={showUpButton}>
-            Pods
-          </Button>
-        </NavLink>
-      </Tooltip>
-      {showUpButton && (
-        <Tooltip title="Up deployment" placement="topRight">
-          <Button
-            type="primary"
-            ghost
-            size="small"
-            icon={<PlayCircleOutlined />}
-            disabled={deployment.pod_count > 0}
-            onClick={toUp}
-          >
-            Up
-          </Button>
+    <TooltipProvider>
+      <div className="flex gap-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" size="sm" disabled={showUpButton} asChild>
+              <NavLink to={`/k8s/${context}/pods?name=${deployment.name}&namespace=${deployment.namespace}`}>
+                Pods
+              </NavLink>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{showUpButton ? "No Pods" : "Pods"}</p>
+          </TooltipContent>
         </Tooltip>
-      )}
-      {!showUpButton && (
-        <Tooltip title="Down deployment" placement="topRight">
-          <Button
-            type="danger"
-            ghost
-            size="small"
-            icon={<PauseCircleOutlined />}
-            disabled={deployment.pod_count === 0}
-            onClick={toDown}
-          >
-            Down
-          </Button>
-        </Tooltip>
-      )}
-    </Button.Group>
+        
+        {showUpButton && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={deployment.pod_count > 0}
+                onClick={toUp}
+                className="gap-2"
+              >
+                <Play className="h-4 w-4" />
+                Up
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Up deployment</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+        
+        {!showUpButton && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={deployment.pod_count === 0}
+                onClick={toDown}
+                className="gap-2"
+              >
+                <Pause className="h-4 w-4" />
+                Down
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Down deployment</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+    </TooltipProvider>
   )
 }
 

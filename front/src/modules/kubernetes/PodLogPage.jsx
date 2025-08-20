@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useReducer } from "react"
 import { useParams, useNavigate, useSearchParams } from "react-router"
-import { Row, Col, Collapse, Button, notification } from "antd"
-import { CaretLeftOutlined } from "@ant-design/icons"
+import { toast } from "sonner"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Button } from "@/components/ui/button"
+import { ChevronLeft } from "lucide-react"
 import { cancelToken } from "../../helpers/http"
 import { getPodLogs } from "./podsResource"
 import Refresh from "../../components/Refresh"
@@ -26,7 +28,7 @@ async function fetchData(dispatch, filter, config) {
     const result = await getPodLogs(filter, config)
     dispatch({ type: SET_DATA, response: result.data })
   } catch {
-    notification.error({ message: "Ops... Failed to fetch API data" })
+    toast.error("Ops... Failed to fetch API data")
     dispatch({ type: SET_DATA, response: [] })
   }
 }
@@ -53,34 +55,45 @@ export default function PodLogPage() {
   }, [context, name, namespace])
 
   return (
-    <>
-      <Row gutter={{ xs: 8, sm: 16, md: 24, lg: 32 }}>
-        <Col xs={18} md={5} lg={6}>
-          <Button type="primary" icon={<CaretLeftOutlined />} onClick={navigate(-1)}>
-            Go Back
-          </Button>
-        </Col>
-        <Col xs={6} md={3} xl={2} />
-        <Col xs={24} md={8} xl={7} />
-        <Col xs={0} md={8} lg={7} xl={{ span: 6, offset: 3 }} style={{ textAlign: "right" }}>
-          <Refresh onReload={onReload} />
-        </Col>
-      </Row>
-      <Row>
-        <Col flex="auto" style={{ marginTop: 10 }}>
-          {logs.data.length > 0 && (
-            <Collapse defaultActiveKey={["0"]}>
-              {logs.data.map((l) => (
-                <Collapse.Panel header={`Container: ${l.name}`} key={l.name}>
-                  <pre>
-                    <code>{l.log}</code>
-                  </pre>
-                </Collapse.Panel>
-              ))}
-            </Collapse>
-          )}
-        </Col>
-      </Row>
-    </>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <Button onClick={() => navigate(-1)} className="gap-2">
+          <ChevronLeft className="h-4 w-4" />
+          Go Back
+        </Button>
+        <Refresh onReload={onReload} />
+      </div>
+
+      {logs.data.length > 0 && (
+        <div className="space-y-4">
+          {logs.data.map((l, index) => (
+            <Collapsible key={l.name} defaultOpen={index === 0}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <span className="font-medium">Container: {l.name}</span>
+                <ChevronLeft className="h-4 w-4 transition-transform data-[state=open]:rotate-90" />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="px-4 pb-4">
+                <pre className="bg-gray-900 text-green-400 p-4 rounded-md text-sm overflow-auto max-h-96">
+                  <code>{l.log}</code>
+                </pre>
+              </CollapsibleContent>
+            </Collapsible>
+          ))}
+        </div>
+      )}
+
+      {logs.loading && (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+          <span className="ml-2">Loading logs...</span>
+        </div>
+      )}
+
+      {!logs.loading && logs.data.length === 0 && (
+        <div className="text-center py-8">
+          <span className="text-muted-foreground">No logs found</span>
+        </div>
+      )}
+    </div>
   )
 }

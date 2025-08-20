@@ -1,18 +1,14 @@
 import PropTypes from "prop-types"
-import { Progress } from "antd"
+import { Progress } from "@/components/ui/progress"
 
 function ProgressData({ percent }) {
   return (
-    <div style={{ maxWidth: 170 }}>
-      <Progress
-        percent={percent.toFixed(1)}
-        size="small"
-        strokeColor={{
-          "0%": "#ffad20",
-          "100%": "#ff4d4f",
-        }}
-        status="active"
+    <div className="w-full max-w-[170px]">
+      <Progress 
+        value={percent} 
+        className="h-2"
       />
+      <span className="text-xs text-muted-foreground">{percent?.toFixed(1)}%</span>
     </div>
   )
 }
