@@ -1,0 +1,58 @@
+import { Container } from 'lucide-react';
+import ClusterPage from './ClusterPage';
+import DeploymentPage from './DeploymentPage';
+import PodPage from './PodPage';
+import PodLogPage from './PodLogPage';
+import ContentWithMenu from '../../components/ContentWithMenu';
+import { getClusters } from './clusterResource';
+import { Menu, Page, ModuleConfig } from '@/types';
+
+const KubernetesModule = async (): Promise<ModuleConfig> => {
+  const { data } = await getClusters();
+  const menus: Menu[] = data.map(({ name, context }) => ({
+    label: name,
+    icon: <Container className="h-4 w-4" />,
+    key: `k8s-${context}`,
+    link: `/k8s/${context}`,
+  }));
+
+  const pages: Page[] = [
+    {
+      name: 'Cluster',
+      path: '/k8s/:context',
+      menu: true,
+      element: <ClusterPage />,
+    },
+    {
+      name: 'Deployments',
+      path: '/k8s/:context/deployments',
+      menu: true,
+      element: <DeploymentPage />,
+    },
+    {
+      name: 'Pods',
+      path: '/k8s/:context/pods',
+      menu: true,
+      element: <PodPage />,
+    },
+    {
+      name: 'PodLogs',
+      path: '/k8s/:context/pod/logs',
+      menu: false,
+      element: <PodLogPage />,
+    },
+  ];
+
+  return {
+    menus,
+    routers: [
+      {
+        key: 'k8s',
+        path: '/k8s/:context/*',
+        element: <ContentWithMenu pages={pages} />,
+      },
+    ],
+  };
+};
+
+export default KubernetesModule;

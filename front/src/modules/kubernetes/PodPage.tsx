@@ -1,114 +1,164 @@
-import { useState, useEffect, useReducer, useCallback } from "react"
-import { Link, useLocation, useNavigate, useParams, useSearchParams } from "react-router"
-import { toast } from "sonner"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-// import { cancelToken } from "../../helpers/http" // Deprecated - using AbortController instead
-import { getNamespaces } from "./namespaceResource"
-import { getPods } from "./podsResource"
-import Refresh from "../../components/Refresh"
+import { useState, useEffect, useReducer, useCallback } from 'react';
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from 'react-router';
+import { toast } from 'sonner';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { getNamespaces } from './namespaceResource';
+import { getPods } from './podsResource';
+import Refresh from '../../components/Refresh';
+import { KubernetesTypes, BadgeVariant } from '@/types';
 
-const INITIAL_STATE = { data: [], loading: false }
-const LOADING = "LOADING"
-const SET_DATA = "SET_DATA"
+const INITIAL_STATE: KubernetesTypes.PodState = { data: [], loading: false };
+const LOADING = 'LOADING';
+const SET_DATA = 'SET_DATA';
 
-function reducer(state, action) {
+function reducer(
+  state: KubernetesTypes.PodState,
+  action: KubernetesTypes.PodAction
+): KubernetesTypes.PodState {
   switch (action.type) {
     case LOADING:
-      return { ...state, loading: true, data: [] }
+      return { ...state, loading: true, data: [] };
     case SET_DATA:
-      return { ...state, loading: false, data: action.response }
+      return { ...state, loading: false, data: action.response };
     default:
-      return state
+      return state;
   }
 }
 
-async function fetchData(dispatch, filter, config) {
+async function fetchData(
+  dispatch: React.Dispatch<KubernetesTypes.PodAction>,
+  filter: KubernetesTypes.PodFilter,
+  config?: { signal?: AbortSignal }
+): Promise<void> {
   try {
-    const result = await getPods(filter, config)
-    dispatch({ type: SET_DATA, response: result.data })
-  } catch (e) {
+    const result = await getPods(filter, config);
+    dispatch({ type: SET_DATA, response: result.data });
+  } catch (e: unknown) {
     if (e.message === 'Request canceled') {
       return;
     }
     console.error('Fetch error:', e);
-    toast.error("Ops... Failed to fetch API data")
-    dispatch({ type: SET_DATA, response: [] })
+    toast.error('Ops... Failed to fetch API data');
+    dispatch({ type: SET_DATA, response: [] });
   }
 }
 
-export default function PodPage() {
-  const { context } = useParams()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [searchParams] = useSearchParams()
-  const [search, setSearch] = useState(searchParams.get("name") ?? "")
-  const [namespace, setNamespace] = useState(searchParams.get("namespace") ?? "default")
-  const [namespaces, setNamespaces] = useState([])
-  const [pods, dispatch] = useReducer(reducer, INITIAL_STATE)
+export default function PodPage(): JSX.Element {
+  const { context } = useParams<{ context: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState<string>(searchParams.get('name') ?? '');
+  const [namespace, setNamespace] = useState<string>(
+    searchParams.get('namespace') ?? 'default'
+  );
+  const [namespaces, setNamespaces] = useState<Namespace[]>([]);
+  const [pods, dispatch] = useReducer(reducer, INITIAL_STATE);
 
   useEffect(() => {
-    const controller = new AbortController()
-    const signal = controller.signal
-    
+    if (!context) return;
+
+    const controller = new AbortController();
+    const signal = controller.signal;
+
     getNamespaces({ context }, { signal })
       .then((result) => {
-        setNamespaces(result.data)
+        setNamespaces(result.data);
       })
-      .catch((e) => {
+      .catch((e: unknown) => {
         if (e.message !== 'Request canceled') {
           console.error('Error fetching namespaces:', e);
         }
-      })
+      });
 
     return () => {
-      controller.abort()
-    }
-  }, [context])
+      controller.abort();
+    };
+  }, [context]);
 
   useEffect(() => {
-    const controller = new AbortController()
-    const signal = controller.signal
-    dispatch({ type: LOADING })
+    if (!context) return;
 
-    fetchData(dispatch, { context, namespace }, { signal })
+    const controller = new AbortController();
+    const signal = controller.signal;
+    dispatch({ type: LOADING });
+
+    fetchData(dispatch, { context, namespace }, { signal });
 
     return () => {
-      controller.abort()
-    }
-  }, [context, namespace])
+      controller.abort();
+    };
+  }, [context, namespace]);
 
   const onReload = useCallback(async () => {
-    fetchData(dispatch, { context, namespace })
-  }, [context, namespace])
+    if (!context) return;
+    fetchData(dispatch, { context, namespace });
+  }, [context, namespace]);
 
-  const searchHandler = (value) => {
-    setSearch(value)
-    navigate(`${location.pathname}?name=${value}&namespace=${namespace}`)
-  }
+  const searchHandler = (value: string): void => {
+    setSearch(value);
+    navigate(`${location.pathname}?name=${value}&namespace=${namespace}`);
+  };
 
-  const handleNamespaceChange = (newNamespace) => {
-    setNamespace(newNamespace)
-    navigate(`${location.pathname}?name=${search}&namespace=${newNamespace}`)
-  }
+  const handleNamespaceChange = (newNamespace: string): void => {
+    setNamespace(newNamespace);
+    navigate(`${location.pathname}?name=${search}&namespace=${newNamespace}`);
+  };
 
-  const filteredData = pods.data.filter((p) => search === "" || p.name.includes(search))
+  const filteredData = pods.data.filter(
+    (p) => search === '' || p.name.includes(search)
+  );
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string): BadgeVariant => {
     switch (status) {
-      case "Running":
-        return "default"
-      case "Succeeded":
-        return "secondary"
-      case "Pending":
-        return "outline"
+      case 'Running':
+        return 'default';
+      case 'Succeeded':
+        return 'secondary';
+      case 'Pending':
+        return 'outline';
       default:
-        return "destructive"
+        return 'destructive';
     }
+  };
+
+  if (!context) {
+    return (
+      <div className="text-center py-8">
+        <span className="text-muted-foreground">
+          No cluster context provided
+        </span>
+      </div>
+    );
   }
 
   return (
@@ -122,9 +172,9 @@ export default function PodPage() {
           />
         </div>
         <div className="md:col-span-1">
-          <Button 
-            variant="outline" 
-            onClick={() => searchHandler("")}
+          <Button
+            variant="outline"
+            onClick={() => searchHandler('')}
             className="w-full"
           >
             Clear
@@ -168,7 +218,7 @@ export default function PodPage() {
                 <TableRow>
                   <TableCell colSpan={4} className="text-center py-8">
                     <div className="flex items-center justify-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
                       <span className="ml-2">Loading...</span>
                     </div>
                   </TableCell>
@@ -184,7 +234,9 @@ export default function PodPage() {
                   <TableRow key={pod.name}>
                     <TableCell className="font-medium">{pod.name}</TableCell>
                     <TableCell>
-                      <Badge variant={getStatusColor(pod.condition_status.status)}>
+                      <Badge
+                        variant={getStatusColor(pod.condition_status.status)}
+                      >
                         {pod.condition_status.status}
                       </Badge>
                     </TableCell>
@@ -195,7 +247,9 @@ export default function PodPage() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button variant="outline" size="sm" asChild>
-                                <Link to={`/k8s/${context}/pod/logs?name=${pod.name}&namespace=${namespace}`}>
+                                <Link
+                                  to={`/k8s/${context}/pod/logs?name=${pod.name}&namespace=${namespace}`}
+                                >
                                   Logs
                                 </Link>
                               </Button>
@@ -207,7 +261,9 @@ export default function PodPage() {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button variant="outline" size="sm" asChild>
-                                <Link to={`/k8s/${context}?node=${pod.node_name}`}>
+                                <Link
+                                  to={`/k8s/${context}?node=${pod.node_name}`}
+                                >
                                   Node
                                 </Link>
                               </Button>
@@ -227,5 +283,5 @@ export default function PodPage() {
         </div>
       )}
     </div>
-  )
+  );
 }
