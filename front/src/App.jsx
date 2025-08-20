@@ -1,22 +1,21 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Routes, Route } from "react-router"
-import { Layout, notification } from "antd"
+import { toast } from "sonner"
 import { loadModulesConfig } from "./helpers/loadModules"
 import { verifyToken } from "./helpers/oauth"
-import Sidebar from "./components/Sidebar"
-import Toolbar from "./components/Toolbar"
+import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import AppSidebar from "./components/AppSidebar"
 import Footer from "./components/Footer"
-import SiderTrigger from "./components/SiderTrigger"
 import Logo from "./components/Logo"
 import DashboardModule from "./modules/dashboard"
+import { Toaster } from "@/components/ui/sonner"
 import "./App.css"
 
 export default function App() {
   const [oAuth2, setOAuth2] = useState({ active: false })
   const [menus, setMenus] = useState([...DashboardModule.menus])
   const [routers, setRouters] = useState([...DashboardModule.routers])
-  const [collapsed, setCollapsed] = useState(false)
   const initialized = useRef(false)
 
   useEffect(() => {
@@ -32,64 +31,47 @@ export default function App() {
       })
       .catch((error) => {
         console.error('Failed to load modules:', error)
-        notification.error({ message: "Failed to load plugins" })
+        toast.error("Failed to load plugins")
       })
 
   }, [])
 
-  const onCollapse = (data) => {
-    setCollapsed(data)
-  }
-
-
-  
   return (
-    <Routes>
-      {oAuth2.active && (
-        <Route path="/login" element={<oAuth2.LoginPage />} />
-      )}
-      <Route
-        path="*"
-        element={
-          <Layout className="dash-layout">
-            <Layout.Header className="dash-header">
-              <SiderTrigger collapsed={collapsed} onCollapse={onCollapse} />
-              <Logo />
-              <Toolbar oAuth2={oAuth2.active} />
-            </Layout.Header>
-            <Layout>
-              <Layout.Sider
-                trigger={null}
-                breakpoint="lg"
-                collapsedWidth="0"
-                collapsible
-                collapsed={collapsed}
-                onCollapse={onCollapse}
-              >
-                <Sidebar menus={menus} />
-              </Layout.Sider>
-              <Layout>
-                <Layout.Content className="dash-content">
-                  <div className="dash-container">
-                    <Routes>
-                      {routers.map((route) => (
-                        <Route
-                          key={route.key}
-                          path={route.path}
-                          element={route.element}
-                        />
-                      ))}
-                    </Routes>
-                  </div>
-                </Layout.Content>
-                <Layout.Footer className="dash-footer">
+    <>
+      <Routes>
+        {oAuth2.active && (
+          <Route path="/login" element={<oAuth2.LoginPage />} />
+        )}
+        <Route
+          path="*"
+          element={
+            <SidebarProvider>
+              <AppSidebar menus={menus} oAuth2={oAuth2.active} />
+              <SidebarInset>
+                <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                  <SidebarTrigger className="-ml-1" />
+                  <Logo />
+                </header>
+                <main className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-auto">
+                  <Routes>
+                    {routers.map((route) => (
+                      <Route
+                        key={route.key}
+                        path={route.path}
+                        element={route.element}
+                      />
+                    ))}
+                  </Routes>
+                </main>
+                <footer className="border-t bg-background p-4">
                   <Footer />
-                </Layout.Footer>
-              </Layout>
-            </Layout>
-          </Layout>
-        }
-      />
-    </Routes>
+                </footer>
+              </SidebarInset>
+            </SidebarProvider>
+          }
+        />
+      </Routes>
+      <Toaster />
+    </>
   )
 }

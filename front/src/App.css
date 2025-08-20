@@ -1,54 +1,25 @@
+/* DashOPS - Code Syntax Highlighting */
+
+/* Code blocks styling for logs and terminal output */
 pre {
   tab-size: 2;
-  background: #001628;
-  color: #72e0d1;
-  padding: 10px;
+  background: #1f2937;
+  color: #10b981;
+  padding: 16px;
+  border-radius: 8px;
   max-height: 600px;
-}
-
-.dash-layout {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-}
-
-.dash-header {
-  padding: 0 !important;
-  min-height: 60px;
-}
-
-.dash-content {
-  flex-grow: 1;
   overflow: auto;
-  margin: 24px 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 16px 0;
 }
 
-.dash-container {
-  padding: 15px;
-  min-height: 360px;
-  background-color: #ffffff;
-}
-
-.dash-footer {
-  text-align: center;
-}
-
-@media only screen and (max-width: 992px) {
-  .dash-content {
-    margin: 12px 8px;
-  }
-
-  .dash-container {
-    padding: 7px;
-  }
-}
-
-@media only screen and (max-width: 768px) {
-  .dash-content {
-    margin: 0px;
-  }
-
-  .dash-container {
-    margin: 0px;
-  }
+/* Inline code styling */
+code {
+  background: #f3f4f6;
+  color: #374151;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 }
