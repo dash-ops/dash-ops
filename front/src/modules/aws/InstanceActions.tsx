@@ -1,32 +1,37 @@
-import PropTypes from "prop-types"
-import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Monitor, Play, Square } from "lucide-react"
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Monitor, Play, Square } from 'lucide-react';
+import { AWSTypes } from '@/types';
 
-function ssh(instance) {
-  if (instance.platform === "windows") {
+function ssh(instance: AWSTypes.Instance): void {
+  if (instance.platform === 'windows') {
     toast.error(`Sorry... I'm afraid I can't do that...`, {
       description: `Windows does not provides a method to connect a Remote Desktop via URL. You can try to connect via command line using on Windows: mstsc /v:${instance.name}`,
-    })
-    return
+    });
+    return;
   }
-  window.location = `ssh://${instance.name}`
+  window.location.href = `ssh://${instance.name}`;
 }
 
-function InstanceActions({ instance, toStart, toStop }) {
-  const showPlayButton = instance.state !== "running"
+function InstanceActions({
+  instance,
+  toStart,
+  toStop,
+}: AWSTypes.InstanceActionsProps): JSX.Element {
+  const showPlayButton = instance.state !== 'running';
 
   return (
     <TooltipProvider>
       <div className="flex gap-1">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => ssh(instance)}
-            >
+            <Button variant="outline" size="sm" onClick={() => ssh(instance)}>
               <Monitor className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -34,14 +39,14 @@ function InstanceActions({ instance, toStart, toStop }) {
             <p>SSH access</p>
           </TooltipContent>
         </Tooltip>
-        
+
         {showPlayButton && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="outline"
                 size="sm"
-                disabled={instance.state !== "stopped"}
+                disabled={instance.state !== 'stopped'}
                 onClick={toStart}
                 className="gap-1"
               >
@@ -54,7 +59,7 @@ function InstanceActions({ instance, toStart, toStop }) {
             </TooltipContent>
           </Tooltip>
         )}
-        
+
         {!showPlayButton && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -76,13 +81,7 @@ function InstanceActions({ instance, toStart, toStop }) {
         )}
       </div>
     </TooltipProvider>
-  )
+  );
 }
 
-InstanceActions.propTypes = {
-  instance: PropTypes.objectOf(PropTypes.string).isRequired,
-  toStart: PropTypes.func.isRequired,
-  toStop: PropTypes.func.isRequired,
-}
-
-export default InstanceActions
+export default InstanceActions;
