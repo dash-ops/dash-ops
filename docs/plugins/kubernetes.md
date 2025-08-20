@@ -1,55 +1,379 @@
-# Kubernetes
+# Kubernetes Plugin
 
-> Nota:
->
-> Plugin ainda em desenvolvimento
+> **⚠️ Alpha Plugin** - Basic cluster monitoring only. Limited features and not production-ready.
 
-Neste plugin tentamos abstrair funções para facilitar a vida de desenvolvedores que trabalham focados em criar e dar manuteção em features do projeto e não precisam se preocupar tanto com a infraestrutara do mesmo.
+The Kubernetes plugin provides a simplified interface for Kubernetes cluster management, focusing on essential operations for developers who need cluster visibility without deep Kubernetes expertise.
 
-O objetivo aqui é tentar diminuir a carga cognitiva dos engenheiros em cima do kubernetes, deixando apenas acesso as informações como visualição do que esta rodando no momento e formas de consultar logs com facilidade.
+## 🎯 Features
 
-## Configurações do Plugin
+### **Current Capabilities (Alpha)**
 
-Em seu arquivo de configuração você poderá adicionar seus clusters do kubernetes, exemplo:
+- **Multi-cluster Support** - Connect and manage multiple K8s clusters
+- **Workload Monitoring** - View deployments, pods, and services
+- **Real-time Logs** - Stream pod logs directly in the browser
+- **Basic Scaling** - Scale deployments up/down (development only)
+- **Resource Overview** - Cluster nodes and resource utilization
+
+### **Planned Features**
+
+- **Advanced Workload Management** - StatefulSets, DaemonSets, Jobs
+- **Resource Quotas** - Namespace limits and monitoring
+- **ConfigMap/Secret Management** - Configuration editing interface
+- **Helm Integration** - Chart deployment and management
+- **Custom Resource Definitions** - CRD monitoring and management
+
+## 🔧 Configuration
+
+### **1. Cluster Access Setup**
+
+#### **Method 1: External Cluster (kubeconfig)**
 
 ```yaml
+# Enable Kubernetes plugin
+plugins:
+  - 'Kubernetes'
+
 kubernetes:
-  - name: 'Kubernetes Dev'
+  - name: 'Development Cluster'
     kubeconfig: ${HOME}/.kube/config
-    context: 'dev'
-  - name: 'Kubernetes Prod'
-    kubeconfig: ${HOME}/.kube/config
-    context: 'prod'
+    context: 'dev-cluster-context'
+
+  - name: 'Staging Cluster'
+    kubeconfig: /path/to/staging/kubeconfig
+    context: 'staging-context'
 ```
 
-Caso você esteja rodando no cluster o `dash-ops` e adicionou configurações de `ClusterRole` no `rbac`, você simplesmente pode rodar o plugin kubernetes sem o `kubeconfig`, seria a configuração `inCluster`, exemplo:
+#### **Method 2: In-Cluster Configuration**
 
 ```yaml
 kubernetes:
-  - name: 'Kubernetes Dev'
-    kubeconfig:
+  - name: 'Current Cluster'
+    kubeconfig: # Empty - uses in-cluster service account
 ```
 
-Neste caso o plugin vai ter permissões de acessar diretamente a API do kubernetes que ele esta rodando sem um kubeconfig.
+> **📝 Note**: In-cluster configuration requires proper RBAC setup. Our [Helm charts](../../helm-charts/) include pre-configured ClusterRole permissions.
 
-> Se você esta usando o nosso template helm o `ClusterRole` já vem pre configurado (https://github.com/dash-ops/helm-charts)
+### **2. Permission Configuration**
 
-### Permissionamento
-
-> No momento a única funcionalidade do Kubernetes plugin que afeta algo no kubernetes é o `scale` dos `deployments`, essa função é recomenda apenas em clusters no ambiente de desenvolvimento.
-
-Exemplo de como adicionar a permissão:
+Control which teams can perform operations:
 
 ```yaml
 kubernetes:
-  - name: 'Kubernetes Dev'
+  - name: 'Development Cluster'
     kubeconfig: ${HOME}/.kube/config
     context: 'dev'
     permission:
       deployments:
-        namespaces: ['default']
-        start: ['org*team']
-        stop: ['org*team']
+        namespaces: ['default', 'dev', 'staging'] # Allowed namespaces
+        start: ['dash-ops*developers'] # Teams that can scale up
+        stop: ['dash-ops*developers', 'dash-ops*sre'] # Teams that can scale down
 ```
 
-> `org*team`: Organização e o time do Github com a permissão de executar o `scale` para `1` ou `0` do `deployment` no kubernetes.
+### **3. Multi-Environment Setup**
+
+```yaml
+kubernetes:
+  - name: 'Development'
+    kubeconfig: ${HOME}/.kube/config
+    context: 'dev'
+    permission:
+      deployments:
+        namespaces: ['default', 'dev']
+        start: ['dash-ops*developers']
+        stop: ['dash-ops*developers']
+
+  - name: 'Staging'
+    kubeconfig: ${HOME}/.kube/config
+    context: 'staging'
+    permission:
+      deployments:
+        namespaces: ['staging']
+        start: ['dash-ops*sre']
+        stop: ['dash-ops*sre']
+
+  - name: 'Production (Read-Only)'
+    kubeconfig: ${HOME}/.kube/config
+    context: 'prod'
+    # No permission block = read-only access
+```
+
+## ☸️ Cluster Operations
+
+### **Cluster Overview**
+
+- **Node Status** - Available nodes and resource capacity
+- **Namespace List** - All namespaces with resource usage
+- **Cluster Info** - Kubernetes version, API server status
+- **Resource Quotas** - Limits and current usage per namespace
+
+### **Workload Management**
+
+#### **Deployments**
+
+- **List Deployments** - All deployments across allowed namespaces
+- **Deployment Details** - Replica count, image, resource limits
+- **Scale Operations** - Increase/decrease replica count
+- **Rollout Status** - Current deployment state and history
+
+#### **Pods**
+
+- **Pod Listing** - All pods with status and resource usage
+- **Pod Details** - Container status, events, resource consumption
+- **Log Streaming** - Real-time log viewing with filtering
+- **Pod Actions** - Restart, describe (planned)
+
+#### **Services & Networking** (Planned)
+
+- **Service Discovery** - List services and endpoints
+- **Ingress Management** - Route configuration and status
+- **Network Policies** - Security rule visualization
+
+## 📊 Monitoring & Observability
+
+### **Real-time Metrics**
+
+- **Cluster Health** - Node and API server status
+- **Resource Usage** - CPU, memory, storage per namespace
+- **Pod Status** - Running, pending, failed pod counts
+- **Event Monitoring** - Kubernetes events and warnings
+
+### **Log Management**
+
+- **Pod Log Streaming** - Live log tailing
+- **Multi-container Support** - Select specific containers
+- **Log Filtering** - Search and filter log content
+- **Download Logs** - Export logs for analysis (planned)
+
+## 🔐 Security & Permissions
+
+### **RBAC Requirements**
+
+#### **Minimum Read-Only Permissions**
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dashops-reader
+rules:
+  - apiGroups: ['']
+    resources: ['pods', 'nodes', 'namespaces', 'services']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['apps']
+    resources: ['deployments', 'replicasets']
+    verbs: ['get', 'list', 'watch']
+  - apiGroups: ['']
+    resources: ['pods/log']
+    verbs: ['get']
+```
+
+#### **Deployment Management Permissions**
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: dashops-operator
+rules:
+  - apiGroups: ['apps']
+    resources: ['deployments', 'deployments/scale']
+    verbs: ['get', 'list', 'patch', 'update']
+  - apiGroups: ['']
+    resources: ['pods']
+    verbs: ['get', 'list', 'delete'] # For restart functionality
+```
+
+### **Team-based Access Control**
+
+```yaml
+kubernetes:
+  - name: 'Production Cluster'
+    permission:
+      deployments:
+        namespaces: ['api', 'worker'] # Limit namespace access
+        start: ['dash-ops*sre'] # Only SRE can scale up
+        stop: ['dash-ops*sre', 'dash-ops*ops'] # SRE and Ops can scale down
+```
+
+## 🚨 Alpha Limitations
+
+### **Current Restrictions**
+
+❌ **Not Production Ready**
+
+- **Limited operations** - Only basic deployment scaling
+- **No resource quotas** - Missing namespace limits
+- **Basic error handling** - Limited failure recovery
+- **No backup/restore** - No data protection features
+- **Missing monitoring** - No alerting or metrics collection
+
+### **Security Limitations**
+
+- **Basic RBAC** - Simple team-based permissions only
+- **No audit trail** - Limited operation logging
+- **Credential exposure** - Kubeconfig in configuration files
+- **No network policies** - Missing security controls
+- **No admission control** - No policy enforcement
+
+## 📊 API Endpoints
+
+### **Cluster Operations**
+
+```
+GET /api/kubernetes/clusters
+```
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "name": "Development Cluster",
+      "context": "dev",
+      "status": "healthy",
+      "version": "v1.28.2"
+    }
+  ]
+}
+```
+
+### **Workload Operations**
+
+```
+GET /api/kubernetes/deployments?cluster={name}&namespace={namespace}
+```
+
+**Response:**
+
+```json
+{
+  "data": [
+    {
+      "name": "api-server",
+      "namespace": "default",
+      "replicas": 3,
+      "readyReplicas": 3,
+      "image": "api-server:v1.2.3",
+      "status": "running"
+    }
+  ]
+}
+```
+
+```
+POST /api/kubernetes/deployments/{name}/scale
+Content-Type: application/json
+
+{
+  "replicas": 5,
+  "namespace": "default",
+  "cluster": "dev"
+}
+```
+
+### **Pod Operations**
+
+```
+GET /api/kubernetes/pods?cluster={name}&namespace={namespace}
+GET /api/kubernetes/pods/{name}/logs?cluster={name}&namespace={namespace}
+```
+
+## 🧪 Testing Guidelines
+
+### **Safe Testing Practices**
+
+> **⚠️ Critical**: Only test on development or staging clusters, never production.
+
+1. **Use dedicated test clusters** - Isolated K8s environments
+2. **Limited permissions** - Restrict RBAC to test namespaces only
+3. **Resource limits** - Set strict quotas on test namespaces
+4. **Monitoring** - Watch cluster events during testing
+
+### **Test Configuration**
+
+```yaml
+kubernetes:
+  - name: 'Development Testing'
+    kubeconfig: ${HOME}/.kube/dev-config
+    context: 'dev-cluster'
+    permission:
+      deployments:
+        namespaces: ['test', 'development'] # Safe namespaces only
+        start: ['dash-ops*developers']
+        stop: ['dash-ops*developers']
+```
+
+## 🐛 Troubleshooting
+
+### **Common Issues**
+
+#### **Connection Failed**
+
+- ✅ Verify kubeconfig file exists and is valid
+- ✅ Check cluster context is correct: `kubectl config current-context`
+- ✅ Test cluster access: `kubectl cluster-info`
+
+#### **Permission Denied**
+
+- ✅ Verify RBAC permissions with: `kubectl auth can-i <verb> <resource>`
+- ✅ Check service account permissions (in-cluster mode)
+- ✅ Validate team membership for operations
+
+#### **Pods/Deployments Not Visible**
+
+- ✅ Check namespace permissions in configuration
+- ✅ Verify user has access to specified namespaces
+- ✅ Check if resources exist: `kubectl get deployments -A`
+
+### **Debug Mode**
+
+Enable verbose logging for troubleshooting:
+
+```bash
+# Backend debug logs
+KUBERNETES_DEBUG=true go run main.go
+
+# Check kubeconfig
+kubectl config view --minify
+
+# Test cluster connectivity
+kubectl cluster-info dump
+```
+
+## 🤝 Contributing
+
+### **Priority Areas**
+
+1. **🔒 Security** - Enhanced RBAC and security controls
+2. **📊 Monitoring** - Metrics collection and alerting
+3. **🧪 Testing** - Kubernetes integration test suite
+4. **🔌 Features** - Additional workload types (StatefulSets, Jobs)
+5. **📖 Documentation** - Setup guides and best practices
+
+### **Development Setup**
+
+```bash
+# 1. Set up test cluster (minikube/kind)
+kind create cluster --name dashops-test
+
+# 2. Configure kubeconfig
+export KUBECONFIG=${HOME}/.kube/config
+
+# 3. Run backend with debug
+KUBERNETES_DEBUG=true go run main.go
+
+# 4. Test API endpoints
+curl http://localhost:8080/api/kubernetes/clusters
+```
+
+## 📚 Resources
+
+- **[Kubernetes API Reference](https://kubernetes.io/docs/reference/kubernetes-api/)**
+- **[kubectl Command Reference](https://kubernetes.io/docs/reference/kubectl/)**
+- **[Kubernetes RBAC Documentation](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)**
+- **[client-go Library](https://github.com/kubernetes/client-go)**
+
+---
+
+**⚠️ Alpha Notice**: This plugin is in early development. Use only for testing and evaluation in non-production environments.
