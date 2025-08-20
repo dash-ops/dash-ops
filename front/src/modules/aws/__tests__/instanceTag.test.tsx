@@ -8,5 +8,5 @@ it('should return tag when instance state passed', () => {
 
   const tag = screen.getByText('running');
   expect(tag).toBeInTheDocument();
-  expect(tag).toHaveClass('ant-tag ant-tag-green');
+  expect(tag).toHaveClass('bg-green-100', 'text-green-800');
 });
