@@ -1,11 +1,10 @@
 import http from '../../helpers/http';
 import { AxiosResponse } from 'axios';
-import { ConfigTypes } from '@/types';
 
-export function getPlugins(): Promise<AxiosResponse<ConfigTypes.Plugin[]>> {
+export function getPlugins(): Promise<AxiosResponse<string[]>> {
   return http
     .get('/config/plugins')
-    .then((resp: AxiosResponse<ConfigTypes.Plugin[]>) =>
+    .then((resp: AxiosResponse<string[]>) =>
       resp.data ? resp : { ...resp, data: [] }
     );
 }

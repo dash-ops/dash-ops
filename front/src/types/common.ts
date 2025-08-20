@@ -29,6 +29,7 @@ export interface Page {
 export interface ModuleConfig {
   menus?: Menu[];
   routers?: Router[];
+  oAuth2?: OAuth2Config; // OAuth2 module specific
 }
 
 export interface OAuth2Config {
@@ -36,9 +37,14 @@ export interface OAuth2Config {
   LoginPage?: () => JSX.Element;
 }
 
-export interface OAuth2Module {
+export interface OAuth2Module extends ModuleConfig {
   oAuth2: OAuth2Config;
-  routers?: Router[];
+}
+
+export interface LoadedModulesConfig {
+  oAuth2: OAuth2Config;
+  menus: Menu[];
+  routers: Router[];
 }
 
 // Generic filter interface

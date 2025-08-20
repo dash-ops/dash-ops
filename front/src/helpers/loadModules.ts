@@ -1,21 +1,28 @@
 import { toast } from 'sonner';
 import { getPlugins } from '../modules/config/configResource';
-import { Menu, Router, OAuth2Config, ModuleConfig } from '@/types';
+import {
+  Menu,
+  Router,
+  OAuth2Config,
+  ModuleConfig,
+  LoadedModulesConfig,
+} from '@/types';
 
-interface LoadedModulesConfig {
-  oAuth2: OAuth2Config;
-  menus: Menu[];
-  routers: Router[];
-}
+// LoadedModulesConfig is now imported from @/types
 
 export function loadModulesConfig(): Promise<LoadedModulesConfig> {
   return getPlugins().then(({ data }) => {
-    const modulesConfig = data.map((plugin) => {
-      const pluginName = plugin.name?.toLowerCase() || 'unknown';
+    // Filter valid plugin names
+    const validPlugins = data.filter(
+      (plugin) => plugin && plugin.trim() !== ''
+    );
 
-      // Try .tsx first, then .jsx, then .js
+    const modulesConfig = validPlugins.map((pluginName) => {
+      const moduleNameLower = pluginName.toLowerCase();
+
+      // Try .tsx first, then .ts
       const tryImport = (extension: string): Promise<ModuleConfig> => {
-        return import(`../modules/${pluginName}/index.${extension}`).then(
+        return import(`../modules/${moduleNameLower}/index.${extension}`).then(
           (module) => {
             if (typeof module.default === 'function') {
               // Module with dynamic route loading
@@ -24,7 +31,7 @@ export function loadModulesConfig(): Promise<LoadedModulesConfig> {
                 .then((config: ModuleConfig) => config)
                 .catch((e: Error) => {
                   toast.error(
-                    `Failed to load plugin ${plugin.name || 'unknown'}: ${e.message}`
+                    `Failed to load plugin ${pluginName}: ${e.message}`
                   );
                   return {} as ModuleConfig;
                 });
