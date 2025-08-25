@@ -9,11 +9,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { getNodes } from './nodesResource';
 import Refresh from '../../components/Refresh';
-import ProgressData from './ProgressData';
+import ResourceProgressBar from './ResourceProgressBar';
+import SimpleNodeStatus from './SimpleNodeStatus';
 import { KubernetesTypes } from '@/types';
 
 const INITIAL_STATE: KubernetesTypes.NodesState = { data: [], loading: false };
@@ -108,21 +109,21 @@ export default function NodesPage(): JSX.Element {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[300px]">Node</TableHead>
-              <TableHead>Ready</TableHead>
-              <TableHead>CPU requests</TableHead>
-              <TableHead>CPU limits</TableHead>
-              <TableHead>Memory requests</TableHead>
-              <TableHead>Memory limit</TableHead>
-              <TableHead className="text-center">
-                Pods Allocate/Capacity
-              </TableHead>
+              <TableHead className="w-[200px]">Name</TableHead>
+              <TableHead className="w-[120px]">CPU</TableHead>
+              <TableHead className="w-[120px]">Memory</TableHead>
+              <TableHead className="w-[120px]">Disk</TableHead>
+              <TableHead className="w-[80px]">Taints</TableHead>
+              <TableHead className="w-[120px]">Roles</TableHead>
+              <TableHead className="w-[100px]">Version</TableHead>
+              <TableHead className="w-[80px]">Age</TableHead>
+              <TableHead className="w-[100px]">Conditions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {nodes.loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
+                <TableCell colSpan={9} className="text-center py-8">
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
                     <span className="ml-2">Loading...</span>
@@ -131,54 +132,75 @@ export default function NodesPage(): JSX.Element {
               </TableRow>
             ) : filteredData.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
+                <TableCell colSpan={9} className="text-center py-8">
                   <span className="text-muted-foreground">No nodes found</span>
                 </TableCell>
               </TableRow>
             ) : (
               filteredData.map((node) => (
-                <TableRow key={node.name}>
-                  <TableCell className="font-medium">{node.name}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        node.ready === 'True' ? 'default' : 'destructive'
-                      }
-                    >
-                      {node.ready}
-                    </Badge>
+                <TableRow key={node.name} className="hover:bg-muted/50">
+                  <TableCell className="font-medium text-foreground">
+                    {node.name}
                   </TableCell>
+
                   <TableCell>
-                    <ProgressData
-                      percent={
+                    <ResourceProgressBar
+                      label=""
+                      percentage={
                         node.allocated_resources?.cpu_requests_fraction || 0
                       }
+                      color="cpu"
                     />
                   </TableCell>
+
                   <TableCell>
-                    <ProgressData
-                      percent={
-                        node.allocated_resources?.cpu_limits_fraction || 0
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <ProgressData
-                      percent={
+                    <ResourceProgressBar
+                      label=""
+                      percentage={
                         node.allocated_resources?.memory_requests_fraction || 0
                       }
+                      color="memory"
                     />
                   </TableCell>
+
                   <TableCell>
-                    <ProgressData
-                      percent={
-                        node.allocated_resources?.memory_limits_fraction || 0
-                      }
+                    <ResourceProgressBar
+                      label=""
+                      percentage={node.capacity.disk_usage_percent || 0}
+                      color="disk"
                     />
                   </TableCell>
+
                   <TableCell className="text-center">
-                    {node.allocated_resources?.allocated_pods}/
-                    {node.allocated_resources?.pod_capacity}
+                    <Badge variant="outline" className="text-xs">
+                      {node.taints}
+                    </Badge>
+                  </TableCell>
+
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {node.roles.map((role, index) => (
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="text-xs"
+                        >
+                          {role}
+                        </Badge>
+                      ))}
+                    </div>
+                  </TableCell>
+
+                  <TableCell className="text-sm text-muted-foreground">
+                    {node.version}
+                  </TableCell>
+
+                  <TableCell className="text-sm text-muted-foreground">
+                    {node.age}
+                  </TableCell>
+
+                  <TableCell>
+                    <SimpleNodeStatus conditions={node.conditions} />
                   </TableCell>
                 </TableRow>
               ))

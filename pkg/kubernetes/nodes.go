@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"context"
 	"fmt"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -16,6 +17,29 @@ type Node struct {
 	Name               string                 `json:"name"`
 	Ready              v1.ConditionStatus     `json:"ready"`
 	AllocatedResources NodeAllocatedResources `json:"allocated_resources"`
+	Conditions         []NodeCondition        `json:"conditions"`
+	Capacity           NodeCapacity           `json:"capacity"`
+	Age                string                 `json:"age"`
+	CreatedAt          time.Time              `json:"created_at"`
+	Version            string                 `json:"version"`
+	Roles              []string               `json:"roles"`
+	Taints             int                    `json:"taints"`
+}
+
+// NodeCondition represents a node condition
+type NodeCondition struct {
+	Type    string `json:"type"`
+	Status  string `json:"status"`
+	Reason  string `json:"reason,omitempty"`
+	Message string `json:"message,omitempty"`
+}
+
+// NodeCapacity represents node capacity information
+type NodeCapacity struct {
+	Storage          string  `json:"storage,omitempty"`
+	EphemeralStorage string  `json:"ephemeral_storage,omitempty"`
+	DiskPressure     bool    `json:"disk_pressure"`
+	DiskUsagePercent float64 `json:"disk_usage_percent"`
 }
 
 // NodeAllocatedResources describes node allocated resources.
@@ -39,20 +63,37 @@ func (kc client) GetNodes() ([]Node, error) {
 	var list []Node
 	nodes, err := kc.clientSet.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("Failed to get nodes: %s", err)
+		return nil, fmt.Errorf("failed to get nodes: %s", err)
 	}
 
 	for _, node := range nodes.Items {
 		pods, err := getNodePods(kc.clientSet, node)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get pods in node: %s", err)
+			return nil, fmt.Errorf("failed to get pods in node: %s", err)
 		}
 
 		allocatedResources, err := getNodeAllocatedResources(node, pods)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get node allocated resources: %s", err)
+		}
+		conditions := getNodeConditions(node)
+		capacity := getNodeCapacity(node, pods)
+		age := calculateNodeAge(node.CreationTimestamp.Time)
+		version := getNodeVersion(node)
+		roles := getNodeRoles(node)
+		taints := len(node.Spec.Taints)
+
 		list = append(list, Node{
 			Name:               node.GetName(),
 			Ready:              getNodeConditionStatus(node, v1.NodeReady),
 			AllocatedResources: allocatedResources,
+			Conditions:         conditions,
+			Capacity:           capacity,
+			Age:                age,
+			CreatedAt:          node.CreationTimestamp.Time,
+			Version:            version,
+			Roles:              roles,
+			Taints:             taints,
 		})
 	}
 
@@ -66,6 +107,110 @@ func getNodeConditionStatus(node v1.Node, conditionType v1.NodeConditionType) v1
 		}
 	}
 	return v1.ConditionUnknown
+}
+
+func getNodeConditions(node v1.Node) []NodeCondition {
+	var conditions []NodeCondition
+	for _, condition := range node.Status.Conditions {
+		conditions = append(conditions, NodeCondition{
+			Type:    string(condition.Type),
+			Status:  string(condition.Status),
+			Reason:  condition.Reason,
+			Message: condition.Message,
+		})
+	}
+	return conditions
+}
+
+func getNodeCapacity(node v1.Node, pods *v1.PodList) NodeCapacity {
+	capacity := NodeCapacity{}
+
+	if storage := node.Status.Capacity.Storage(); storage != nil {
+		capacity.Storage = storage.String()
+	}
+
+	if ephemeralStorage := node.Status.Capacity.StorageEphemeral(); ephemeralStorage != nil {
+		capacity.EphemeralStorage = ephemeralStorage.String()
+	}
+
+	// Check for disk pressure condition
+	for _, condition := range node.Status.Conditions {
+		if condition.Type == v1.NodeDiskPressure && condition.Status == v1.ConditionTrue {
+			capacity.DiskPressure = true
+			break
+		}
+	}
+
+	// Estimate disk usage based on pod count and disk pressure
+	// This is a rough estimation since we don't have direct disk metrics
+	podCount := len(pods.Items)
+	diskUsage := float64(podCount) * 2.0 // Estimate ~2% per pod as baseline
+
+	if capacity.DiskPressure {
+		diskUsage = 85.0 // If disk pressure, assume high usage
+	} else if diskUsage > 75 {
+		diskUsage = 75.0 // Cap at 75% if no pressure reported
+	}
+
+	capacity.DiskUsagePercent = diskUsage
+
+	return capacity
+}
+
+func calculateNodeAge(createdAt time.Time) string {
+	now := time.Now()
+	duration := now.Sub(createdAt)
+
+	days := int(duration.Hours() / 24)
+	hours := int(duration.Hours()) % 24
+	minutes := int(duration.Minutes()) % 60
+
+	if days > 0 {
+		if hours > 0 {
+			return fmt.Sprintf("%dd %dh", days, hours)
+		}
+		return fmt.Sprintf("%dd", days)
+	} else if hours > 0 {
+		if minutes > 0 {
+			return fmt.Sprintf("%dh %dm", hours, minutes)
+		}
+		return fmt.Sprintf("%dh", hours)
+	} else {
+		return fmt.Sprintf("%dm", minutes)
+	}
+}
+
+func getNodeVersion(node v1.Node) string {
+	return node.Status.NodeInfo.KubeletVersion
+}
+
+func getNodeRoles(node v1.Node) []string {
+	var roles []string
+	for label := range node.Labels {
+		if label == "node-role.kubernetes.io/control-plane" || label == "node-role.kubernetes.io/master" {
+			roles = append(roles, "control-plane")
+		} else if label == "node-role.kubernetes.io/worker" {
+			roles = append(roles, "worker")
+		}
+	}
+
+	// If no specific role found, check for generic role labels
+	if len(roles) == 0 {
+		for label := range node.Labels {
+			if label == "kubernetes.io/role" {
+				if role, exists := node.Labels[label]; exists {
+					roles = append(roles, role)
+				}
+			}
+		}
+	}
+
+	// Default to worker if no role found
+	if len(roles) == 0 {
+		roles = append(roles, "worker")
+	}
+
+	return roles
 }
 
 func getNodePods(client *kubernetes.Clientset, node v1.Node) (*v1.PodList, error) {

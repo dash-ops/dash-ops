@@ -14,6 +14,27 @@ export interface Namespace extends EntityWithStatus {}
 export interface Node extends BaseEntity {
   ready: string;
   allocated_resources?: AllocatedResources;
+  conditions: NodeCondition[];
+  capacity: NodeCapacity;
+  created_at: string;
+  age: string;
+  version: string;
+  roles: string[];
+  taints: number;
+}
+
+export interface NodeCondition {
+  type: string;
+  status: string;
+  reason?: string;
+  message?: string;
+}
+
+export interface NodeCapacity {
+  storage?: string;
+  ephemeral_storage?: string;
+  disk_pressure: boolean;
+  disk_usage_percent: number;
 }
 
 export interface AllocatedResources {
