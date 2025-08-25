@@ -21,7 +21,9 @@ export default function PodContainers({
 
   return (
     <Badge
-      variant={readyCount === totalCount && totalCount > 0 ? 'default' : 'destructive'}
+      variant={
+        readyCount === totalCount && totalCount > 0 ? 'default' : 'destructive'
+      }
       className="text-xs"
     >
       {readyCount}/{totalCount}

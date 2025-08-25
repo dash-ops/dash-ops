@@ -1,8 +1,8 @@
 import http from '../../../helpers/http';
 import {
   getDeployments,
-  upDeployment,
-  downDeployment,
+  restartDeployment,
+  scaleDeployment,
 } from '../deploymentResource';
 
 vi.mock('../../../helpers/http');
@@ -35,7 +35,7 @@ it('should return deployments list', async () => {
   expect(resp.data).toEqual(mockResponse);
 });
 
-it('should start pod when upDeployment called', async () => {
+it('should restart deployment when restartDeployment called', async () => {
   const mockResponse = {};
   http.post.mockResolvedValue({
     data: mockResponse,
@@ -44,15 +44,15 @@ it('should start pod when upDeployment called', async () => {
   const context = 'prod';
   const name = 'my-microservice';
   const namespace = 'default';
-  const resp = await upDeployment(context, name, namespace);
+  const resp = await restartDeployment(context, name, namespace);
 
   expect(http.post).toBeCalledWith(
-    `/v1/k8s/${context}/deployment/up/${namespace}/${name}`
+    `/v1/k8s/${context}/deployment/restart/${namespace}/${name}`
   );
   expect(resp.data).toEqual(mockResponse);
 });
 
-it('should stop pod when downDeployment called', async () => {
+it('should scale deployment when scaleDeployment called', async () => {
   const mockResponse = {};
   http.post.mockResolvedValue({
     data: mockResponse,
@@ -61,10 +61,11 @@ it('should stop pod when downDeployment called', async () => {
   const context = 'prod';
   const name = 'my-microservice';
   const namespace = 'default';
-  const resp = await downDeployment(context, name, namespace);
+  const replicas = 3;
+  const resp = await scaleDeployment(context, name, namespace, replicas);
 
   expect(http.post).toBeCalledWith(
-    `/v1/k8s/${context}/deployment/down/${namespace}/${name}`
+    `/v1/k8s/${context}/deployment/scale/${namespace}/${name}/${replicas}`
   );
   expect(resp.data).toEqual(mockResponse);
 });
