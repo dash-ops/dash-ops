@@ -34,6 +34,9 @@ import {
 import { getPods } from './podsResource';
 import { getNamespacesCached } from './namespacesCache';
 import Refresh from '../../components/Refresh';
+import PodContainers from './PodContainers';
+import PodQoSBadge from './PodQoSBadge';
+import { FileText } from 'lucide-react';
 import { KubernetesTypes, BadgeVariant } from '@/types';
 
 const INITIAL_STATE: KubernetesTypes.PodState = { data: [], loading: false };
@@ -200,16 +203,22 @@ export default function PodPage(): JSX.Element {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[400px]">Name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Restart</TableHead>
-                <TableHead className="w-[140px] text-right">Actions</TableHead>
+                <TableHead className="w-[250px]">Name</TableHead>
+                <TableHead className="w-[120px]">Namespace</TableHead>
+                <TableHead className="w-[120px]">Containers</TableHead>
+                <TableHead className="w-[80px]">Restarts</TableHead>
+                <TableHead className="w-[150px]">Controlled By</TableHead>
+                <TableHead className="w-[150px]">Node</TableHead>
+                <TableHead className="w-[100px]">QoS</TableHead>
+                <TableHead className="w-[80px]">Age</TableHead>
+                <TableHead className="w-[100px]">Status</TableHead>
+                <TableHead className="w-[60px] text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {pods.loading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8">
+                  <TableCell colSpan={10} className="text-center py-8">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
                       <span className="ml-2">Loading...</span>
@@ -218,54 +227,88 @@ export default function PodPage(): JSX.Element {
                 </TableRow>
               ) : filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8">
+                  <TableCell colSpan={10} className="text-center py-8">
                     <span className="text-muted-foreground">No pods found</span>
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredData.map((pod) => (
-                  <TableRow key={pod.name}>
-                    <TableCell className="font-medium">{pod.name}</TableCell>
+                  <TableRow key={pod.name} className="hover:bg-muted/50">
+                    <TableCell className="font-medium text-foreground">
+                      {pod.name}
+                    </TableCell>
+
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">
+                        {pod.namespace}
+                      </Badge>
+                    </TableCell>
+
+                    <TableCell>
+                      <PodContainers containers={pod.containers} />
+                    </TableCell>
+
+                    <TableCell className="text-center">
+                      <Badge
+                        variant={
+                          pod.restart_count > 0 ? 'destructive' : 'secondary'
+                        }
+                        className="text-xs"
+                      >
+                        {pod.restart_count}
+                      </Badge>
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="text-sm text-muted-foreground truncate">
+                        {pod.controlled_by}
+                      </div>
+                    </TableCell>
+
+                    <TableCell>
+                      <div className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer truncate">
+                        {pod.node_name}
+                      </div>
+                    </TableCell>
+
+                    <TableCell>
+                      <PodQoSBadge qosClass={pod.qos_class} />
+                    </TableCell>
+
+                    <TableCell className="text-sm text-muted-foreground">
+                      {pod.age}
+                    </TableCell>
+
                     <TableCell>
                       <Badge
                         variant={getStatusColor(pod.condition_status.status)}
+                        className="text-xs"
                       >
                         {pod.condition_status.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{pod.restart_count}</TableCell>
-                    <TableCell className="text-right">
+
+                    <TableCell className="text-center">
                       <TooltipProvider>
-                        <div className="flex gap-1 justify-end">
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="outline" size="sm" asChild>
-                                <Link
-                                  to={`/k8s/${context}/pod/logs?name=${pod.name}&namespace=${namespace}`}
-                                >
-                                  Logs
-                                </Link>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Containers Log</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button variant="outline" size="sm" asChild>
-                                <Link
-                                  to={`/k8s/${context}?node=${pod.node_name}`}
-                                >
-                                  Node
-                                </Link>
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Details {pod.node_name}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              asChild
+                            >
+                              <Link
+                                to={`/k8s/${context}/pod/logs?name=${pod.name}&namespace=${namespace === 'All' ? pod.namespace : namespace}`}
+                              >
+                                <FileText className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>View container logs</p>
+                          </TooltipContent>
+                        </Tooltip>
                       </TooltipProvider>
                     </TableCell>
                   </TableRow>

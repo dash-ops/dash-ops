@@ -51,6 +51,17 @@ export interface Pod extends BaseEntity {
   condition_status: ConditionStatus;
   restart_count: number;
   node_name: string;
+  controlled_by: string;
+  qos_class: string;
+  age: string;
+  created_at: string;
+  containers: PodContainer[];
+}
+
+export interface PodContainer {
+  name: string;
+  ready: boolean;
+  state: string;
 }
 
 export interface ConditionStatus {
