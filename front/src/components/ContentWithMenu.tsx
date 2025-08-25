@@ -13,14 +13,15 @@ import { ContentWithMenuProps, MenuItem } from '@/types';
 function ContentWithMenu({
   pages,
   paramName = 'context',
+  contextValue,
 }: ContentWithMenuProps): JSX.Element {
   const params = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const [current, setCurrent] = useState<string>(location.pathname);
 
-  // Get the parameter value based on paramName
-  const paramValue = params[paramName];
+  // Get the parameter value - use contextValue if provided, otherwise from params
+  const paramValue = contextValue || params[paramName];
 
   useEffect(() => {
     setCurrent(location.pathname);

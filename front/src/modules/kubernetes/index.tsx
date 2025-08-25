@@ -1,27 +1,27 @@
 import { Container } from 'lucide-react';
-import ClusterPage from './ClusterPage';
+import NodesPage from './NodesPage';
 import DeploymentPage from './DeploymentPage';
 import PodPage from './PodPage';
 import PodLogPage from './PodLogPage';
-import ContentWithMenu from '../../components/ContentWithMenu';
-import { getClusters } from './clusterResource';
+import KubernetesWithContextSelector from './KubernetesWithContextSelector';
 import { Menu, Page, ModuleConfig } from '@/types';
 
 const KubernetesModule = async (): Promise<ModuleConfig> => {
-  const { data } = await getClusters();
-  const menus: Menu[] = data.map(({ name, context }) => ({
-    label: name,
-    icon: <Container className="h-4 w-4" />,
-    key: `k8s-${context}`,
-    link: `/k8s/${context}`,
-  }));
+  const menus: Menu[] = [
+    {
+      label: 'Kubernetes',
+      icon: <Container className="h-4 w-4" />,
+      key: 'kubernetes',
+      link: '/k8s',
+    },
+  ];
 
   const pages: Page[] = [
     {
-      name: 'Cluster',
+      name: 'Nodes',
       path: '/k8s/:context',
       menu: true,
-      element: <ClusterPage />,
+      element: <NodesPage />,
     },
     {
       name: 'Deployments',
@@ -47,9 +47,14 @@ const KubernetesModule = async (): Promise<ModuleConfig> => {
     menus,
     routers: [
       {
+        key: 'k8s-root',
+        path: '/k8s',
+        element: <KubernetesWithContextSelector pages={pages} />,
+      },
+      {
         key: 'k8s',
         path: '/k8s/:context/*',
-        element: <ContentWithMenu pages={pages} />,
+        element: <KubernetesWithContextSelector pages={pages} />,
       },
     ],
   };

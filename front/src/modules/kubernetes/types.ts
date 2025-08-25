@@ -5,7 +5,9 @@
 import { BaseEntity, EntityWithStatus } from '../../types/api';
 
 // Kubernetes Resources
-export interface Cluster extends EntityWithStatus {}
+export interface Cluster extends EntityWithStatus {
+  context: string;
+}
 
 export interface Namespace extends EntityWithStatus {}
 

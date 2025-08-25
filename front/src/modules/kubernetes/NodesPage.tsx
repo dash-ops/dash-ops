@@ -34,7 +34,7 @@ function reducer(
   }
 }
 
-export default function ClusterPage(): JSX.Element {
+export default function NodesPage(): JSX.Element {
   const { context } = useParams<{ context: string }>();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState<string>(searchParams.get('node') ?? '');
@@ -49,7 +49,7 @@ export default function ClusterPage(): JSX.Element {
         const result = await getNodes({ context }, config);
         dispatch({ type: SET_DATA, response: result.data });
       } catch (e: unknown) {
-        if (e.message === 'Request canceled') {
+        if (e instanceof Error && e.message === 'Request canceled') {
           return;
         }
         console.error('Fetch error:', e);
@@ -150,24 +150,30 @@ export default function ClusterPage(): JSX.Element {
                   </TableCell>
                   <TableCell>
                     <ProgressData
-                      percent={node.allocated_resources?.cpu_requests_fraction}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <ProgressData
-                      percent={node.allocated_resources?.cpu_limits_fraction}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <ProgressData
                       percent={
-                        node.allocated_resources?.memory_requests_fraction
+                        node.allocated_resources?.cpu_requests_fraction || 0
                       }
                     />
                   </TableCell>
                   <TableCell>
                     <ProgressData
-                      percent={node.allocated_resources?.memory_limits_fraction}
+                      percent={
+                        node.allocated_resources?.cpu_limits_fraction || 0
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <ProgressData
+                      percent={
+                        node.allocated_resources?.memory_requests_fraction || 0
+                      }
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <ProgressData
+                      percent={
+                        node.allocated_resources?.memory_limits_fraction || 0
+                      }
                     />
                   </TableCell>
                   <TableCell className="text-center">

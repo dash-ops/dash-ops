@@ -33,6 +33,7 @@ export interface ProgressDataProps {
 export interface ContentWithMenuProps {
   pages: Page[];
   paramName?: string;
+  contextValue?: string;
 }
 
 export interface MenuItem {
