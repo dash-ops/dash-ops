@@ -77,8 +77,8 @@ func TestPermissionsHandler(t *testing.T) {
 	mockPermission := permission{
 		Deployments: deploymentsPermissions{
 			Namespaces: []string{"apps"},
-			Start:      []string{"bla"},
-			Stop:       []string{"ble"},
+			Restart:    []string{"bla"},
+			Scale:      []string{"ble"},
 		},
 	}
 

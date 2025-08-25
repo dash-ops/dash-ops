@@ -11,8 +11,29 @@ The Kubernetes plugin provides a simplified interface for Kubernetes cluster man
 - **Multi-cluster Support** - Connect and manage multiple K8s clusters
 - **Workload Monitoring** - View deployments, pods, and services
 - **Real-time Logs** - Stream pod logs directly in the browser
-- **Basic Scaling** - Scale deployments up/down (development only)
-- **Resource Overview** - Cluster nodes and resource utilization
+- **Deployment Management** - Restart and scale operations with permission controls
+- **Resource Overview** - Enhanced node information with disk usage, conditions, and age
+- **Multi-cluster Context Switching** - Single menu with cluster selector (similar to kubectl)
+
+### **Recent Updates (v0.2.0-alpha)**
+
+**Enhanced Deployment Management:**
+
+- ✅ **New Actions**: `restart` for rolling updates and `scale` for replica management
+- ✅ **Modern UI**: Dialog-based interfaces with input validation and loading states
+- ✅ **Granular Permissions**: Separate `restart` and `scale` permission controls
+
+**Improved Pod Information:**
+
+- ✅ **Enhanced Data**: Container counts, QoS class, controlled by, age, and restart counts
+- ✅ **Better UX**: Icon-based actions and consistent badge styling
+- ✅ **Node Integration**: Direct node links and placement information
+
+**Node Monitoring Enhancements:**
+
+- ✅ **Resource Details**: CPU, memory, and disk usage with visual progress bars
+- ✅ **Node Health**: Comprehensive condition monitoring and age calculation
+- ✅ **Visual Consistency**: Modern table layouts with color-coded status indicators
 
 ### **Planned Features**
 
@@ -65,8 +86,8 @@ kubernetes:
     permission:
       deployments:
         namespaces: ['default', 'dev', 'staging'] # Allowed namespaces
-        start: ['dash-ops*developers'] # Teams that can scale up
-        stop: ['dash-ops*developers', 'dash-ops*sre'] # Teams that can scale down
+        restart: ['dash-ops*developers', 'dash-ops*sre'] # Teams that can restart deployments
+        scale: ['dash-ops*developers', 'dash-ops*sre'] # Teams that can scale deployments
 ```
 
 ### **3. Multi-Environment Setup**
@@ -79,8 +100,8 @@ kubernetes:
     permission:
       deployments:
         namespaces: ['default', 'dev']
-        start: ['dash-ops*developers']
-        stop: ['dash-ops*developers']
+        restart: ['dash-ops*developers']
+        scale: ['dash-ops*developers']
 
   - name: 'Staging'
     kubeconfig: ${HOME}/.kube/config
@@ -88,8 +109,8 @@ kubernetes:
     permission:
       deployments:
         namespaces: ['staging']
-        start: ['dash-ops*sre']
-        stop: ['dash-ops*sre']
+        restart: ['dash-ops*sre']
+        scale: ['dash-ops*sre']
 
   - name: 'Production (Read-Only)'
     kubeconfig: ${HOME}/.kube/config
@@ -111,16 +132,17 @@ kubernetes:
 #### **Deployments**
 
 - **List Deployments** - All deployments across allowed namespaces
-- **Deployment Details** - Replica count, image, resource limits
-- **Scale Operations** - Increase/decrease replica count
+- **Deployment Details** - Replica count, image, resource limits, age, conditions
+- **Restart Operations** - Rolling restart of deployment pods
+- **Scale Operations** - Increase/decrease replica count with validation
 - **Rollout Status** - Current deployment state and history
 
 #### **Pods**
 
-- **Pod Listing** - All pods with status and resource usage
-- **Pod Details** - Container status, events, resource consumption
-- **Log Streaming** - Real-time log viewing with filtering
-- **Pod Actions** - Restart, describe (planned)
+- **Pod Listing** - All pods with status, resource usage, and container counts
+- **Pod Details** - Container status, controlled by, QoS class, age, node placement
+- **Log Streaming** - Real-time log viewing with search and copy functionality
+- **Enhanced Information** - Restart counts, quality of service, resource allocation
 
 #### **Services & Networking** (Planned)
 
@@ -191,8 +213,8 @@ kubernetes:
     permission:
       deployments:
         namespaces: ['api', 'worker'] # Limit namespace access
-        start: ['dash-ops*sre'] # Only SRE can scale up
-        stop: ['dash-ops*sre', 'dash-ops*ops'] # SRE and Ops can scale down
+        restart: ['dash-ops*sre'] # Only SRE can restart deployments
+        scale: ['dash-ops*sre', 'dash-ops*ops'] # SRE and Ops can scale deployments
 ```
 
 ## 🚨 Alpha Limitations
@@ -261,14 +283,33 @@ GET /api/kubernetes/deployments?cluster={name}&namespace={namespace}
 }
 ```
 
-```
-POST /api/kubernetes/deployments/{name}/scale
-Content-Type: application/json
+#### **Deployment Actions**
 
+```
+POST /api/kubernetes/{context}/deployment/restart/{namespace}/{name}
+```
+
+**Description:** Performs a rolling restart of the deployment
+
+**Response:**
+
+```json
 {
-  "replicas": 5,
-  "namespace": "default",
-  "cluster": "dev"
+  "message": "Deployment restart initiated"
+}
+```
+
+```
+POST /api/kubernetes/{context}/deployment/scale/{namespace}/{name}/{replicas}
+```
+
+**Description:** Scales the deployment to the specified number of replicas
+
+**Response:**
+
+```json
+{
+  "message": "Deployment scaled successfully"
 }
 ```
 
@@ -300,8 +341,8 @@ kubernetes:
     permission:
       deployments:
         namespaces: ['test', 'development'] # Safe namespaces only
-        start: ['dash-ops*developers']
-        stop: ['dash-ops*developers']
+        restart: ['dash-ops*developers'] # Allow restart for testing
+        scale: ['dash-ops*developers'] # Allow scaling for testing
 ```
 
 ## 🐛 Troubleshooting
