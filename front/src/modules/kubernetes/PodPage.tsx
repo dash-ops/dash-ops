@@ -31,8 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { getNamespaces } from './namespaceResource';
 import { getPods } from './podsResource';
+import { getNamespacesCached } from './namespacesCache';
 import Refresh from '../../components/Refresh';
 import { KubernetesTypes, BadgeVariant } from '@/types';
 
@@ -63,7 +63,7 @@ async function fetchData(
     const result = await getPods(filter, config);
     dispatch({ type: SET_DATA, response: result.data });
   } catch (e: unknown) {
-    if (e.message === 'Request canceled') {
+    if (e instanceof Error && e.message === 'Request canceled') {
       return;
     }
     console.error('Fetch error:', e);
@@ -79,30 +79,21 @@ export default function PodPage(): JSX.Element {
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState<string>(searchParams.get('name') ?? '');
   const [namespace, setNamespace] = useState<string>(
-    searchParams.get('namespace') ?? 'default'
+    searchParams.get('namespace') ?? 'All'
   );
-  const [namespaces, setNamespaces] = useState<Namespace[]>([]);
+  const [namespaces, setNamespaces] = useState<KubernetesTypes.Namespace[]>([]);
   const [pods, dispatch] = useReducer(reducer, INITIAL_STATE);
 
   useEffect(() => {
     if (!context) return;
 
-    const controller = new AbortController();
-    const signal = controller.signal;
-
-    getNamespaces({ context }, { signal })
-      .then((result) => {
-        setNamespaces(result.data);
+    getNamespacesCached(context)
+      .then((namespaces) => {
+        setNamespaces([{ name: 'All', status: 'Active' }, ...namespaces]);
       })
       .catch((e: unknown) => {
-        if (e.message !== 'Request canceled') {
-          console.error('Error fetching namespaces:', e);
-        }
+        console.error('Error fetching namespaces:', e);
       });
-
-    return () => {
-      controller.abort();
-    };
   }, [context]);
 
   useEffect(() => {
@@ -112,7 +103,8 @@ export default function PodPage(): JSX.Element {
     const signal = controller.signal;
     dispatch({ type: LOADING });
 
-    fetchData(dispatch, { context, namespace }, { signal });
+    const namespaceFilter = namespace === 'All' ? '' : namespace;
+    fetchData(dispatch, { context, namespace: namespaceFilter }, { signal });
 
     return () => {
       controller.abort();
@@ -121,7 +113,8 @@ export default function PodPage(): JSX.Element {
 
   const onReload = useCallback(async () => {
     if (!context) return;
-    fetchData(dispatch, { context, namespace });
+    const namespaceFilter = namespace === 'All' ? '' : namespace;
+    fetchData(dispatch, { context, namespace: namespaceFilter });
   }, [context, namespace]);
 
   const searchHandler = (value: string): void => {

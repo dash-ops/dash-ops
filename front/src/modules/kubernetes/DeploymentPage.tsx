@@ -19,12 +19,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { getNamespaces } from './namespaceResource';
 import {
   getDeployments,
   upDeployment,
   downDeployment,
 } from './deploymentResource';
+import { getNamespacesCached } from './namespacesCache';
 import Refresh from '../../components/Refresh';
 import DeploymentActions from './DeploymentActions';
 import { KubernetesTypes } from '@/types';
@@ -59,7 +59,7 @@ async function fetchData(
     const result = await getDeployments(filter, config);
     dispatch({ type: SET_DATA, response: result.data });
   } catch (e: unknown) {
-    if (e.message === 'Request canceled') {
+    if (e instanceof Error && e.message === 'Request canceled') {
       return;
     }
     console.error('Fetch error:', e);
@@ -70,13 +70,13 @@ async function fetchData(
 
 async function toUp(
   context: string,
-  deployment: Deployment,
+  deployment: KubernetesTypes.Deployment,
   setNewPodCount: (name: string, podCount: number) => void
 ): Promise<void> {
   try {
     setNewPodCount(deployment.name, 1);
     await upDeployment(context, deployment.name, deployment.namespace);
-  } catch (e: unknown) {
+  } catch (e: any) {
     setNewPodCount(deployment.name, 0);
     toast.error(
       `Failed to try to up deployment: ${e.data?.error || e.message}`
@@ -86,13 +86,13 @@ async function toUp(
 
 async function toDown(
   context: string,
-  deployment: Deployment,
+  deployment: KubernetesTypes.Deployment,
   setNewPodCount: (name: string, podCount: number) => void
 ): Promise<void> {
   try {
     setNewPodCount(deployment.name, 0);
     await downDeployment(context, deployment.name, deployment.namespace);
-  } catch (e: unknown) {
+  } catch (e: any) {
     setNewPodCount(deployment.name, 1);
     toast.error(
       `Failed to try to down deployment: ${e.data?.error || e.message}`
@@ -103,29 +103,20 @@ async function toDown(
 export default function DeploymentPage(): JSX.Element {
   const { context } = useParams<{ context: string }>();
   const [search, setSearch] = useState<string>('');
-  const [namespace, setNamespace] = useState<string>('default');
-  const [namespaces, setNamespaces] = useState<Namespace[]>([]);
+  const [namespace, setNamespace] = useState<string>('All');
+  const [namespaces, setNamespaces] = useState<KubernetesTypes.Namespace[]>([]);
   const [deployments, dispatch] = useReducer(reducer, INITIAL_STATE);
 
   useEffect(() => {
     if (!context) return;
 
-    const controller = new AbortController();
-    const signal = controller.signal;
-
-    getNamespaces({ context }, { signal })
-      .then((result) => {
-        setNamespaces(result.data);
+    getNamespacesCached(context)
+      .then((namespaces) => {
+        setNamespaces([{ name: 'All', status: 'Active' }, ...namespaces]);
       })
       .catch((e: unknown) => {
-        if (e.message !== 'Request canceled') {
-          console.error('Error fetching namespaces:', e);
-        }
+        console.error('Error fetching namespaces:', e);
       });
-
-    return () => {
-      controller.abort();
-    };
   }, [context]);
 
   useEffect(() => {
@@ -134,7 +125,9 @@ export default function DeploymentPage(): JSX.Element {
     const controller = new AbortController();
     const signal = controller.signal;
     dispatch({ type: LOADING });
-    fetchData(dispatch, { context, namespace }, { signal });
+
+    const namespaceFilter = namespace === 'All' ? '' : namespace;
+    fetchData(dispatch, { context, namespace: namespaceFilter }, { signal });
 
     return () => {
       controller.abort();
@@ -143,7 +136,8 @@ export default function DeploymentPage(): JSX.Element {
 
   const onReload = useCallback(async () => {
     if (!context) return;
-    fetchData(dispatch, { context, namespace });
+    const namespaceFilter = namespace === 'All' ? '' : namespace;
+    fetchData(dispatch, { context, namespace: namespaceFilter });
   }, [context, namespace]);
 
   const handleNamespaceChange = (newNamespace: string): void => {
