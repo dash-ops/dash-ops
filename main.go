@@ -14,6 +14,7 @@ import (
 	"github.com/dash-ops/dash-ops/pkg/config"
 	"github.com/dash-ops/dash-ops/pkg/kubernetes"
 	"github.com/dash-ops/dash-ops/pkg/oauth2"
+	servicecatalog "github.com/dash-ops/dash-ops/pkg/service-catalog"
 	"github.com/dash-ops/dash-ops/pkg/spa"
 )
 
@@ -40,6 +41,10 @@ func main() {
 	if dashConfig.Plugins.Has("OAuth2") {
 		// ToDo transform into isolated plugins
 		oauth2.MakeOauthHandlers(api, internal, fileConfig)
+	}
+	if dashConfig.Plugins.Has("ServiceCatalog") {
+		// Service Catalog plugin
+		servicecatalog.MakeServiceCatalogHandlers(internal, fileConfig)
 	}
 	if dashConfig.Plugins.Has("Kubernetes") {
 		// ToDo transform into isolated plugins

@@ -6,6 +6,7 @@ headers:
 front: front/dist
 plugins:
   - 'OAuth2'
+  - 'ServiceCatalog'
   - 'Kubernetes'
   - 'AWS'
 oauth2:
@@ -21,10 +22,20 @@ oauth2:
       - user
       - repo
       - read:org
+service_catalog:
+  storage:
+    provider: 'filesystem'  # filesystem, github, s3
+    filesystem:
+      directory: './services'
+    github:
+      repository: 'your-org/service-definitions'
+      branch: 'main'
+    s3:
+      bucket: 'your-service-definitions-bucket'
 kubernetes:
   - name: 'Kubernetes Local'
     kubeconfig: ${HOME}/.kube/config
-    context: 'local'
+    context: 'docker-desktop'
 aws:
   - name: 'My AWS account'
     region: us-east-1
