@@ -24,6 +24,8 @@ type deploymentsPermissions struct {
 	Namespaces []string `yaml:"namespaces" json:"namespaces"`
 	Start      []string `yaml:"start" json:"start"`
 	Stop       []string `yaml:"stop" json:"stop"`
+	Restart    []string `yaml:"restart" json:"restart"`
+	Scale      []string `yaml:"scale" json:"scale"`
 }
 
 func loadConfig(file []byte) (dashYaml, error) {

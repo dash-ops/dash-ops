@@ -47,6 +47,11 @@ func (m *mockClient) GetPodLogs(filters podFilter) ([]ContainerLog, error) {
 	return args.Get(0).([]ContainerLog), args.Error(1)
 }
 
+func (m *mockClient) RestartDeployment(name string, ns string) error {
+	args := m.Called()
+	return args.Error(0)
+}
+
 func TestClustersHandler(t *testing.T) {
 	mockConfig := dashYaml{
 		Kubernetes: []config{
@@ -153,11 +158,11 @@ func TestDeploymentsHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code, "should return status 200")
 }
 
-func TestDeploymentUpHandler(t *testing.T) {
+func TestDeploymentRestartHandler(t *testing.T) {
 	mockPermission := permission{
 		Deployments: deploymentsPermissions{
 			Namespaces: []string{"apps"},
-			Start:      []string{"bla"},
+			Restart:    []string{"bla"},
 		},
 	}
 
@@ -166,25 +171,25 @@ func TestDeploymentUpHandler(t *testing.T) {
 	}
 
 	client := new(mockClient)
-	client.On("Scale").Return(nil)
+	client.On("RestartDeployment").Return(nil)
 
 	rr := httptest.NewRecorder()
-	req := httptest.NewRequest("POST", "/deployment/up/apps/nginx", nil)
+	req := httptest.NewRequest("POST", "/deployment/restart/apps/nginx", nil)
 	ctx := context.WithValue(req.Context(), commons.UserDataKey, mockUserData)
 	req = req.WithContext(ctx)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/deployment/up/{namespace}/{name}", deploymentUpHandler(client, mockPermission))
+	router.HandleFunc("/deployment/restart/{namespace}/{name}", deploymentRestartHandler(client, mockPermission))
 	router.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "should return status 200")
 }
 
-func TestDeploymentDownHandler(t *testing.T) {
+func TestDeploymentScaleHandler(t *testing.T) {
 	mockPermission := permission{
 		Deployments: deploymentsPermissions{
 			Namespaces: []string{"apps"},
-			Stop:       []string{"bla"},
+			Scale:      []string{"bla"},
 		},
 	}
 
@@ -196,12 +201,12 @@ func TestDeploymentDownHandler(t *testing.T) {
 	client.On("Scale").Return(nil)
 
 	rr := httptest.NewRecorder()
-	req := httptest.NewRequest("POST", "/deployment/down/apps/nginx", nil)
+	req := httptest.NewRequest("POST", "/deployment/scale/apps/nginx/3", nil)
 	ctx := context.WithValue(req.Context(), commons.UserDataKey, mockUserData)
 	req = req.WithContext(ctx)
 
 	router := mux.NewRouter()
-	router.HandleFunc("/deployment/down/{namespace}/{name}", deploymentDownHandler(client, mockPermission))
+	router.HandleFunc("/deployment/scale/{namespace}/{name}/{replicas}", deploymentScaleHandler(client, mockPermission))
 	router.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusOK, rr.Code, "should return status 200")

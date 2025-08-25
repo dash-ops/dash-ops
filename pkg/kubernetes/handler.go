@@ -86,7 +86,7 @@ func deploymentsHandler(client Client) http.HandlerFunc {
 func deploymentRestartHandler(client Client, permission permission) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userData := r.Context().Value(commons.UserDataKey).(commons.UserData)
-		if isValid := commons.HasPermission(permission.Deployments.Start, userData.Groups); !isValid {
+		if isValid := commons.HasPermission(permission.Deployments.Restart, userData.Groups); !isValid {
 			commons.RespondError(w, http.StatusForbidden, "you do not have permission")
 			return
 		}
@@ -109,7 +109,7 @@ func deploymentRestartHandler(client Client, permission permission) http.Handler
 func deploymentScaleHandler(client Client, permission permission) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userData := r.Context().Value(commons.UserDataKey).(commons.UserData)
-		if isValid := commons.HasPermission(permission.Deployments.Start, userData.Groups); !isValid {
+		if isValid := commons.HasPermission(permission.Deployments.Scale, userData.Groups); !isValid {
 			commons.RespondError(w, http.StatusForbidden, "you do not have permission")
 			return
 		}
