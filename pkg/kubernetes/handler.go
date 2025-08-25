@@ -3,6 +3,7 @@ package kubernetes
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/dash-ops/dash-ops/pkg/commons"
 	"github.com/gorilla/mux"
@@ -82,7 +83,7 @@ func deploymentsHandler(client Client) http.HandlerFunc {
 	}
 }
 
-func deploymentUpHandler(client Client, permission permission) http.HandlerFunc {
+func deploymentRestartHandler(client Client, permission permission) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userData := r.Context().Value(commons.UserDataKey).(commons.UserData)
 		if isValid := commons.HasPermission(permission.Deployments.Start, userData.Groups); !isValid {
@@ -96,7 +97,7 @@ func deploymentUpHandler(client Client, permission permission) http.HandlerFunc 
 			return
 		}
 
-		err := client.Scale(vars["name"], vars["namespace"], 1)
+		err := client.RestartDeployment(vars["name"], vars["namespace"])
 		if err != nil {
 			commons.RespondError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -105,10 +106,10 @@ func deploymentUpHandler(client Client, permission permission) http.HandlerFunc 
 	}
 }
 
-func deploymentDownHandler(client Client, permission permission) http.HandlerFunc {
+func deploymentScaleHandler(client Client, permission permission) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userData := r.Context().Value(commons.UserDataKey).(commons.UserData)
-		if isValid := commons.HasPermission(permission.Deployments.Stop, userData.Groups); !isValid {
+		if isValid := commons.HasPermission(permission.Deployments.Start, userData.Groups); !isValid {
 			commons.RespondError(w, http.StatusForbidden, "you do not have permission")
 			return
 		}
@@ -119,7 +120,14 @@ func deploymentDownHandler(client Client, permission permission) http.HandlerFun
 			return
 		}
 
-		err := client.Scale(vars["name"], vars["namespace"], 0)
+		replicas := vars["replicas"]
+		replicasInt, err := strconv.Atoi(replicas)
+		if err != nil {
+			commons.RespondError(w, http.StatusBadRequest, "invalid replicas number")
+			return
+		}
+
+		err = client.Scale(vars["name"], vars["namespace"], int32(replicasInt))
 		if err != nil {
 			commons.RespondError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -214,13 +222,13 @@ func MakeKubernetesHandlers(r *mux.Router, fileConfig []byte) {
 			Methods("GET", "OPTIONS").
 			Name("k8sDeployments")
 
-		contextRoute.HandleFunc("/deployment/up/{namespace}/{name}", deploymentUpHandler(client, cluster.Permission)).
+		contextRoute.HandleFunc("/deployment/restart/{namespace}/{name}", deploymentRestartHandler(client, cluster.Permission)).
 			Methods("POST", "OPTIONS").
-			Name("k8sDeploymentUp")
+			Name("k8sDeploymentRestart")
 
-		contextRoute.HandleFunc("/deployment/down/{namespace}/{name}", deploymentDownHandler(client, cluster.Permission)).
+		contextRoute.HandleFunc("/deployment/scale/{namespace}/{name}/{replicas}", deploymentScaleHandler(client, cluster.Permission)).
 			Methods("POST", "OPTIONS").
-			Name("k8sDeploymentDown")
+			Name("k8sDeploymentScale")
 
 		contextRoute.HandleFunc("/pods", podsHandler(client)).
 			Methods("GET", "OPTIONS").

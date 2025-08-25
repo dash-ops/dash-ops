@@ -21,12 +21,13 @@ import {
 } from '@/components/ui/select';
 import {
   getDeployments,
-  upDeployment,
-  downDeployment,
+  restartDeployment,
+  scaleDeployment,
 } from './deploymentResource';
 import { getNamespacesCached } from './namespacesCache';
 import Refresh from '../../components/Refresh';
-import DeploymentActions from './DeploymentActions';
+import ModernDeploymentActions from './ModernDeploymentActions';
+import SimpleDeploymentStatus from './SimpleDeploymentStatus';
 import { KubernetesTypes } from '@/types';
 
 const INITIAL_STATE: KubernetesTypes.DeploymentState = {
@@ -68,35 +69,39 @@ async function fetchData(
   }
 }
 
-async function toUp(
+async function handleRestart(
   context: string,
   deployment: KubernetesTypes.Deployment,
-  setNewPodCount: (name: string, podCount: number) => void
+  onReload: () => void
 ): Promise<void> {
   try {
-    setNewPodCount(deployment.name, 1);
-    await upDeployment(context, deployment.name, deployment.namespace);
+    await restartDeployment(context, deployment.name, deployment.namespace);
+    toast.success(`Deployment ${deployment.name} restarted successfully`);
+    onReload();
   } catch (e: any) {
-    setNewPodCount(deployment.name, 0);
-    toast.error(
-      `Failed to try to up deployment: ${e.data?.error || e.message}`
-    );
+    toast.error(`Failed to restart deployment: ${e.data?.error || e.message}`);
   }
 }
 
-async function toDown(
+async function handleScale(
   context: string,
   deployment: KubernetesTypes.Deployment,
-  setNewPodCount: (name: string, podCount: number) => void
+  replicas: number,
+  onReload: () => void
 ): Promise<void> {
   try {
-    setNewPodCount(deployment.name, 0);
-    await downDeployment(context, deployment.name, deployment.namespace);
-  } catch (e: any) {
-    setNewPodCount(deployment.name, 1);
-    toast.error(
-      `Failed to try to down deployment: ${e.data?.error || e.message}`
+    await scaleDeployment(
+      context,
+      deployment.name,
+      deployment.namespace,
+      replicas
     );
+    toast.success(
+      `Deployment ${deployment.name} scaled to ${replicas} replicas`
+    );
+    onReload();
+  } catch (e: any) {
+    toast.error(`Failed to scale deployment: ${e.data?.error || e.message}`);
   }
 }
 
@@ -142,13 +147,6 @@ export default function DeploymentPage(): JSX.Element {
 
   const handleNamespaceChange = (newNamespace: string): void => {
     setNamespace(newNamespace);
-  };
-
-  const updatePodCount = (name: string, podCount: number): void => {
-    const newDeployments = deployments.data.map((dep) =>
-      dep.name === name ? { ...dep, pod_count: podCount } : dep
-    );
-    dispatch({ type: SET_DATA, response: newDeployments });
   };
 
   const filteredData = deployments.data.filter(
@@ -211,15 +209,19 @@ export default function DeploymentPage(): JSX.Element {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[300px]">Name</TableHead>
-                <TableHead>Pods Info</TableHead>
-                <TableHead className="w-[140px] text-right">Actions</TableHead>
+                <TableHead className="w-[200px]">Name</TableHead>
+                <TableHead className="w-[120px]">Namespace</TableHead>
+                <TableHead className="w-[100px]">Pods</TableHead>
+                <TableHead className="w-[100px]">Replicas</TableHead>
+                <TableHead className="w-[80px]">Age</TableHead>
+                <TableHead className="w-[120px]">Conditions</TableHead>
+                <TableHead className="w-[100px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {deployments.loading ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
                       <span className="ml-2">Loading...</span>
@@ -228,7 +230,7 @@ export default function DeploymentPage(): JSX.Element {
                 </TableRow>
               ) : filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center py-8">
+                  <TableCell colSpan={7} className="text-center py-8">
                     <span className="text-muted-foreground">
                       No deployments found
                     </span>
@@ -236,10 +238,17 @@ export default function DeploymentPage(): JSX.Element {
                 </TableRow>
               ) : (
                 filteredData.map((deployment) => (
-                  <TableRow key={deployment.name}>
-                    <TableCell className="font-medium">
+                  <TableRow key={deployment.name} className="hover:bg-muted/50">
+                    <TableCell className="font-medium text-foreground">
                       {deployment.name}
                     </TableCell>
+
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">
+                        {deployment.namespace}
+                      </Badge>
+                    </TableCell>
+
                     <TableCell>
                       <Badge
                         variant={
@@ -247,18 +256,48 @@ export default function DeploymentPage(): JSX.Element {
                             ? 'default'
                             : 'destructive'
                         }
+                        className="text-xs"
                       >
                         {deployment.pod_info.current}/
                         {deployment.pod_info.desired}
                       </Badge>
                     </TableCell>
+
+                    <TableCell>
+                      <div className="text-sm">
+                        <span className="text-foreground">
+                          {deployment.replicas.ready}/
+                          {deployment.replicas.desired}
+                        </span>
+                        {deployment.replicas.updated !==
+                          deployment.replicas.desired && (
+                          <span className="text-muted-foreground ml-1">
+                            ({deployment.replicas.updated} updated)
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="text-sm text-muted-foreground">
+                      {deployment.age}
+                    </TableCell>
+
+                    <TableCell>
+                      <SimpleDeploymentStatus
+                        conditions={deployment.conditions}
+                        replicas={deployment.replicas}
+                      />
+                    </TableCell>
+
                     <TableCell className="text-right">
-                      <DeploymentActions
+                      <ModernDeploymentActions
                         context={context}
                         deployment={deployment}
-                        toUp={() => toUp(context, deployment, updatePodCount)}
-                        toDown={() =>
-                          toDown(context, deployment, updatePodCount)
+                        onRestart={() =>
+                          handleRestart(context, deployment, onReload)
+                        }
+                        onScale={(replicas) =>
+                          handleScale(context, deployment, replicas, onReload)
                         }
                       />
                     </TableCell>

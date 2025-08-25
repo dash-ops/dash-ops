@@ -61,11 +61,29 @@ export interface Deployment extends BaseEntity {
   namespace: string;
   pod_count: number;
   pod_info: PodInfo;
+  replicas: DeploymentReplicas;
+  age: string;
+  created_at: string;
+  conditions: DeploymentCondition[];
 }
 
 export interface PodInfo {
   current: number;
   desired: number;
+}
+
+export interface DeploymentReplicas {
+  ready: number;
+  available: number;
+  updated: number;
+  desired: number;
+}
+
+export interface DeploymentCondition {
+  type: string;
+  status: string;
+  reason?: string;
+  message?: string;
 }
 
 export interface LogContainer {
@@ -131,12 +149,4 @@ export interface PodLogsFilter {
 export interface DeploymentFilter {
   context: string;
   namespace: string;
-}
-
-// Component Props
-export interface DeploymentActionsProps {
-  context: string;
-  deployment: Deployment;
-  toUp: () => void;
-  toDown: () => void;
 }

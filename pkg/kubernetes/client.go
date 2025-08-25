@@ -12,6 +12,7 @@ type Client interface {
 	GetNamespaces() ([]Namespace, error)
 	GetDeployments(filters deploymentFilter) ([]Deployment, error)
 	Scale(name string, ns string, replicas int32) error
+	RestartDeployment(name string, ns string) error
 	GetPods(filters podFilter) ([]Pod, error)
 	GetPodLogs(filters podFilter) ([]ContainerLog, error)
 }

@@ -16,18 +16,23 @@ export function getDeployments(
     .then((resp) => (resp.data ? resp : { ...resp, data: [] }));
 }
 
-export function upDeployment(
+export function restartDeployment(
   context: string,
   name: string,
   namespace: string
 ): Promise<AxiosResponse<{ success: boolean }>> {
-  return http.post(`/v1/k8s/${context}/deployment/up/${namespace}/${name}`);
+  return http.post(
+    `/v1/k8s/${context}/deployment/restart/${namespace}/${name}`
+  );
 }
 
-export function downDeployment(
+export function scaleDeployment(
   context: string,
   name: string,
-  namespace: string
+  namespace: string,
+  replicas: number
 ): Promise<AxiosResponse<{ success: boolean }>> {
-  return http.post(`/v1/k8s/${context}/deployment/down/${namespace}/${name}`);
+  return http.post(
+    `/v1/k8s/${context}/deployment/scale/${namespace}/${name}/${replicas}`
+  );
 }
