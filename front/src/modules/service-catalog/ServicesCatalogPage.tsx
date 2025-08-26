@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -69,19 +69,7 @@ export function ServicesCatalogPage() {
     username: 'current-user',
   };
 
-  // Load services on component mount
-  useEffect(() => {
-    loadServices();
-  }, []);
-
-  // Load health data when services change
-  useEffect(() => {
-    if (services.length > 0) {
-      loadHealthData();
-    }
-  }, [services]);
-
-  const loadServices = async () => {
+  const loadServices = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
@@ -93,12 +81,11 @@ export function ServicesCatalogPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const loadHealthData = async () => {
+  const loadHealthData = useCallback(async (serviceNames: string[]) => {
     try {
       setHealthLoading(true);
-      const serviceNames = services.map((s) => s.metadata.name);
       const healthData = await getServiceHealthBatch(serviceNames);
       setServiceHealths(healthData);
     } catch (err) {
@@ -107,7 +94,20 @@ export function ServicesCatalogPage() {
     } finally {
       setHealthLoading(false);
     }
-  };
+  }, []);
+
+  // Load services on component mount
+  useEffect(() => {
+    loadServices();
+  }, [loadServices]);
+
+  // Load health data when services change
+  useEffect(() => {
+    if (services.length > 0) {
+      const serviceNames = services.map((s) => s.metadata.name);
+      loadHealthData(serviceNames);
+    }
+  }, [services, loadHealthData]);
 
   // Filter and sort services
   const filteredServices = useMemo(() => {
@@ -312,7 +312,10 @@ export function ServicesCatalogPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={loadHealthData}
+              onClick={() => {
+                const serviceNames = services.map((s) => s.metadata.name);
+                loadHealthData(serviceNames);
+              }}
               disabled={healthLoading}
             >
               <RefreshCw
