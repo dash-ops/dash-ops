@@ -58,8 +58,8 @@ spec:
     spec:
       containers:
       - name: auth-api
-        image: user-authentication-api:latest
-        imagePullPolicy: IfNotPresent  # For local development with docker-desktop
+        image: httpd:2.4-alpine
+        imagePullPolicy: IfNotPresent  # Use httpd for demo purposes
         ports:
         - containerPort: 8080
           name: http
