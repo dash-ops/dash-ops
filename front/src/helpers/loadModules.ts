@@ -18,11 +18,21 @@ export function loadModulesConfig(): Promise<LoadedModulesConfig> {
     );
 
     const modulesConfig = validPlugins.map((pluginName) => {
+      // Map plugin names to their actual folder names
+      const pluginToFolderMap: Record<string, string> = {
+        servicecatalog: 'service-catalog',
+        oauth2: 'oauth2',
+        kubernetes: 'kubernetes',
+        aws: 'aws',
+        config: 'config',
+      };
+
       const moduleNameLower = pluginName.toLowerCase();
+      const folderName = pluginToFolderMap[moduleNameLower] || moduleNameLower;
 
       // Try .tsx first, then .ts
       const tryImport = (extension: string): Promise<ModuleConfig> => {
-        return import(`../modules/${moduleNameLower}/index.${extension}`).then(
+        return import(`../modules/${folderName}/index.${extension}`).then(
           (module) => {
             if (typeof module.default === 'function') {
               // Module with dynamic route loading
