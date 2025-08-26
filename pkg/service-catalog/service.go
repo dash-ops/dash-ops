@@ -3,14 +3,14 @@ package servicecatalog
 import (
 	"fmt"
 	"strings"
-	"time"
 )
 
 // ServiceCatalog represents the main service catalog manager
 type ServiceCatalog struct {
-	storage       StorageProvider
-	gitVersioning *GitVersioning
-	config        *Config
+	storage        StorageProvider
+	gitVersioning  *GitVersioning
+	config         *Config
+	k8sIntegration *KubernetesIntegration
 }
 
 // NewServiceCatalog creates a new service catalog instance
@@ -45,10 +45,14 @@ func NewServiceCatalog(config *Config) (*ServiceCatalog, error) {
 		}
 	}
 
+	// Initialize Kubernetes integration
+	k8sIntegration := NewKubernetesIntegration("") // Empty string uses default localhost
+
 	return &ServiceCatalog{
-		storage:       storage,
-		gitVersioning: gitVersioning,
-		config:        config,
+		storage:        storage,
+		gitVersioning:  gitVersioning,
+		config:         config,
+		k8sIntegration: k8sIntegration,
 	}, nil
 }
 
@@ -233,44 +237,14 @@ func (sc *ServiceCatalog) ServiceExists(name string) bool {
 }
 
 // GetServiceHealth returns aggregated health status for a service
-func (sc *ServiceCatalog) GetServiceHealth(serviceName string) (*ServiceHealth, error) {
+func (sc *ServiceCatalog) GetServiceHealth(serviceName string, authHeader string) (*ServiceHealth, error) {
 	service, err := sc.GetService(serviceName)
 	if err != nil {
 		return nil, err
 	}
 
-	// If service has no Kubernetes definition, return basic health
-	if service.Spec.Kubernetes == nil {
-		return &ServiceHealth{
-			ServiceName:   serviceName,
-			OverallStatus: "unknown",
-			Environments:  []EnvironmentHealth{},
-			LastUpdated:   time.Now(),
-		}, nil
-	}
-
-	// TODO: Implement Kubernetes health aggregation
-	// This will be implemented when we integrate with the Kubernetes plugin
-	// For now, return a placeholder
-	var environments []EnvironmentHealth
-
-	for _, env := range service.Spec.Kubernetes.Environments {
-		environments = append(environments, EnvironmentHealth{
-			Name:        env.Name,
-			Context:     env.Context,
-			Status:      "unknown", // Will be populated from K8s plugin
-			Deployments: []DeploymentHealth{},
-		})
-	}
-
-	overallStatus := sc.calculateServiceStatus(environments, service.Metadata.Tier)
-
-	return &ServiceHealth{
-		ServiceName:   serviceName,
-		OverallStatus: overallStatus,
-		Environments:  environments,
-		LastUpdated:   time.Now(),
-	}, nil
+	// Use Kubernetes integration to get real health data
+	return sc.k8sIntegration.AggregateServiceHealth(service, authHeader)
 }
 
 // GetServiceHistory returns change history for a service

@@ -231,7 +231,10 @@ func (h *Handler) getServiceHealthHandler(w http.ResponseWriter, r *http.Request
 	vars := mux.Vars(r)
 	name := vars["name"]
 
-	health, err := h.serviceCatalog.GetServiceHealth(name)
+	// Get authorization header to pass to Kubernetes API
+	authHeader := r.Header.Get("Authorization")
+
+	health, err := h.serviceCatalog.GetServiceHealth(name, authHeader)
 	if err != nil {
 		if err.Error() == fmt.Sprintf("service '%s' not found", name) {
 			commons.RespondError(w, http.StatusNotFound, err.Error())
