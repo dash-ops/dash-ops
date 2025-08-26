@@ -34,6 +34,13 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         release_branches: main
+        default_bump: patch
+        tag_prefix: v
+        pre_release: false
+        # Keep in 0.x.x range for beta releases
+        major_pattern: "BREAKING CHANGE:"
+        minor_pattern: "feat:"
+        patch_pattern: "fix:|perf:|refactor:"
 
     - name: Build and push Docker images
       uses: docker/build-push-action@v1
