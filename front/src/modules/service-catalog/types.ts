@@ -94,7 +94,13 @@ export interface ServiceList {
 
 export interface ServiceHealth {
   service_name: string;
-  overall_status: 'healthy' | 'degraded' | 'down' | 'critical' | 'unknown';
+  overall_status:
+    | 'healthy'
+    | 'degraded'
+    | 'down'
+    | 'critical'
+    | 'drift'
+    | 'unknown';
   environments: EnvironmentHealth[];
   last_updated: string;
 }
@@ -102,7 +108,7 @@ export interface ServiceHealth {
 export interface EnvironmentHealth {
   name: string;
   context: string;
-  status: 'healthy' | 'degraded' | 'down';
+  status: 'healthy' | 'degraded' | 'down' | 'drift';
   deployments: DeploymentHealth[];
 }
 

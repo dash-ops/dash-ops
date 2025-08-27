@@ -228,6 +228,8 @@ export function ServicesCatalogPage() {
     switch (status) {
       case 'healthy':
         return 'bg-green-500';
+      case 'drift':
+        return 'bg-blue-500'; // Service working, config out of sync
       case 'degraded':
         return 'bg-yellow-500';
       case 'critical':
@@ -403,6 +405,7 @@ export function ServicesCatalogPage() {
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="healthy">Healthy</SelectItem>
+              <SelectItem value="drift">Config Drift</SelectItem>
               <SelectItem value="degraded">Degraded</SelectItem>
               <SelectItem value="critical">Critical</SelectItem>
               <SelectItem value="down">Down</SelectItem>

@@ -80,7 +80,7 @@ func (ki *KubernetesIntegration) GetDeployments(context, namespace string, authH
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Kubernetes API returned status %d", resp.StatusCode)
+		return nil, fmt.Errorf("kubernetes API returned status %d", resp.StatusCode)
 	}
 
 	// Parse response
@@ -192,19 +192,29 @@ func (ki *KubernetesIntegration) calculateDeploymentStatus(k8sDeploy *K8sDeploym
 		}
 	}
 
-	// Check replica health
+	// Check replica counts
 	ready := k8sDeploy.Replicas.Ready
 	desired := k8sDeploy.Replicas.Desired
+	expected := int32(expectedReplicas)
 
+	// Service is DOWN if not available or no ready replicas
 	if !available || ready == 0 {
 		return "down"
 	}
 
-	if ready < desired || int(ready) < expectedReplicas {
+	// Service is DEGRADED if Kubernetes desired replicas are not met
+	// This indicates an actual cluster issue (pods crashing, resource constraints)
+	if ready < desired {
 		return "degraded"
 	}
 
+	// Service is HEALTHY if K8s deployment is stable and working
+	// regardless of config drift
 	if available && progressing && ready == desired {
+		// Check if there's configuration drift (but service is still healthy)
+		if desired != expected {
+			return "drift" // Service working, but config out of sync
+		}
 		return "healthy"
 	}
 
@@ -218,6 +228,7 @@ func (ki *KubernetesIntegration) calculateEnvironmentStatus(deployments []Deploy
 	}
 
 	healthyCount := 0
+	driftCount := 0
 	downCount := 0
 	degradedCount := 0
 
@@ -225,6 +236,8 @@ func (ki *KubernetesIntegration) calculateEnvironmentStatus(deployments []Deploy
 		switch deploy.Status {
 		case "healthy":
 			healthyCount++
+		case "drift":
+			driftCount++
 		case "down", "NotFound":
 			downCount++
 		case "degraded":
@@ -237,14 +250,19 @@ func (ki *KubernetesIntegration) calculateEnvironmentStatus(deployments []Deploy
 		return "down"
 	}
 
-	// If any deployment is degraded, environment is degraded
+	// If any deployment is degraded (actual issues), environment is degraded
 	if degradedCount > 0 {
 		return "degraded"
 	}
 
-	// If all deployments are healthy
+	// If all deployments are healthy (perfect sync)
 	if healthyCount == len(deployments) {
 		return "healthy"
+	}
+
+	// If all deployments are working (healthy + drift), but some have config drift
+	if (healthyCount+driftCount) == len(deployments) && driftCount > 0 {
+		return "drift"
 	}
 
 	return "unknown"
@@ -271,28 +289,44 @@ func (ki *KubernetesIntegration) calculateServiceStatus(environments []Environme
 		prodStatus = environments[0].Status
 	}
 
-	// Apply tier-based logic (same as before)
+	// Apply tier-based logic with improved drift handling
 	switch tier {
 	case "TIER-1":
-		// Critical services: any issues are critical
-		if prodStatus == "down" || prodStatus == "degraded" {
+		// Critical services: strict monitoring, drift is concerning
+		switch prodStatus {
+		case "down", "degraded":
 			return "critical"
+		case "drift":
+			return "degraded" // Config drift in critical services needs attention
+		default:
+			return prodStatus
 		}
-		return prodStatus
 
 	case "TIER-2":
-		// Important services: production down is degraded
-		if prodStatus == "down" {
+		// Important services: balanced approach
+		switch prodStatus {
+		case "down":
 			return "degraded"
+		case "degraded":
+			return "degraded"
+		case "drift":
+			return "drift" // Config drift is acceptable but visible
+		default:
+			return prodStatus
 		}
-		return prodStatus
 
 	case "TIER-3":
-		// Standard services: only complete failure matters
-		if prodStatus == "down" {
+		// Standard services: lenient, focus on actual availability
+		switch prodStatus {
+		case "down":
 			return "degraded"
+		case "degraded":
+			return "degraded"
+		case "drift":
+			return "healthy" // Config drift in standard services is not a concern
+		default:
+			return "healthy"
 		}
-		return "healthy"
 
 	default:
 		return prodStatus
