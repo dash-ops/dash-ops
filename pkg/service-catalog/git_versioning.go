@@ -67,8 +67,8 @@ func (gv *GitVersioning) InitializeRepository() error {
 		Name:     "Dash-Ops System",
 		Email:    "system@dash-ops.local",
 	}, "initialize"); err != nil {
-		// Log warning but don't fail
-		fmt.Printf("Warning: failed to create initial commit: %v\n", err)
+		// Silently continue if initial commit fails
+		_ = err
 	}
 
 	return nil

@@ -72,8 +72,8 @@ func (sc *ServiceCatalog) CreateService(service *Service, user *UserContext) err
 	// Commit to git if versioning is enabled
 	if sc.gitVersioning != nil {
 		if err := sc.gitVersioning.CommitServiceChange(service, user, "create"); err != nil {
-			// Log warning but don't fail the operation
-			fmt.Printf("Warning: failed to commit service creation: %v\n", err)
+			// Silently continue if git commit fails
+			_ = err
 		}
 	}
 
@@ -108,8 +108,8 @@ func (sc *ServiceCatalog) UpdateService(service *Service, user *UserContext) err
 	// Commit to git if versioning is enabled
 	if sc.gitVersioning != nil {
 		if err := sc.gitVersioning.CommitServiceChange(service, user, "update"); err != nil {
-			// Log warning but don't fail the operation
-			fmt.Printf("Warning: failed to commit service update: %v\n", err)
+			// Silently continue if git commit fails
+			_ = err
 		}
 	}
 
@@ -131,8 +131,8 @@ func (sc *ServiceCatalog) DeleteService(name string, user *UserContext) error {
 	// Commit to git if versioning is enabled
 	if sc.gitVersioning != nil {
 		if err := sc.gitVersioning.CommitServiceDeletion(name, user); err != nil {
-			// Log warning but don't fail the operation
-			fmt.Printf("Warning: failed to commit service deletion: %v\n", err)
+			// Silently continue if git commit fails
+			_ = err
 		}
 	}
 

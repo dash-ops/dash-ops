@@ -179,8 +179,7 @@ func (fp *FilesystemProvider) ListServices() ([]Service, error) {
 		// Get service
 		service, err := fp.GetService(serviceName)
 		if err != nil {
-			// Log error but continue with other services
-			fmt.Printf("Warning: failed to load service %s: %v\n", serviceName, err)
+			// Skip invalid services but continue with others
 			continue
 		}
 
