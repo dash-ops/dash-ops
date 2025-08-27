@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   Dialog,
@@ -87,34 +87,28 @@ export function ServiceFormModal({
     return formData;
   };
 
-  // Memoize initial form values to prevent unnecessary re-calculations
-  const initialFormValues = useMemo((): ServiceFormData => {
-    if (isEditing && serviceData) {
-      return serviceToFormData(serviceData);
-    }
-
-    return {
-      name: '',
-      description: '',
-      tier: 'TIER-2',
-      github_team: '',
-      impact: 'medium',
-      sla_target: '99.9%',
-      language: '',
-      framework: '',
-      env_name: 'local',
-      env_context: 'docker-desktop',
-      env_namespace: '',
-      deployment_name: '',
-      deployment_replicas: 3,
-      cpu_request: '100m',
-      memory_request: '128Mi',
-      cpu_limit: '500m',
-      memory_limit: '256Mi',
-      metrics_url: '',
-      logs_url: '',
-    };
-  }, [isEditing, serviceData]);
+  // Default form values - always start with defaults, then use setValue to populate
+  const defaultFormValues: ServiceFormData = {
+    name: '',
+    description: '',
+    tier: 'TIER-2',
+    github_team: '',
+    impact: 'medium',
+    sla_target: '99.9%',
+    language: '',
+    framework: '',
+    env_name: 'local',
+    env_context: 'docker-desktop',
+    env_namespace: '',
+    deployment_name: '',
+    deployment_replicas: 3,
+    cpu_request: '100m',
+    memory_request: '128Mi',
+    cpu_limit: '500m',
+    memory_limit: '256Mi',
+    metrics_url: '',
+    logs_url: '',
+  };
 
   const {
     register,
@@ -124,7 +118,7 @@ export function ServiceFormModal({
     reset,
     formState: { errors },
   } = useForm<ServiceFormData>({
-    defaultValues: initialFormValues,
+    // defaultValues: defaultFormValues,
   });
 
   const watchedTier = watch('tier');
@@ -140,6 +134,7 @@ export function ServiceFormModal({
 
           // Store service data in state
           setServiceData(loadedServiceData);
+          reset(serviceToFormData(loadedServiceData));
 
           // Set dependencies
           const deps = loadedServiceData.spec.business?.dependencies || [];
@@ -172,7 +167,51 @@ export function ServiceFormModal({
     loadServiceData();
   }, [open, isEditing, editingServiceName, onOpenChange]);
 
-  // No need for complex resets - form only renders when data is ready!
+  // Set form values when service data is loaded
+  // useEffect(() => {
+  //   if (serviceData && isEditing) {
+  //     const formData = serviceToFormData(serviceData);
+  //     console.log('🔄 Setting form values:', formData);
+
+  //     // Set each field individually using setValue
+  //     setValue('name', formData.name);
+  //     setValue('description', formData.description);
+  //     setValue('tier', formData.tier);
+  //     setValue('github_team', formData.github_team);
+  //     setValue('impact', formData.impact);
+  //     setValue('sla_target', formData.sla_target);
+  //     setValue('language', formData.language);
+  //     setValue('framework', formData.framework);
+  //     setValue('env_name', formData.env_name);
+  //     setValue('env_context', formData.env_context);
+  //     setValue('env_namespace', formData.env_namespace);
+  //     setValue('deployment_name', formData.deployment_name);
+  //     setValue('deployment_replicas', formData.deployment_replicas);
+  //     setValue('cpu_request', formData.cpu_request);
+  //     setValue('memory_request', formData.memory_request);
+  //     setValue('cpu_limit', formData.cpu_limit);
+  //     setValue('memory_limit', formData.memory_limit);
+  //     setValue('metrics_url', formData.metrics_url);
+  //     setValue('logs_url', formData.logs_url);
+
+  //     console.log('✅ Form values set, current form state:', watch());
+  //   }
+  // }, [serviceData, isEditing, setValue, watch]);
+
+  // Auto-fill namespace and deployment name based on service name
+  useEffect(() => {
+    const currentName = watchedName;
+    if (currentName && !isEditing) {
+      // Auto-fill namespace if empty
+      if (!watch('env_namespace')) {
+        setValue('env_namespace', currentName.toLowerCase());
+      }
+      // Auto-fill deployment name if empty
+      if (!watch('deployment_name')) {
+        setValue('deployment_name', `${currentName.toLowerCase()}-api`);
+      }
+    }
+  }, [watchedName, isEditing, watch, setValue]);
 
   const onSubmit = async (data: ServiceFormData) => {
     if (
@@ -281,7 +320,8 @@ export function ServiceFormModal({
   };
 
   const handleClose = () => {
-    reset();
+    // Reset form to default values
+    reset(defaultFormValues);
     setCustomDependencies([]);
     setNewDependency('');
     setActiveTab('basic');
@@ -301,19 +341,6 @@ export function ServiceFormModal({
 
   const removeDependency = (dependency: string) => {
     setCustomDependencies((prev) => prev.filter((d) => d !== dependency));
-  };
-
-  // Auto-fill namespace and deployment name based on service name
-  const handleNameChange = (name: string) => {
-    setValue('name', name);
-    if (name) {
-      if (!watch('env_namespace')) {
-        setValue('env_namespace', name.toLowerCase());
-      }
-      if (!watch('deployment_name')) {
-        setValue('deployment_name', `${name.toLowerCase()}-api`);
-      }
-    }
   };
 
   // Don't render modal at all when closed to prevent unnecessary computations
@@ -386,9 +413,6 @@ export function ServiceFormModal({
                               {...register('name', {
                                 required: 'Nome é obrigatório',
                               })}
-                              onChange={(e) =>
-                                !isEditing && handleNameChange(e.target.value)
-                              }
                             />
                             {errors.name && (
                               <p className="text-sm text-destructive mt-1">

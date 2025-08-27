@@ -151,7 +151,7 @@ export interface ServiceFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onServiceCreated?: () => void;
-  editingService?: Service | undefined; // When provided, modal is in edit mode
+  editingServiceName?: string | undefined; // When provided, modal is in edit mode and will fetch service data
 }
 
 export interface ServiceFormData {

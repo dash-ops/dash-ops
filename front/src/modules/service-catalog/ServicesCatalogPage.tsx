@@ -55,9 +55,9 @@ export function ServicesCatalogPage() {
 
   // Modal state
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [editingService, setEditingService] = useState<Service | undefined>(
-    undefined
-  );
+  const [editingServiceName, setEditingServiceName] = useState<
+    string | undefined
+  >(undefined);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -328,7 +328,7 @@ export function ServicesCatalogPage() {
             <Button
               className="gap-2"
               onClick={() => {
-                setEditingService(undefined);
+                setEditingServiceName(undefined);
                 setCreateModalOpen(true);
               }}
             >
@@ -490,7 +490,7 @@ export function ServicesCatalogPage() {
                           size="sm"
                           className="text-xs gap-1 h-6 px-2"
                           onClick={() => {
-                            setEditingService(service);
+                            setEditingServiceName(service.metadata.name);
                             setCreateModalOpen(true);
                           }}
                         >
@@ -654,15 +654,15 @@ export function ServicesCatalogPage() {
         onOpenChange={(open) => {
           setCreateModalOpen(open);
           if (!open) {
-            setEditingService(undefined);
+            setEditingServiceName(undefined);
           }
         }}
         onServiceCreated={() => {
           loadServices();
           setCreateModalOpen(false);
-          setEditingService(undefined);
+          setEditingServiceName(undefined);
         }}
-        editingService={editingService}
+        editingServiceName={editingServiceName}
       />
     </div>
   );
