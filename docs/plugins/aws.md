@@ -1,6 +1,6 @@
 # AWS Plugin
 
-> **⚠️ Alpha Plugin** - Basic EC2 operations only. Limited features and not production-ready.
+> **⚠️ Alpha Plugin** - Enhanced EC2 operations with modern UI. Improved performance but still not production-ready.
 
 The AWS plugin provides a simplified interface for common AWS operations, reducing cognitive load for developers who need basic cloud resource management without deep AWS expertise.
 
@@ -8,10 +8,26 @@ The AWS plugin provides a simplified interface for common AWS operations, reduci
 
 ### **Current Capabilities (Alpha)**
 
-- **EC2 Instance Management** - List, start, and stop EC2 instances
-- **Account Overview** - Basic AWS account and region information
-- **Multi-account Support** - Connect multiple AWS accounts
+- **EC2 Instance Management** - List, start, and stop EC2 instances with modern interface
+- **Multi-account Support** - Connect multiple AWS accounts with unified sidebar selector
+- **Optimized Performance** - Intelligent caching prevents redundant API calls
+- **Single Account Selector** - Unified account selection similar to kubectl context switching
 - **Permission Controls** - Team-based instance operation permissions
+
+### **Recent Updates (v0.2.0-alpha)**
+
+**Sidebar & Navigation Improvements:**
+
+- ✅ **Single Menu Item**: Unified "AWS" menu with account selector dropdown
+- ✅ **Account Switching**: Modern UI for switching between multiple AWS accounts
+- ✅ **Optimized API Calls**: Intelligent caching prevents redundant account list requests
+- ✅ **Performance**: Significant reduction in initial load and navigation times
+
+**Infrastructure Optimization:**
+
+- ✅ **Shared Account Cache**: Similar pattern to Kubernetes cluster caching
+- ✅ **Hook Dependencies**: Fixed React Hook dependency arrays for better performance
+- ✅ **Loading States**: Improved loading indicators during account switches
 
 ### **Planned Features**
 

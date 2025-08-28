@@ -1,39 +1,59 @@
 # Kubernetes Plugin
 
-> **⚠️ Alpha Plugin** - Basic cluster monitoring only. Limited features and not production-ready.
+> **⚠️ Alpha Plugin** - Feature-rich cluster management. Improved UI and optimized performance but still not production-ready.
 
-The Kubernetes plugin provides a simplified interface for Kubernetes cluster management, focusing on essential operations for developers who need cluster visibility without deep Kubernetes expertise.
+The Kubernetes plugin provides a comprehensive yet simplified interface for Kubernetes cluster management, focusing on essential operations for developers who need cluster visibility without deep Kubernetes expertise.
 
 ## 🎯 Features
 
 ### **Current Capabilities (Alpha)**
 
-- **Multi-cluster Support** - Connect and manage multiple K8s clusters
-- **Workload Monitoring** - View deployments, pods, and services
-- **Real-time Logs** - Stream pod logs directly in the browser
-- **Deployment Management** - Restart and scale operations with permission controls
-- **Resource Overview** - Enhanced node information with disk usage, conditions, and age
-- **Multi-cluster Context Switching** - Single menu with cluster selector (similar to kubectl)
+- **Multi-cluster Support** - Connect and manage multiple K8s clusters with unified context switching
+- **Enhanced Workload Monitoring** - Modern UI for deployments, pods, and services with real-time status
+- **Advanced Pod Logs** - Stream logs with search, filter, copy, and expand functionality
+- **Smart Deployment Management** - Restart and scale operations with modal dialogs and validation
+- **Comprehensive Resource Overview** - Enhanced node information with disk usage, conditions, age, and visual indicators
+- **Optimized Performance** - Intelligent caching to prevent redundant API calls
+- **Shared Namespace Management** - Cached namespace selector across all Kubernetes pages
+- **Single Sidebar Integration** - Unified cluster context selector (no multiple menu items)
 
-### **Recent Updates (v0.2.0-alpha)**
+### **Recent Updates (v0.3.0-alpha)**
+
+**Sidebar & Navigation Improvements:**
+
+- ✅ **Single Menu Item**: Unified "Kubernetes" menu with cluster context selector dropdown
+- ✅ **Context Switching**: Similar to `kubectl config use-context` but with modern UI
+- ✅ **Optimized API Calls**: Intelligent caching prevents redundant cluster list requests
+- ✅ **Performance**: Significant reduction in initial load and navigation times
 
 **Enhanced Deployment Management:**
 
-- ✅ **New Actions**: `restart` for rolling updates and `scale` for replica management
-- ✅ **Modern UI**: Dialog-based interfaces with input validation and loading states
-- ✅ **Granular Permissions**: Separate `restart` and `scale` permission controls
+- ✅ **Modern Actions**: Replaced "Up/Down" with "Restart" and "Scale" using shadcn/ui dialogs
+- ✅ **Input Validation**: Scale action includes replica count input with validation
+- ✅ **Confirmation Dialogs**: Restart action has confirmation step for safety
+- ✅ **Loading States**: Real-time feedback during operations
+- ✅ **Permission Controls**: Separate `restart` and `scale` permission validation
 
-**Improved Pod Information:**
+**Advanced Pod Management:**
 
-- ✅ **Enhanced Data**: Container counts, QoS class, controlled by, age, and restart counts
-- ✅ **Better UX**: Icon-based actions and consistent badge styling
-- ✅ **Node Integration**: Direct node links and placement information
+- ✅ **Visual Redesign**: Modern table layout matching deployment design patterns
+- ✅ **Icon-based Actions**: Logs action converted to icon (eye icon) for better UX
+- ✅ **Node Integration**: Node name displayed as table column instead of separate action
+- ✅ **Container Information**: Simplified badges for ready/total containers (consistent styling)
+- ✅ **Enhanced Data**: QoS class, controlled by, age, and restart count information
 
 **Node Monitoring Enhancements:**
 
-- ✅ **Resource Details**: CPU, memory, and disk usage with visual progress bars
-- ✅ **Node Health**: Comprehensive condition monitoring and age calculation
-- ✅ **Visual Consistency**: Modern table layouts with color-coded status indicators
+- ✅ **Comprehensive Metrics**: CPU, memory, and disk usage with visual progress bars
+- ✅ **Health Conditions**: Real-time node condition monitoring (Ready, MemoryPressure, DiskPressure)
+- ✅ **Age Calculation**: Backend-calculated node age for better performance
+- ✅ **Visual Indicators**: Color-coded status bars and modern table layout
+
+**Shared Infrastructure:**
+
+- ✅ **Namespace Cache**: Shared caching mechanism across Pods and Deployments pages
+- ✅ **"All" Option**: Namespace selector includes "All" option for viewing all resources
+- ✅ **Performance**: Reduced redundant API calls for namespace and cluster data
 
 ### **Planned Features**
 

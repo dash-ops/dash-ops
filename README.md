@@ -78,18 +78,52 @@ DashOPS is built with a **plugin-based architecture** supporting multiple cloud 
 
 ## 🎯 Features
 
+### **🆕 Latest Updates (v0.3.0-beta)**
+
+**New Service Catalog Plugin:**
+
+- ✅ **Service Registry** - Complete CRUD for service definitions with modern tabbed UI
+- ✅ **Kubernetes Health Integration** - Real-time service health from K8s deployments
+- ✅ **GitHub Teams** - Service ownership and permission management
+- ✅ **Multi-Environment** - Service deployment across dev, staging, production
+- ✅ **Git Versioning** - Automatic service definition versioning
+
+**Enhanced Theme System:**
+
+- ✅ **Dark/Light Mode** - Toggle between light and dark themes with header control
+- ✅ **Color Themes** - 9 pre-built color palettes (Neutral, Red, Rose, Orange, Green, Blue, Yellow, Violet, Slate)
+- ✅ **Persistence** - Theme preferences saved to localStorage
+- ✅ **Responsive Logo** - Logo adapts to selected theme and mode
+
+**Plugin UI Improvements:**
+
+- ✅ **Kubernetes** - Single sidebar menu, optimized caching, modern pod/deployment interfaces
+- ✅ **AWS** - Unified account selector, performance optimizations
+- ✅ **All Plugins** - Consistent visual design, improved loading states
+
+### **Core Features**
+
+### **📋 Service Catalog**
+
+- **Service Registry** - Complete service definitions with YAML-based storage
+- **Team Ownership** - GitHub team-based service ownership and permissions
+- **Health Monitoring** - Real-time health aggregation from Kubernetes deployments
+- **Multi-Environment** - Service deployment tracking across environments
+- **Search & Filter** - Advanced filtering by team, tier, technology, and health status
+
 ### **☁️ AWS Operations**
 
-- **EC2 Management** - Start, stop, monitor instances
-- **Account Overview** - Resource monitoring and permissions
+- **EC2 Management** - Start, stop, monitor instances with modern interface
+- **Multi-Account** - Unified account selector and switching
 - **Cost Optimization** - Instance lifecycle management
 
 ### **⚙️ Kubernetes Operations**
 
-- **Multi-cluster Support** - Manage multiple K8s environments
-- **Workload Management** - Deployments, pods, services
-- **Resource Monitoring** - Real-time cluster health
-- **Log Streaming** - Live pod logs and debugging
+- **Multi-cluster Support** - Unified cluster context switching in single menu
+- **Enhanced Workload Management** - Modern deployment and pod interfaces with restart/scale actions
+- **Advanced Pod Logs** - Real-time log streaming with search, filter, and copy functionality
+- **Node Monitoring** - Comprehensive resource usage with disk, conditions, and age information
+- **Optimized Performance** - Intelligent API caching and shared namespace management
 
 ### **🔐 Authentication & Security**
 
