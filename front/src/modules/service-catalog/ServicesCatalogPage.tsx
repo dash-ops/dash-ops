@@ -414,7 +414,9 @@ export function ServicesCatalogPage() {
 
           <Select
             value={sortBy}
-            onValueChange={(value: any) => setSortBy(value)}
+            onValueChange={(value) =>
+              setSortBy(value as 'name' | 'tier' | 'team' | 'updated_at')
+            }
           >
             <SelectTrigger>
               <SelectValue />

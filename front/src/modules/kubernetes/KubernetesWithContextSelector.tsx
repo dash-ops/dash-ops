@@ -48,7 +48,7 @@ export default function KubernetesWithContextSelector({
     }
 
     loadClusters();
-  }, []);
+  }, [clusters.length, isLoadingClusters]);
 
   useEffect(() => {
     if (clusters.length === 0) return;

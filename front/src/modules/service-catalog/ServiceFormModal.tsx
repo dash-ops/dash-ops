@@ -141,9 +141,7 @@ export function ServiceFormModal({
           setCustomDependencies(deps);
         } catch (error) {
           console.error('Failed to load service data:', error);
-          toast.error(
-            `Erro ao carregar dados do serviço: ${editingServiceName}`
-          );
+          toast.error(`Failed to load service data: ${editingServiceName}`);
           onOpenChange(false);
         } finally {
           setIsLoadingService(false);
@@ -165,7 +163,7 @@ export function ServiceFormModal({
     };
 
     loadServiceData();
-  }, [open, isEditing, editingServiceName, onOpenChange]);
+  }, [open, isEditing, editingServiceName, onOpenChange, reset]);
 
   // Set form values when service data is loaded
   // useEffect(() => {
@@ -220,12 +218,12 @@ export function ServiceFormModal({
       !data.github_team ||
       !data.env_namespace
     ) {
-      toast.error('Preencha todos os campos obrigatórios');
+      toast.error('Fill in all required fields');
       return;
     }
 
     if (!data.deployment_name) {
-      toast.error('Nome do deployment é obrigatório');
+      toast.error('Deployment name is required');
       return;
     }
 
@@ -301,19 +299,20 @@ export function ServiceFormModal({
 
       if (isEditing && editingServiceName) {
         await updateService(editingServiceName, service);
-        toast.success(
-          `Serviço '${editingServiceName}' atualizado com sucesso!`
-        );
+        toast.success(`Service '${editingServiceName}' updated successfully!`);
       } else {
         await createService(service);
-        toast.success(`Serviço '${data.name}' criado com sucesso!`);
+        toast.success(`Service '${data.name}' created successfully!`);
       }
 
       handleClose();
       onServiceCreated?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating service:', error);
-      toast.error(error.response?.data?.error || 'Erro ao criar serviço');
+      toast.error(
+        (error as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || 'Failed to create service'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -353,23 +352,21 @@ export function ServiceFormModal({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-none">
           <DialogTitle>
-            {isEditing ? 'Editar Serviço' : 'Criar Novo Serviço'}
+            {isEditing ? 'Edit Service' : 'Create New Service'}
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? 'Atualize as configurações do seu serviço. Os campos obrigatórios são marcados com *.'
-              : 'Configure seu novo serviço com integração ao Kubernetes. Os campos obrigatórios são marcados com *.'}
+              ? 'Update your service configuration. Required fields are marked with *.'
+              : 'Configure your new service with Kubernetes integration. Required fields are marked with *.'}
           </DialogDescription>
         </DialogHeader>
 
         {isLoadingService || (isEditing && !serviceData) ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
               <p className="text-muted-foreground">
-                {isEditing
-                  ? 'Carregando dados do serviço...'
-                  : 'Preparando formulário...'}
+                {isEditing ? 'Loading service data...' : 'Preparing form...'}
               </p>
             </div>
           </div>
@@ -384,10 +381,10 @@ export function ServiceFormModal({
               className="flex-1 flex flex-col overflow-hidden"
             >
               <TabsList className="grid w-full grid-cols-4 flex-none">
-                <TabsTrigger value="basic">Informações</TabsTrigger>
+                <TabsTrigger value="basic">Basic Info</TabsTrigger>
                 <TabsTrigger value="infrastructure">Kubernetes</TabsTrigger>
-                <TabsTrigger value="observability">Observabilidade</TabsTrigger>
-                <TabsTrigger value="review">Revisar</TabsTrigger>
+                <TabsTrigger value="observability">Observability</TabsTrigger>
+                <TabsTrigger value="review">Review</TabsTrigger>
               </TabsList>
 
               <ScrollArea className="flex-1 mt-4">
@@ -398,20 +395,20 @@ export function ServiceFormModal({
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                           <Info className="h-5 w-5" />
-                          Informações Básicas
+                          Basic Information
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="name">Nome do Serviço *</Label>
+                            <Label htmlFor="name">Service Name *</Label>
                             <Input
                               id="name"
                               placeholder="ex: user-authentication"
                               readOnly={isEditing}
                               className={isEditing ? 'bg-muted' : ''}
                               {...register('name', {
-                                required: 'Nome é obrigatório',
+                                required: 'Service name is required',
                               })}
                             />
                             {errors.name && (
@@ -422,11 +419,14 @@ export function ServiceFormModal({
                           </div>
 
                           <div>
-                            <Label htmlFor="tier">Tier do Serviço *</Label>
+                            <Label htmlFor="tier">Service Tier *</Label>
                             <Select
                               value={watchedTier}
                               onValueChange={(value) =>
-                                setValue('tier', value as any)
+                                setValue(
+                                  'tier',
+                                  value as 'TIER-1' | 'TIER-2' | 'TIER-3'
+                                )
                               }
                             >
                               <SelectTrigger>
@@ -434,13 +434,13 @@ export function ServiceFormModal({
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="TIER-1">
-                                  TIER-1 - Crítico
+                                  TIER-1 - Critical
                                 </SelectItem>
                                 <SelectItem value="TIER-2">
-                                  TIER-2 - Importante
+                                  TIER-2 - Important
                                 </SelectItem>
                                 <SelectItem value="TIER-3">
-                                  TIER-3 - Padrão
+                                  TIER-3 - Standard
                                 </SelectItem>
                               </SelectContent>
                             </Select>
@@ -448,12 +448,12 @@ export function ServiceFormModal({
                         </div>
 
                         <div>
-                          <Label htmlFor="description">Descrição *</Label>
+                          <Label htmlFor="description">Description *</Label>
                           <Input
                             id="description"
-                            placeholder="Descreva o que esse serviço faz..."
+                            placeholder="Describe what this service does..."
                             {...register('description', {
-                              required: 'Descrição é obrigatória',
+                              required: 'Description is required',
                             })}
                           />
                           {errors.description && (
@@ -470,7 +470,7 @@ export function ServiceFormModal({
                               id="github_team"
                               placeholder="ex: auth-squad"
                               {...register('github_team', {
-                                required: 'GitHub team é obrigatório',
+                                required: 'GitHub team is required',
                               })}
                             />
                             {errors.github_team && (
@@ -481,7 +481,7 @@ export function ServiceFormModal({
                           </div>
 
                           <div>
-                            <Label htmlFor="language">Linguagem</Label>
+                            <Label htmlFor="language">Language</Label>
                             <Input
                               id="language"
                               placeholder="ex: Go"
@@ -501,20 +501,23 @@ export function ServiceFormModal({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="impact">Impacto de Negócio</Label>
+                            <Label htmlFor="impact">Business Impact</Label>
                             <Select
                               value={watch('impact')}
                               onValueChange={(value) =>
-                                setValue('impact', value as any)
+                                setValue(
+                                  'impact',
+                                  value as 'high' | 'medium' | 'low'
+                                )
                               }
                             >
                               <SelectTrigger>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="high">Alto</SelectItem>
-                                <SelectItem value="medium">Médio</SelectItem>
-                                <SelectItem value="low">Baixo</SelectItem>
+                                <SelectItem value="high">High</SelectItem>
+                                <SelectItem value="medium">Medium</SelectItem>
+                                <SelectItem value="low">Low</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -531,7 +534,7 @@ export function ServiceFormModal({
 
                         {/* Dependencies */}
                         <div>
-                          <Label>Dependências</Label>
+                          <Label>Dependencies</Label>
                           <div className="flex gap-2 mb-3">
                             <Input
                               placeholder="ex: user-database"
@@ -580,13 +583,13 @@ export function ServiceFormModal({
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                           <Server className="h-5 w-5" />
-                          Configuração Kubernetes
+                          Kubernetes Configuration
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div>
-                            <Label htmlFor="env_name">Nome do Ambiente</Label>
+                            <Label htmlFor="env_name">Environment Name</Label>
                             <Input
                               id="env_name"
                               placeholder="ex: local"
@@ -600,7 +603,7 @@ export function ServiceFormModal({
                               id="env_context"
                               placeholder="ex: docker-desktop"
                               {...register('env_context', {
-                                required: 'Context é obrigatório',
+                                required: 'Context is required',
                               })}
                             />
                             {errors.env_context && (
@@ -614,9 +617,9 @@ export function ServiceFormModal({
                             <Label htmlFor="env_namespace">Namespace *</Label>
                             <Input
                               id="env_namespace"
-                              placeholder="Preenchido automaticamente"
+                              placeholder="Automatically filled"
                               {...register('env_namespace', {
-                                required: 'Namespace é obrigatório',
+                                required: 'Namespace is required',
                               })}
                             />
                             {errors.env_namespace && (
@@ -628,18 +631,18 @@ export function ServiceFormModal({
                         </div>
 
                         <div className="space-y-4">
-                          <h4 className="font-medium">Deployment Principal</h4>
+                          <h4 className="font-medium">Main Deployment</h4>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <Label htmlFor="deployment_name">
-                                Nome do Deployment *
+                                Deployment Name *
                               </Label>
                               <Input
                                 id="deployment_name"
                                 placeholder={`ex: ${watchedName || 'app'}-api`}
                                 {...register('deployment_name', {
-                                  required: 'Nome do deployment é obrigatório',
+                                  required: 'Deployment name is required',
                                 })}
                               />
                               {errors.deployment_name && (
@@ -651,7 +654,7 @@ export function ServiceFormModal({
 
                             <div>
                               <Label htmlFor="deployment_replicas">
-                                Réplicas
+                                Replicas
                               </Label>
                               <Input
                                 id="deployment_replicas"
@@ -717,13 +720,13 @@ export function ServiceFormModal({
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                           <Activity className="h-5 w-5" />
-                          Observabilidade (Opcional)
+                          Observability (Optional)
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="metrics_url">URL de Métricas</Label>
+                            <Label htmlFor="metrics_url">Metrics URL</Label>
                             <Input
                               id="metrics_url"
                               placeholder="ex: https://grafana.company.com/d/service"
@@ -732,7 +735,7 @@ export function ServiceFormModal({
                           </div>
 
                           <div>
-                            <Label htmlFor="logs_url">URL de Logs</Label>
+                            <Label htmlFor="logs_url">Logs URL</Label>
                             <Input
                               id="logs_url"
                               placeholder="ex: https://kibana.company.com/app"
@@ -750,23 +753,23 @@ export function ServiceFormModal({
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                           <Settings className="h-5 w-5" />
-                          Revisar Configuração
+                          Review Configuration
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-6">
                         <div>
                           <h4 className="font-medium mb-3">
-                            Informações Básicas
+                            Basic Information
                           </h4>
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <span className="text-muted-foreground">
-                                Nome:
+                                Name:
                               </span>
                               <p className="font-medium">
                                 {watch('name') ||
                                   serviceData?.metadata.name ||
-                                  'Não especificado'}
+                                  'Not specified'}
                               </p>
                             </div>
                             <div>
@@ -784,12 +787,12 @@ export function ServiceFormModal({
                               <p className="font-medium">
                                 {watch('github_team') ||
                                   serviceData?.spec.team.github_team ||
-                                  'Não especificado'}
+                                  'Not specified'}
                               </p>
                             </div>
                             <div>
                               <span className="text-muted-foreground">
-                                Impacto:
+                                Impact:
                               </span>
                               <p className="font-medium">
                                 {watch('impact') ||
@@ -804,7 +807,7 @@ export function ServiceFormModal({
 
                         <div>
                           <h4 className="font-medium mb-3">
-                            Configuração Kubernetes
+                            Kubernetes Configuration
                           </h4>
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
@@ -815,7 +818,7 @@ export function ServiceFormModal({
                                 {watch('env_context') ||
                                   serviceData?.spec.kubernetes
                                     ?.environments?.[0]?.context ||
-                                  'Não especificado'}
+                                  'Not specified'}
                               </p>
                             </div>
                             <div>
@@ -826,7 +829,7 @@ export function ServiceFormModal({
                                 {watch('env_namespace') ||
                                   serviceData?.spec.kubernetes
                                     ?.environments?.[0]?.namespace ||
-                                  'Não especificado'}
+                                  'Not specified'}
                               </p>
                             </div>
                             <div>
@@ -838,12 +841,12 @@ export function ServiceFormModal({
                                   serviceData?.spec.kubernetes
                                     ?.environments?.[0]?.resources
                                     ?.deployments?.[0]?.name ||
-                                  'Não especificado'}
+                                  'Not specified'}
                               </p>
                             </div>
                             <div>
                               <span className="text-muted-foreground">
-                                Réplicas:
+                                Replicas:
                               </span>
                               <p className="font-medium">
                                 {watch('deployment_replicas')}
@@ -855,7 +858,7 @@ export function ServiceFormModal({
                         <Separator />
 
                         <div>
-                          <h4 className="font-medium mb-3">Dependências</h4>
+                          <h4 className="font-medium mb-3">Dependencies</h4>
                           <div className="flex flex-wrap gap-1">
                             {customDependencies.length > 0 ? (
                               customDependencies.map((dep) => (
@@ -865,7 +868,7 @@ export function ServiceFormModal({
                               ))
                             ) : (
                               <p className="text-sm text-muted-foreground">
-                                Nenhuma dependência adicionada
+                                No dependencies added
                               </p>
                             )}
                           </div>
@@ -876,13 +879,13 @@ export function ServiceFormModal({
                             <Separator />
                             <div>
                               <h4 className="font-medium mb-3">
-                                Observabilidade
+                                Observability
                               </h4>
                               <div className="grid grid-cols-2 gap-4 text-sm">
                                 {watch('metrics_url') && (
                                   <div>
                                     <span className="text-muted-foreground">
-                                      Métricas:
+                                      Metrics:
                                     </span>
                                     <p className="font-medium break-all">
                                       {watch('metrics_url')}
@@ -917,7 +920,7 @@ export function ServiceFormModal({
                 onClick={handleClose}
                 disabled={isLoading}
               >
-                Cancelar
+                Cancel
               </Button>
               <div className="flex gap-2">
                 {activeTab !== 'basic' && (
@@ -938,7 +941,7 @@ export function ServiceFormModal({
                       }
                     }}
                   >
-                    Anterior
+                    Previous
                   </Button>
                 )}
                 {activeTab !== 'review' ? (
@@ -958,17 +961,17 @@ export function ServiceFormModal({
                       }
                     }}
                   >
-                    Próximo
+                    Next
                   </Button>
                 ) : (
                   <Button type="submit" disabled={isLoading}>
                     {isLoading
                       ? isEditing
-                        ? 'Salvando...'
-                        : 'Criando...'
+                        ? 'Saving...'
+                        : 'Creating...'
                       : isEditing
-                        ? 'Salvar Alterações'
-                        : 'Criar Serviço'}
+                        ? 'Save Changes'
+                        : 'Create Service'}
                   </Button>
                 )}
               </div>

@@ -78,8 +78,13 @@ async function handleRestart(
     await restartDeployment(context, deployment.name, deployment.namespace);
     toast.success(`Deployment ${deployment.name} restarted successfully`);
     onReload();
-  } catch (e: any) {
-    toast.error(`Failed to restart deployment: ${e.data?.error || e.message}`);
+  } catch (e: unknown) {
+    toast.error(
+      `Failed to restart deployment: ${
+        (e as { data?: { error?: string }; message?: string }).data?.error ||
+        (e as { message?: string }).message
+      }`
+    );
   }
 }
 
@@ -100,8 +105,13 @@ async function handleScale(
       `Deployment ${deployment.name} scaled to ${replicas} replicas`
     );
     onReload();
-  } catch (e: any) {
-    toast.error(`Failed to scale deployment: ${e.data?.error || e.message}`);
+  } catch (e: unknown) {
+    toast.error(
+      `Failed to scale deployment: ${
+        (e as { data?: { error?: string }; message?: string }).data?.error ||
+        (e as { message?: string }).message
+      }`
+    );
   }
 }
 

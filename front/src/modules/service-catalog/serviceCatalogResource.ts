@@ -126,7 +126,7 @@ export const getServiceHealthBatch = async (
     try {
       const health = await getServiceHealth(name);
       return { name, health };
-    } catch (error) {
+    } catch (_error) {
       // Return unknown health if API fails
       return {
         name,

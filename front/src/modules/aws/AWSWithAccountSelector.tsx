@@ -48,7 +48,7 @@ export default function AWSWithAccountSelector({
     }
 
     loadAccounts();
-  }, []);
+  }, [accounts.length, isLoadingAccounts]);
 
   useEffect(() => {
     if (accounts.length === 0) return;

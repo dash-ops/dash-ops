@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
+import type { AxiosRequestConfig } from 'axios';
 import {
   Collapsible,
   CollapsibleContent,
@@ -36,7 +37,7 @@ function reducer(
 async function fetchData(
   dispatch: React.Dispatch<KubernetesTypes.LogAction>,
   filter: KubernetesTypes.PodLogsFilter,
-  config?: { cancelToken?: any }
+  config?: AxiosRequestConfig
 ): Promise<void> {
   try {
     const result = await getPodLogs(filter, config);
