@@ -7,10 +7,11 @@ import (
 
 // ServiceCatalog represents the main service catalog manager
 type ServiceCatalog struct {
-	storage        StorageProvider
-	gitVersioning  *GitVersioning
-	config         *Config
-	k8sIntegration *KubernetesIntegration
+	storage         StorageProvider
+	gitVersioning   *GitVersioning
+	config          *Config
+	k8sIntegration  *KubernetesIntegration
+	contextResolver *ServiceContextResolver
 }
 
 // NewServiceCatalog creates a new service catalog instance
@@ -48,12 +49,28 @@ func NewServiceCatalog(config *Config) (*ServiceCatalog, error) {
 	// Initialize Kubernetes integration
 	k8sIntegration := NewKubernetesIntegration("") // Empty string uses default localhost
 
-	return &ServiceCatalog{
+	// Create ServiceCatalog instance
+	serviceCatalog := &ServiceCatalog{
 		storage:        storage,
 		gitVersioning:  gitVersioning,
 		config:         config,
 		k8sIntegration: k8sIntegration,
-	}, nil
+	}
+
+	// Initialize context resolver (needs serviceCatalog reference)
+	serviceCatalog.contextResolver = NewServiceContextResolver(serviceCatalog)
+
+	return serviceCatalog, nil
+}
+
+// GetContextResolver returns the service context resolver
+func (sc *ServiceCatalog) GetContextResolver() *ServiceContextResolver {
+	return sc.contextResolver
+}
+
+// ResolveDeploymentService is a convenience method to resolve deployment service context
+func (sc *ServiceCatalog) ResolveDeploymentService(deploymentName, namespace, context string) (*ServiceContext, error) {
+	return sc.contextResolver.ResolveDeploymentService(deploymentName, namespace, context)
 }
 
 // CreateService creates a new service definition
