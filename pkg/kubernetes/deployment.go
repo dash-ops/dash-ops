@@ -10,15 +10,33 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// ServiceContext represents service information linked to a Kubernetes resource
+// This is imported from service-catalog to avoid circular dependencies
+type ServiceContext struct {
+	ServiceName string `json:"service_name,omitempty"`
+	ServiceTier string `json:"service_tier,omitempty"`
+	Environment string `json:"environment,omitempty"`
+	Context     string `json:"context,omitempty"`
+	Team        string `json:"team,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+// ServiceContextResolver interface for resolving service context
+// This allows loose coupling between kubernetes and service-catalog plugins
+type ServiceContextResolver interface {
+	ResolveDeploymentService(deploymentName, namespace, context string) (*ServiceContext, error)
+}
+
 // Deployment Struct representing an k8s deployment
 type Deployment struct {
-	Name       string                `json:"name"`
-	Namespace  string                `json:"namespace"`
-	PodInfo    PodInfo               `json:"pod_info"`
-	Replicas   DeploymentReplicas    `json:"replicas"`
-	Age        string                `json:"age"`
-	CreatedAt  time.Time             `json:"created_at"`
-	Conditions []DeploymentCondition `json:"conditions"`
+	Name           string                `json:"name"`
+	Namespace      string                `json:"namespace"`
+	PodInfo        PodInfo               `json:"pod_info"`
+	Replicas       DeploymentReplicas    `json:"replicas"`
+	Age            string                `json:"age"`
+	CreatedAt      time.Time             `json:"created_at"`
+	Conditions     []DeploymentCondition `json:"conditions"`
+	ServiceContext *ServiceContext       `json:"service_context,omitempty"`
 }
 
 // PodInfo Struct
@@ -48,6 +66,10 @@ type deploymentFilter struct {
 }
 
 func (kc client) GetDeployments(filter deploymentFilter) ([]Deployment, error) {
+	return kc.GetDeploymentsWithContext(filter, nil)
+}
+
+func (kc client) GetDeploymentsWithContext(filter deploymentFilter, resolver ServiceContextResolver) ([]Deployment, error) {
 	var deployments []Deployment
 
 	if filter.Namespace == "" {
@@ -67,7 +89,7 @@ func (kc client) GetDeployments(filter deploymentFilter) ([]Deployment, error) {
 		age := calculateDeploymentAge(deploy.CreationTimestamp.Time)
 		replicas := getDeploymentReplicas(deploy)
 
-		deployments = append(deployments, Deployment{
+		deployment := Deployment{
 			Name:      deploy.GetName(),
 			Namespace: deploy.GetNamespace(),
 			PodInfo: PodInfo{
@@ -78,7 +100,22 @@ func (kc client) GetDeployments(filter deploymentFilter) ([]Deployment, error) {
 			Age:        age,
 			CreatedAt:  deploy.CreationTimestamp.Time,
 			Conditions: conditions,
-		})
+		}
+
+		// Resolve service context if resolver is available
+		if resolver != nil {
+			serviceContext, err := resolver.ResolveDeploymentService(
+				deploy.GetName(),
+				deploy.GetNamespace(),
+				kc.context, // Use the client's context
+			)
+			if err == nil && serviceContext != nil {
+				deployment.ServiceContext = serviceContext
+			}
+			// Ignore errors - service context is optional
+		}
+
+		deployments = append(deployments, deployment)
 	}
 
 	return deployments, nil

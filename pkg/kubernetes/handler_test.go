@@ -32,6 +32,11 @@ func (m *mockClient) GetDeployments(filters deploymentFilter) ([]Deployment, err
 	return args.Get(0).([]Deployment), args.Error(1)
 }
 
+func (m *mockClient) GetDeploymentsWithContext(filters deploymentFilter, resolver ServiceContextResolver) ([]Deployment, error) {
+	args := m.Called(filters, resolver)
+	return args.Get(0).([]Deployment), args.Error(1)
+}
+
 func (m *mockClient) Scale(name string, ns string, replicas int32) error {
 	args := m.Called()
 	return args.Error(0)

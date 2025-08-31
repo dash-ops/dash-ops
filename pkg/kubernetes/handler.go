@@ -67,13 +67,28 @@ func namespacesHandler(client Client) http.HandlerFunc {
 }
 
 func deploymentsHandler(client Client) http.HandlerFunc {
+	return deploymentsHandlerWithContext(client, nil)
+}
+
+func deploymentsHandlerWithContext(client Client, resolver ServiceContextResolver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		query := r.URL.Query()
 
 		namespace := query.Get("namespace")
-		deployments, err := client.GetDeployments(deploymentFilter{
-			Namespace: namespace,
-		})
+
+		// Use context-aware function if resolver is available
+		var deployments []Deployment
+		var err error
+		if resolver != nil {
+			deployments, err = client.GetDeploymentsWithContext(deploymentFilter{
+				Namespace: namespace,
+			}, resolver)
+		} else {
+			deployments, err = client.GetDeployments(deploymentFilter{
+				Namespace: namespace,
+			})
+		}
+
 		if err != nil {
 			commons.RespondError(w, http.StatusInternalServerError, err.Error())
 			return
@@ -185,6 +200,11 @@ func hasPermissionNamespace(namespaces []string, namespace string) bool {
 
 // MakeKubernetesHandlers Add kubernetes module endpoints
 func MakeKubernetesHandlers(r *mux.Router, fileConfig []byte) {
+	MakeKubernetesHandlersWithResolver(r, fileConfig, nil)
+}
+
+// MakeKubernetesHandlersWithResolver Add kubernetes module endpoints with service context resolver
+func MakeKubernetesHandlersWithResolver(r *mux.Router, fileConfig []byte, resolver ServiceContextResolver) {
 	dashConfig, err := loadConfig(fileConfig)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -218,7 +238,7 @@ func MakeKubernetesHandlers(r *mux.Router, fileConfig []byte) {
 			Methods("GET", "OPTIONS").
 			Name("k8sNamespaces")
 
-		contextRoute.HandleFunc("/deployments", deploymentsHandler(client)).
+		contextRoute.HandleFunc("/deployments", deploymentsHandlerWithContext(client, resolver)).
 			Methods("GET", "OPTIONS").
 			Name("k8sDeployments")
 

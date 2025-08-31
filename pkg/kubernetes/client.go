@@ -11,6 +11,7 @@ type Client interface {
 	GetNodes() ([]Node, error)
 	GetNamespaces() ([]Namespace, error)
 	GetDeployments(filters deploymentFilter) ([]Deployment, error)
+	GetDeploymentsWithContext(filters deploymentFilter, resolver ServiceContextResolver) ([]Deployment, error)
 	Scale(name string, ns string, replicas int32) error
 	RestartDeployment(name string, ns string) error
 	GetPods(filters podFilter) ([]Pod, error)
@@ -19,6 +20,7 @@ type Client interface {
 
 type client struct {
 	clientSet *kubernetes.Clientset
+	context   string
 }
 
 // NewClient Create a new k8s client
@@ -33,7 +35,10 @@ func NewClient(config config) (Client, error) {
 		return nil, err
 	}
 
-	return client{clientSet}, nil
+	return client{
+		clientSet: clientSet,
+		context:   config.Context,
+	}, nil
 }
 
 func getConfig(config config) (*rest.Config, error) {
