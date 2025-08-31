@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import {
   Card,
   CardContent,
@@ -28,6 +29,7 @@ import {
   Edit3,
   AlertTriangle,
   Loader2,
+  Container,
   RefreshCw,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -43,6 +45,8 @@ export function ServicesCatalogPage() {
   const [loading, setLoading] = useState(true);
   const [healthLoading, setHealthLoading] = useState(false);
   const [error, setError] = useState<string>('');
+
+  const navigate = useNavigate();
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -272,6 +276,19 @@ export function ServicesCatalogPage() {
   const getUniqueTeams = () => {
     const teams = services.map((s) => s.spec.team.github_team);
     return [...new Set(teams)].sort();
+  };
+
+  // Navigation helpers
+  const handleViewDeployments = (service: Service) => {
+    // Get the first environment's context - in real scenario we might want to show a selector
+    const firstEnvironment = service.spec.kubernetes?.environments?.[0];
+    if (firstEnvironment?.context) {
+      const namespace = firstEnvironment.namespace || '';
+      // Navigate to Kubernetes deployments page with service context
+      navigate(
+        `/k8s/${firstEnvironment.context}/deployments${namespace ? `?namespace=${namespace}` : ''}`
+      );
+    }
   };
 
   if (loading) {
@@ -590,6 +607,38 @@ export function ServicesCatalogPage() {
                     <span>
                       Updated {formatLastUpdate(service.metadata.updated_at)}
                     </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-2 border-t">
+                    {service.spec.kubernetes && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-xs gap-1 h-7"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewDeployments(service);
+                        }}
+                      >
+                        <Container className="h-3 w-3" />
+                        Deployments
+                      </Button>
+                    )}
+                    {service.spec.observability?.metrics && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-xs gap-1 h-7"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // TODO: Add navigation to observability page
+                        }}
+                      >
+                        <Globe className="h-3 w-3" />
+                        Metrics
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -221,6 +221,7 @@ export default function DeploymentPage(): JSX.Element {
               <TableRow>
                 <TableHead className="w-[200px]">Name</TableHead>
                 <TableHead className="w-[120px]">Namespace</TableHead>
+                <TableHead className="w-[150px]">Service</TableHead>
                 <TableHead className="w-[100px]">Pods</TableHead>
                 <TableHead className="w-[100px]">Replicas</TableHead>
                 <TableHead className="w-[80px]">Age</TableHead>
@@ -231,7 +232,7 @@ export default function DeploymentPage(): JSX.Element {
             <TableBody>
               {deployments.loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-8">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900" />
                       <span className="ml-2">Loading...</span>
@@ -240,7 +241,7 @@ export default function DeploymentPage(): JSX.Element {
                 </TableRow>
               ) : filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={8} className="text-center py-8">
                     <span className="text-muted-foreground">
                       No deployments found
                     </span>
@@ -257,6 +258,38 @@ export default function DeploymentPage(): JSX.Element {
                       <Badge variant="outline" className="text-xs">
                         {deployment.namespace}
                       </Badge>
+                    </TableCell>
+
+                    <TableCell>
+                      {deployment.service_context ? (
+                        <div className="flex items-center gap-1">
+                          <Badge variant="secondary" className="text-xs gap-1">
+                            <span className="text-xs">
+                              {deployment.service_context.service_name}
+                            </span>
+                          </Badge>
+                          {deployment.service_context.service_tier && (
+                            <Badge
+                              variant="outline"
+                              className={`text-xs ${
+                                deployment.service_context.service_tier ===
+                                'TIER-1'
+                                  ? 'border-red-500 text-red-600'
+                                  : deployment.service_context.service_tier ===
+                                      'TIER-2'
+                                    ? 'border-yellow-500 text-yellow-600'
+                                    : 'border-green-500 text-green-600'
+                              }`}
+                            >
+                              {deployment.service_context.service_tier}
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          No service
+                        </span>
+                      )}
                     </TableCell>
 
                     <TableCell>

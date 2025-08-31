@@ -68,6 +68,15 @@ export interface ConditionStatus {
   status: string;
 }
 
+export interface ServiceContext {
+  service_name?: string;
+  service_tier?: string;
+  environment?: string;
+  context?: string;
+  team?: string;
+  description?: string;
+}
+
 export interface Deployment extends BaseEntity {
   namespace: string;
   pod_count: number;
@@ -76,6 +85,7 @@ export interface Deployment extends BaseEntity {
   age: string;
   created_at: string;
   conditions: DeploymentCondition[];
+  service_context?: ServiceContext;
 }
 
 export interface PodInfo {
