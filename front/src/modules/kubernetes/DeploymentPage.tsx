@@ -1,5 +1,5 @@
 import { useState, useEffect, useReducer, useCallback } from 'react';
-import { useParams } from 'react-router';
+import { useParams, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 import {
   Table,
@@ -117,10 +117,25 @@ async function handleScale(
 
 export default function DeploymentPage(): JSX.Element {
   const { context } = useParams<{ context: string }>();
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState<string>('');
   const [namespace, setNamespace] = useState<string>('All');
   const [namespaces, setNamespaces] = useState<KubernetesTypes.Namespace[]>([]);
   const [deployments, dispatch] = useReducer(reducer, INITIAL_STATE);
+
+  // Initialize filters from URL parameters
+  useEffect(() => {
+    const urlNamespace = searchParams.get('namespace');
+    const urlService = searchParams.get('service');
+
+    if (urlNamespace) {
+      setNamespace(urlNamespace);
+    }
+
+    if (urlService) {
+      setSearch(urlService);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!context) return;

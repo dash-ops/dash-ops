@@ -14,19 +14,19 @@ type ServiceCatalogConfig struct {
 }
 
 // MakeServiceCatalogHandlers creates and registers service catalog HTTP handlers
-func MakeServiceCatalogHandlers(internal *mux.Router, fileConfig []byte) {
+func MakeServiceCatalogHandlers(internal *mux.Router, fileConfig []byte) *ServiceCatalog {
 	// Parse configuration
 	config, err := parseServiceCatalogConfig(fileConfig)
 	if err != nil {
 		log.Printf("Failed to parse service catalog configuration: %v", err)
-		return
+		return nil
 	}
 
 	// Create service catalog instance
 	serviceCatalog, err := NewServiceCatalog(&config.ServiceCatalog)
 	if err != nil {
 		log.Printf("Failed to initialize service catalog: %v", err)
-		return
+		return nil
 	}
 
 	// Create HTTP handler
@@ -37,6 +37,7 @@ func MakeServiceCatalogHandlers(internal *mux.Router, fileConfig []byte) {
 	handler.RegisterRoutes(serviceCatalogRouter)
 
 	log.Println("Service Catalog handlers registered successfully")
+	return serviceCatalog
 }
 
 // parseServiceCatalogConfig parses the service catalog configuration from YAML

@@ -38,18 +38,32 @@ func main() {
 	config.MakeConfigHandlers(api, dashConfig)
 
 	internal := api.PathPrefix("/v1").Subrouter()
+
+	// Initialize plugins in dependency order
+	var serviceCatalogInstance *servicecatalog.ServiceCatalog
+
 	if dashConfig.Plugins.Has("OAuth2") {
 		// ToDo transform into isolated plugins
 		oauth2.MakeOauthHandlers(api, internal, fileConfig)
 	}
+
 	if dashConfig.Plugins.Has("ServiceCatalog") {
-		// Service Catalog plugin
-		servicecatalog.MakeServiceCatalogHandlers(internal, fileConfig)
+		// Service Catalog plugin - initialize first to provide context resolver
+		serviceCatalogInstance = servicecatalog.MakeServiceCatalogHandlers(internal, fileConfig)
 	}
+
 	if dashConfig.Plugins.Has("Kubernetes") {
-		// ToDo transform into isolated plugins
-		kubernetes.MakeKubernetesHandlers(internal, fileConfig)
+		// Kubernetes plugin with service context integration
+		if serviceCatalogInstance != nil {
+			// Use service context resolver for enhanced integration
+			resolver := serviceCatalogInstance.GetKubernetesAdapter()
+			kubernetes.MakeKubernetesHandlersWithResolver(internal, fileConfig, resolver)
+		} else {
+			// Fallback to basic kubernetes handlers
+			kubernetes.MakeKubernetesHandlers(internal, fileConfig)
+		}
 	}
+
 	if dashConfig.Plugins.Has("AWS") {
 		// ToDo transform into isolated plugins
 		aws.MakeAWSInstanceHandlers(internal, fileConfig)

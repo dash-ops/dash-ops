@@ -284,9 +284,15 @@ export function ServicesCatalogPage() {
     const firstEnvironment = service.spec.kubernetes?.environments?.[0];
     if (firstEnvironment?.context) {
       const namespace = firstEnvironment.namespace || '';
-      // Navigate to Kubernetes deployments page with service context
+      const serviceName = service.metadata.name;
+
+      // Navigate to Kubernetes deployments page with service context and service filter
+      const params = new URLSearchParams();
+      if (namespace) params.append('namespace', namespace);
+      params.append('service', serviceName);
+
       navigate(
-        `/k8s/${firstEnvironment.context}/deployments${namespace ? `?namespace=${namespace}` : ''}`
+        `/k8s/${firstEnvironment.context}/deployments?${params.toString()}`
       );
     }
   };
