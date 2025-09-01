@@ -4,6 +4,3 @@ coverage.out
 *.test.yaml
 .DS_Store
 tmp
-
-# Service definitions for local testing
-services/
