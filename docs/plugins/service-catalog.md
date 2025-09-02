@@ -15,7 +15,7 @@ The Service Catalog plugin provides a comprehensive service registry and managem
 - **Service Tiers** - TIER-1 (Critical), TIER-2 (Important), TIER-3 (Standard) classification
 - **Advanced Filtering** - Search, filter by tier, team, status, and more
 - **Health Aggregation** - Contextual health status from Kubernetes deployments
-- **Git Versioning** - Automatic versioning of service definitions with Git integration
+- **Flexible Versioning** - Multiple versioning options: Git, Simple, or None
 
 ### **Recent Updates (v0.2.0-beta)**
 
@@ -37,7 +37,8 @@ The Service Catalog plugin provides a comprehensive service registry and managem
 
 **Backend Enhancements:**
 
-- ✅ **Filesystem Storage**: Local YAML-based service definitions with Git versioning
+- ✅ **Flexible Storage**: Local YAML-based service definitions with multiple versioning options
+- ✅ **Versioning Providers**: Git versioning, Simple versioning, or No versioning support
 - ✅ **Health API**: Real-time health aggregation from Kubernetes deployments
 - ✅ **Team Authorization**: GitHub team-based read/write permissions
 - ✅ **Batch Operations**: Efficient health status retrieval for multiple services
@@ -63,10 +64,12 @@ plugins:
 
 service-catalog:
   storage:
-    provider: 'filesystem' # Currently supported: filesystem
-    config:
+    provider: 'filesystem' # filesystem, github, s3
+    filesystem:
       directory: './services' # Directory to store service definitions
-      git_versioning: true # Enable Git versioning (default: true)
+  versioning:
+    enabled: true # Enable/disable versioning (default: false)
+    provider: 'simple' # git, simple, none (auto-detect if not specified)
 ```
 
 ### **2. GitHub Integration (Required)**
@@ -110,11 +113,12 @@ kubernetes:
 service-catalog:
   storage:
     provider: 'filesystem'
-    config:
+    filesystem:
       directory: './services'
-      git_versioning: true
-      commit_author_name: 'DashOPS'
-      commit_author_email: 'dashops@yourcompany.com'
+
+  versioning:
+    enabled: true
+    provider: 'git' # git, simple, none
 
   # Default service configuration
   defaults:
@@ -368,29 +372,24 @@ GitHub team membership is resolved at runtime:
 
 ## 🗄️ Storage & Versioning
 
-### **Filesystem Storage (Current)**
+### **Storage Providers**
 
-Services are stored as YAML files with Git versioning:
+#### **Filesystem Storage (Current)**
+
+Services are stored as YAML files with flexible versioning options:
 
 ```
 ./services/
 ├── user-authentication.yaml
 ├── payment-processor.yaml
 ├── notification-service.yaml
-└── .git/
-    └── (automatic Git repository for versioning)
+├── .git/                    # Git versioning (optional)
+└── .history/               # Simple versioning (optional)
+    ├── user-authentication.json
+    └── payment-processor.json
 ```
 
-**Git Integration:**
-
-- **Automatic Commits** - Every service create/update triggers a Git commit
-- **User Attribution** - Commits include the authenticated user's information
-- **Version History** - Full Git history for all service changes
-- **Branch Strategy** - Single main branch with linear history
-
-### **Planned Storage Providers**
-
-**GitHub Repository Storage** (Roadmap):
+#### **GitHub Repository Storage** (Roadmap):
 
 ```yaml
 service-catalog:
@@ -403,7 +402,7 @@ service-catalog:
       oauth2_client: true # Use OAuth2 GitHub client
 ```
 
-**S3 Storage** (Roadmap):
+#### **S3 Storage** (Roadmap):
 
 ```yaml
 service-catalog:
@@ -414,6 +413,136 @@ service-catalog:
       prefix: 'services/'
       aws_client: true # Use AWS plugin client
 ```
+
+### **Versioning Providers**
+
+The service catalog supports flexible versioning through multiple providers:
+
+#### **1. Git Versioning (`git`)**
+
+- **Best for**: Filesystem storage with full Git integration
+- **Features**:
+  - Full Git history with commits, authors, and timestamps
+  - Automatic Git repository initialization
+  - Proper commit messages with service metadata
+- **Requirements**: Git must be installed and available in PATH
+- **Storage compatibility**: Filesystem only
+
+**Configuration:**
+
+```yaml
+service-catalog:
+  storage:
+    provider: 'filesystem'
+    filesystem:
+      directory: './services'
+  versioning:
+    enabled: true
+    provider: 'git'
+```
+
+#### **2. Simple Versioning (`simple`)**
+
+- **Best for**: Filesystem or S3 storage without Git dependency
+- **Features**:
+  - JSON-based history storage in `.history/` directory
+  - Service change tracking with timestamps and user info
+  - Limited to last 100 changes per service (configurable)
+- **Requirements**: None (pure Go implementation)
+- **Storage compatibility**: Filesystem (S3 support planned)
+
+**Configuration:**
+
+```yaml
+service-catalog:
+  storage:
+    provider: 'filesystem'
+    filesystem:
+      directory: './services'
+  versioning:
+    enabled: true
+    provider: 'simple'
+```
+
+#### **3. No Versioning (`none`)**
+
+- **Best for**: Minimal setups or when versioning is not needed
+- **Features**: Disables all versioning functionality
+- **Requirements**: None
+- **Storage compatibility**: All storage providers
+
+**Configuration:**
+
+```yaml
+service-catalog:
+  storage:
+    provider: 'filesystem'
+    filesystem:
+      directory: './services'
+  versioning:
+    enabled: false
+```
+
+### **Auto-Detection (Default Behavior)**
+
+When `versioning.provider` is not specified, the system automatically chooses:
+
+- **Filesystem storage**: Uses `git` if Git is available, falls back to `simple`
+- **Other storage**: Uses `simple`
+
+### **Configuration Examples**
+
+#### **Development Setup (No Versioning)**
+
+```yaml
+service-catalog:
+  storage:
+    provider: 'filesystem'
+    filesystem:
+      directory: './services'
+  versioning:
+    enabled: false
+```
+
+#### **Production Setup (Git Versioning)**
+
+```yaml
+service-catalog:
+  storage:
+    provider: 'filesystem'
+    filesystem:
+      directory: '/var/lib/dash-ops/services'
+  versioning:
+    enabled: true
+    provider: 'git'
+```
+
+#### **Cloud Setup (Simple Versioning)**
+
+```yaml
+service-catalog:
+  storage:
+    provider: 's3'
+    s3:
+      bucket: 'company-service-definitions'
+  versioning:
+    enabled: true
+    provider: 'simple' # Git not available in cloud environments
+```
+
+### **Migration from Git-Only System**
+
+If you're upgrading from the previous Git-only system:
+
+1. **No changes needed** for Git-based setups - the system will continue using Git
+2. **To disable Git dependency**: Set `versioning.provider: 'simple'`
+3. **To disable versioning**: Set `versioning.enabled: false`
+
+### **Performance Considerations**
+
+- **Git Versioning**: Slower for large histories, but provides full Git features
+- **Simple Versioning**: Faster, limited history (100 entries per service by default)
+- **No Versioning**: Fastest, no history tracking
 
 ## 📊 API Reference
 
@@ -469,9 +598,10 @@ GET /api/v1/service-catalog/user/permissions
 service-catalog:
   storage:
     provider: 'filesystem'
-    config:
+    filesystem:
       directory: './test-services'
-      git_versioning: false # Disable for testing
+  versioning:
+    enabled: false # Disable for testing
 ```
 
 ### **Creating Test Services**
@@ -558,12 +688,26 @@ curl http://localhost:8080/api/v1/service-catalog/services/test-api/health
 - ✅ Confirm OAuth2 token has org:read permissions
 - ✅ Validate team membership via GitHub API
 
-#### **Git Versioning Errors**
+#### **Versioning Errors**
+
+**Git Versioning Issues:**
 
 - ✅ Ensure services directory is writable
 - ✅ Check Git is installed and accessible
 - ✅ Verify Git user configuration (name and email)
 - ✅ Confirm no conflicting Git operations
+
+**Simple Versioning Issues:**
+
+- ✅ Check write permissions on services directory
+- ✅ Verify `.history/` directory can be created
+- ✅ Ensure sufficient disk space for history files
+
+**General Versioning Issues:**
+
+- ✅ Verify `versioning.enabled: true` in configuration
+- ✅ Check `versioning.provider` is set correctly
+- ✅ Confirm storage provider supports chosen versioning method
 
 ### **Debug Configuration**
 
@@ -571,8 +715,11 @@ curl http://localhost:8080/api/v1/service-catalog/services/test-api/health
 service-catalog:
   debug: true # Enable verbose logging
   storage:
-    config:
-      git_versioning: false # Disable for troubleshooting
+    provider: 'filesystem'
+    filesystem:
+      directory: './services'
+  versioning:
+    enabled: false # Disable for troubleshooting
   health:
     timeout: '60s' # Increase timeout for debugging
 ```

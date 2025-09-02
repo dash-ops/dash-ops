@@ -319,10 +319,16 @@ func (h *Handler) getSystemStatusHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	status := map[string]interface{}{
-		"service_count":     serviceList.Total,
-		"repository_status": repoStatus,
-		"storage_provider":  h.serviceCatalog.config.Storage.Provider,
-		"git_versioning":    h.serviceCatalog.gitVersioning != nil,
+		"service_count":      serviceList.Total,
+		"repository_status":  repoStatus,
+		"storage_provider":   h.serviceCatalog.config.Storage.Provider,
+		"versioning_enabled": h.serviceCatalog.versioning != nil && h.serviceCatalog.versioning.IsEnabled(),
+		"versioning_provider": func() string {
+			if h.serviceCatalog.config.Versioning.Enabled {
+				return h.serviceCatalog.config.Versioning.Provider
+			}
+			return "none"
+		}(),
 	}
 
 	commons.RespondJSON(w, http.StatusOK, status)

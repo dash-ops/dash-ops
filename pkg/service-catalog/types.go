@@ -187,7 +187,8 @@ type StorageProvider interface {
 
 // Config represents service catalog configuration
 type Config struct {
-	Storage StorageConfig `yaml:"storage" json:"storage"`
+	Storage    StorageConfig    `yaml:"storage" json:"storage"`
+	Versioning VersioningConfig `yaml:"versioning,omitempty" json:"versioning,omitempty"`
 }
 
 // StorageConfig represents storage configuration
@@ -212,6 +213,12 @@ type GitHubStorageConfig struct {
 // S3StorageConfig represents S3 bucket storage configuration
 type S3StorageConfig struct {
 	Bucket string `yaml:"bucket" json:"bucket"`
+}
+
+// VersioningConfig represents versioning configuration
+type VersioningConfig struct {
+	Enabled  bool   `yaml:"enabled" json:"enabled"`                       // Enable/disable versioning
+	Provider string `yaml:"provider,omitempty" json:"provider,omitempty"` // git, simple, none
 }
 
 // UserContext represents user information from OAuth2

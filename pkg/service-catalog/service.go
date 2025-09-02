@@ -8,7 +8,7 @@ import (
 // ServiceCatalog represents the main service catalog manager
 type ServiceCatalog struct {
 	storage         StorageProvider
-	gitVersioning   *GitVersioning
+	versioning      VersioningProvider
 	config          *Config
 	k8sIntegration  *KubernetesIntegration
 	contextResolver *ServiceContextResolver
@@ -22,28 +22,10 @@ func NewServiceCatalog(config *Config) (*ServiceCatalog, error) {
 		return nil, fmt.Errorf("failed to initialize storage provider: %w", err)
 	}
 
-	// Initialize git versioning for filesystem provider
-	var gitVersioning *GitVersioning
-	if config.Storage.Provider == "filesystem" {
-		// Get the directory path from filesystem provider
-		if fsProvider, ok := storage.(*FilesystemProvider); ok {
-			gitVersioning = NewGitVersioning(fsProvider.GetDirectory())
-
-			// Validate git installation
-			if err := ValidateGitInstallation(); err != nil {
-				return nil, fmt.Errorf("git validation failed: %w", err)
-			}
-
-			// Initialize repository
-			if err := gitVersioning.InitializeRepository(); err != nil {
-				return nil, fmt.Errorf("failed to initialize git repository: %w", err)
-			}
-
-			// Setup git config
-			if err := gitVersioning.SetupGitConfig(); err != nil {
-				return nil, fmt.Errorf("failed to setup git config: %w", err)
-			}
-		}
+	// Initialize versioning provider
+	versioning, err := newVersioningProvider(config, storage)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize versioning provider: %w", err)
 	}
 
 	// Initialize Kubernetes integration
@@ -52,7 +34,7 @@ func NewServiceCatalog(config *Config) (*ServiceCatalog, error) {
 	// Create ServiceCatalog instance
 	serviceCatalog := &ServiceCatalog{
 		storage:        storage,
-		gitVersioning:  gitVersioning,
+		versioning:     versioning,
 		config:         config,
 		k8sIntegration: k8sIntegration,
 	}
@@ -86,10 +68,10 @@ func (sc *ServiceCatalog) CreateService(service *Service, user *UserContext) err
 		return fmt.Errorf("failed to create service in storage: %w", err)
 	}
 
-	// Commit to git if versioning is enabled
-	if sc.gitVersioning != nil {
-		if err := sc.gitVersioning.CommitServiceChange(service, user, "create"); err != nil {
-			// Silently continue if git commit fails
+	// Commit to versioning system if enabled
+	if sc.versioning != nil && sc.versioning.IsEnabled() {
+		if err := sc.versioning.CommitServiceChange(service, user, "create"); err != nil {
+			// Silently continue if versioning commit fails
 			_ = err
 		}
 	}
@@ -122,10 +104,10 @@ func (sc *ServiceCatalog) UpdateService(service *Service, user *UserContext) err
 		return fmt.Errorf("failed to update service in storage: %w", err)
 	}
 
-	// Commit to git if versioning is enabled
-	if sc.gitVersioning != nil {
-		if err := sc.gitVersioning.CommitServiceChange(service, user, "update"); err != nil {
-			// Silently continue if git commit fails
+	// Commit to versioning system if enabled
+	if sc.versioning != nil && sc.versioning.IsEnabled() {
+		if err := sc.versioning.CommitServiceChange(service, user, "update"); err != nil {
+			// Silently continue if versioning commit fails
 			_ = err
 		}
 	}
@@ -145,10 +127,10 @@ func (sc *ServiceCatalog) DeleteService(name string, user *UserContext) error {
 		return fmt.Errorf("failed to delete service from storage: %w", err)
 	}
 
-	// Commit to git if versioning is enabled
-	if sc.gitVersioning != nil {
-		if err := sc.gitVersioning.CommitServiceDeletion(name, user); err != nil {
-			// Silently continue if git commit fails
+	// Commit to versioning system if enabled
+	if sc.versioning != nil && sc.versioning.IsEnabled() {
+		if err := sc.versioning.CommitServiceDeletion(name, user); err != nil {
+			// Silently continue if versioning commit fails
 			_ = err
 		}
 	}
@@ -266,11 +248,11 @@ func (sc *ServiceCatalog) GetServiceHealth(serviceName string, authHeader string
 
 // GetServiceHistory returns change history for a service
 func (sc *ServiceCatalog) GetServiceHistory(serviceName string) (*ServiceHistory, error) {
-	if sc.gitVersioning == nil {
-		return nil, fmt.Errorf("git versioning is not available")
+	if sc.versioning == nil || !sc.versioning.IsEnabled() {
+		return nil, fmt.Errorf("versioning is not available")
 	}
 
-	changes, err := sc.gitVersioning.GetServiceHistory(serviceName)
+	changes, err := sc.versioning.GetServiceHistory(serviceName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get service history: %w", err)
 	}
@@ -283,11 +265,11 @@ func (sc *ServiceCatalog) GetServiceHistory(serviceName string) (*ServiceHistory
 
 // GetAllHistory returns complete change history
 func (sc *ServiceCatalog) GetAllHistory() ([]ServiceChange, error) {
-	if sc.gitVersioning == nil {
-		return nil, fmt.Errorf("git versioning is not available")
+	if sc.versioning == nil || !sc.versioning.IsEnabled() {
+		return nil, fmt.Errorf("versioning is not available")
 	}
 
-	changes, err := sc.gitVersioning.GetAllHistory()
+	changes, err := sc.versioning.GetAllHistory()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get history: %w", err)
 	}
@@ -322,13 +304,13 @@ func (sc *ServiceCatalog) ValidateService(service *Service) error {
 	return nil
 }
 
-// GetRepositoryStatus returns git repository status
+// GetRepositoryStatus returns versioning system status
 func (sc *ServiceCatalog) GetRepositoryStatus() (string, error) {
-	if sc.gitVersioning == nil {
-		return "Git versioning is not available", nil
+	if sc.versioning == nil {
+		return "Versioning is not available", nil
 	}
 
-	return sc.gitVersioning.GetRepositoryStatus()
+	return sc.versioning.GetStatus()
 }
 
 // calculateServiceStatus determines overall service status based on environments and tier
@@ -405,5 +387,77 @@ func newStorageProvider(config *Config) (StorageProvider, error) {
 
 	default:
 		return nil, fmt.Errorf("unsupported storage provider: %s", config.Storage.Provider)
+	}
+}
+
+// newVersioningProvider creates appropriate versioning provider based on configuration
+func newVersioningProvider(config *Config, storage StorageProvider) (VersioningProvider, error) {
+	// Check if versioning is disabled
+	if !config.Versioning.Enabled {
+		return NewNoVersioning(), nil
+	}
+
+	// Determine versioning provider
+	versioningProvider := config.Versioning.Provider
+	if versioningProvider == "" {
+		// Default behavior: use git for filesystem, simple for others
+		switch config.Storage.Provider {
+		case "filesystem":
+			versioningProvider = "git"
+		default:
+			versioningProvider = "simple"
+		}
+	}
+
+	switch versioningProvider {
+	case "git":
+		// Get directory from storage provider
+		var directory string
+		if fsProvider, ok := storage.(*FilesystemProvider); ok {
+			directory = fsProvider.GetDirectory()
+		} else {
+			return nil, fmt.Errorf("git versioning requires filesystem storage provider")
+		}
+
+		gitVersioning := NewGitVersioning(directory)
+
+		// Validate git installation
+		if err := ValidateGitInstallation(); err != nil {
+			return nil, fmt.Errorf("git validation failed: %w", err)
+		}
+
+		// Initialize repository
+		if err := gitVersioning.Initialize(); err != nil {
+			return nil, fmt.Errorf("failed to initialize git repository: %w", err)
+		}
+
+		// Setup git config
+		if err := gitVersioning.SetupGitConfig(); err != nil {
+			return nil, fmt.Errorf("failed to setup git config: %w", err)
+		}
+
+		return gitVersioning, nil
+
+	case "simple":
+		// Get directory from storage provider
+		var directory string
+		if fsProvider, ok := storage.(*FilesystemProvider); ok {
+			directory = fsProvider.GetDirectory()
+		} else {
+			return nil, fmt.Errorf("simple versioning requires filesystem storage provider")
+		}
+
+		simpleVersioning := NewSimpleVersioning(directory)
+		if err := simpleVersioning.Initialize(); err != nil {
+			return nil, fmt.Errorf("failed to initialize simple versioning: %w", err)
+		}
+
+		return simpleVersioning, nil
+
+	case "none":
+		return NewNoVersioning(), nil
+
+	default:
+		return nil, fmt.Errorf("unsupported versioning provider: %s", versioningProvider)
 	}
 }

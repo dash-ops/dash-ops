@@ -10,6 +10,7 @@ import (
 )
 
 // GitVersioning manages Git operations for service definitions
+// Implements VersioningProvider interface
 type GitVersioning struct {
 	repoPath string
 	enabled  bool
@@ -21,6 +22,11 @@ func NewGitVersioning(repoPath string) *GitVersioning {
 		repoPath: repoPath,
 		enabled:  true, // Always enabled according to roadmap
 	}
+}
+
+// Initialize initializes Git repository if it doesn't exist (implements VersioningProvider)
+func (gv *GitVersioning) Initialize() error {
+	return gv.InitializeRepository()
 }
 
 // InitializeRepository initializes Git repository if it doesn't exist
@@ -347,4 +353,14 @@ func (gv *GitVersioning) GetRepositoryStatus() (string, error) {
 	}
 
 	return string(output), nil
+}
+
+// IsEnabled returns whether Git versioning is enabled (implements VersioningProvider)
+func (gv *GitVersioning) IsEnabled() bool {
+	return gv.enabled
+}
+
+// GetStatus returns current repository status (implements VersioningProvider)
+func (gv *GitVersioning) GetStatus() (string, error) {
+	return gv.GetRepositoryStatus()
 }
