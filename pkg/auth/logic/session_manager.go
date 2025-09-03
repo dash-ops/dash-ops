@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	authModels "github.com/dash-ops/dash-ops/pkg/auth-new/models"
+	authModels "github.com/dash-ops/dash-ops/pkg/auth/models"
+	"golang.org/x/oauth2"
 )
 
 // SessionManager handles authentication session logic
@@ -125,5 +126,18 @@ func (sm *SessionManager) ExtendSessionDuration(session *authModels.AuthSession,
 	}
 
 	session.ExpiresAt = session.ExpiresAt.Add(extension)
+	return nil
+}
+
+// ValidateToken validates an OAuth2 token
+func (sm *SessionManager) ValidateToken(token *oauth2.Token) error {
+	if token == nil {
+		return fmt.Errorf("token is nil")
+	}
+
+	if !token.Valid() {
+		return fmt.Errorf("token is invalid or expired")
+	}
+
 	return nil
 }

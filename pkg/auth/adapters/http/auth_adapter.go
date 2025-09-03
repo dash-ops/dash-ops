@@ -1,8 +1,10 @@
 package http
 
 import (
-	authModels "github.com/dash-ops/dash-ops/pkg/auth-new/models"
-	authWire "github.com/dash-ops/dash-ops/pkg/auth-new/wire"
+	"fmt"
+
+	authModels "github.com/dash-ops/dash-ops/pkg/auth/models"
+	authWire "github.com/dash-ops/dash-ops/pkg/auth/wire"
 )
 
 // AuthAdapter handles transformation between models and wire formats
@@ -27,10 +29,23 @@ func (aa *AuthAdapter) ModelToUserResponse(user *authModels.User) authWire.UserR
 
 	var teams []authWire.TeamResponse
 	for _, team := range user.Teams {
+		var id string
+		if team.ID != nil {
+			id = fmt.Sprintf("%d", *team.ID)
+		}
+		var name string
+		if team.Name != nil {
+			name = *team.Name
+		}
+		var slug string
+		if team.Slug != nil {
+			slug = *team.Slug
+		}
+
 		teams = append(teams, authWire.TeamResponse{
-			ID:           team.ID,
-			Name:         team.Name,
-			Slug:         team.Slug,
+			ID:           id,
+			Name:         name,
+			Slug:         slug,
 			Organization: team.Organization,
 			Role:         team.Role,
 		})
@@ -150,4 +165,23 @@ type TokenExchangeRequest struct {
 	Code        string
 	State       string
 	RedirectURL string
+}
+
+// UserPermissionsToResponse converts user permissions to response format
+func (aa *AuthAdapter) UserPermissionsToResponse(permissions *authModels.UserPermissions) map[string]interface{} {
+	// Convert teams to interface{} format for JSON compatibility
+	var teams []map[string]interface{}
+	for _, team := range permissions.Teams {
+		teams = append(teams, map[string]interface{}{
+			"id":   team.ID,
+			"name": team.Name,
+			"slug": team.Slug,
+		})
+	}
+
+	return map[string]interface{}{
+		"organization": permissions.Organization,
+		"teams":        teams,
+		"groups":       permissions.Groups,
+	}
 }

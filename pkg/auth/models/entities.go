@@ -56,11 +56,11 @@ type Organization struct {
 
 // Team represents a user's team within an organization
 type Team struct {
-	ID           string `json:"id"`
-	Name         string `json:"name"`
-	Slug         string `json:"slug"`
-	Organization string `json:"organization"`   // Organization slug
-	Role         string `json:"role,omitempty"` // maintainer, member, etc.
+	ID           *int64  `json:"id,omitempty"`
+	Name         *string `json:"name,omitempty"`
+	Slug         *string `json:"slug,omitempty"`
+	Organization string  `json:"organization,omitempty"` // Organization slug
+	Role         string  `json:"role,omitempty"`         // maintainer, member, etc.
 }
 
 // Token represents an authentication token
@@ -115,7 +115,7 @@ func (u *User) HasOrganization(orgSlug string) bool {
 // HasTeam checks if user belongs to a specific team
 func (u *User) HasTeam(teamSlug string) bool {
 	for _, team := range u.Teams {
-		if team.Slug == teamSlug {
+		if team.Slug != nil && *team.Slug == teamSlug {
 			return true
 		}
 	}
@@ -125,7 +125,7 @@ func (u *User) HasTeam(teamSlug string) bool {
 // HasTeamInOrg checks if user belongs to a specific team in an organization
 func (u *User) HasTeamInOrg(teamSlug, orgSlug string) bool {
 	for _, team := range u.Teams {
-		if team.Slug == teamSlug && team.Organization == orgSlug {
+		if team.Slug != nil && *team.Slug == teamSlug && team.Organization == orgSlug {
 			return true
 		}
 	}
@@ -231,4 +231,19 @@ func (as *AuthSession) IsActive() bool {
 // UpdateLastUsed updates the last used timestamp
 func (as *AuthSession) UpdateLastUsed() {
 	as.LastUsed = time.Now()
+}
+
+// UserPermissions represents user permissions from provider
+type UserPermissions struct {
+	Organization string   `json:"organization"`
+	Teams        []Team   `json:"teams"`
+	Groups       []string `json:"groups"`
+}
+
+// UserData represents user data stored in context (compatible with commons)
+type UserData struct {
+	Username string   `json:"username"`
+	Email    string   `json:"email"`
+	Groups   []string `json:"groups"`
+	Org      string   `json:"org"`
 }

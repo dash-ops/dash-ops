@@ -10,10 +10,10 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
+	"github.com/dash-ops/dash-ops/pkg/auth"
 	"github.com/dash-ops/dash-ops/pkg/aws"
 	"github.com/dash-ops/dash-ops/pkg/config"
 	"github.com/dash-ops/dash-ops/pkg/kubernetes"
-	"github.com/dash-ops/dash-ops/pkg/oauth2"
 	servicecatalog "github.com/dash-ops/dash-ops/pkg/service-catalog"
 	"github.com/dash-ops/dash-ops/pkg/spa"
 )
@@ -44,7 +44,7 @@ func main() {
 
 	if dashConfig.Plugins.Has("OAuth2") {
 		// ToDo transform into isolated plugins
-		oauth2.MakeOauthHandlers(api, internal, fileConfig)
+		auth.MakeOauthHandlers(api, internal, fileConfig)
 	}
 
 	if dashConfig.Plugins.Has("ServiceCatalog") {
