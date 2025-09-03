@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	githubModels "github.com/dash-ops/dash-ops/pkg/github-new/models"
+	githubModels "github.com/dash-ops/dash-ops/pkg/github/models"
 )
 
 // TeamResolver provides team resolution and membership logic

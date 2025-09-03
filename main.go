@@ -13,14 +13,22 @@ import (
 	"github.com/dash-ops/dash-ops/pkg/auth"
 	"github.com/dash-ops/dash-ops/pkg/aws"
 	"github.com/dash-ops/dash-ops/pkg/config"
+	"github.com/dash-ops/dash-ops/pkg/github"
 	"github.com/dash-ops/dash-ops/pkg/kubernetes"
 	servicecatalog "github.com/dash-ops/dash-ops/pkg/service-catalog"
 	"github.com/dash-ops/dash-ops/pkg/spa"
+	spaModels "github.com/dash-ops/dash-ops/pkg/spa/models"
+	"golang.org/x/oauth2"
 )
 
 func main() {
-	fileConfig := config.GetFileGlobalConfig()
-	dashConfig := config.GetGlobalConfig(fileConfig)
+	// Initialize config module
+	configModule, err := config.NewModule("")
+	if err != nil {
+		log.Fatalf("Failed to initialize config module: %v", err)
+	}
+
+	dashConfig := configModule.GetConfig()
 
 	router := mux.NewRouter()
 
@@ -35,25 +43,61 @@ func main() {
 	api.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 	})
-	config.MakeConfigHandlers(api, dashConfig)
+
+	// Register config routes using hexagonal architecture
+	configModule.RegisterRoutes(api)
 
 	internal := api.PathPrefix("/v1").Subrouter()
 
 	// Initialize plugins in dependency order
 	var serviceCatalogInstance *servicecatalog.ServiceCatalog
 
+	// Initialize plugins with dependency injection
 	if dashConfig.Plugins.Has("OAuth2") {
-		// ToDo transform into isolated plugins
-		auth.MakeOauthHandlers(api, internal, fileConfig)
+		// Parse auth config using hexagonal architecture
+		fileConfig := configModule.GetFileConfigBytes()
+		authConfig, err := auth.ParseAuthConfigFromFileConfig(fileConfig)
+		if err != nil {
+			log.Fatalf("Failed to parse auth config: %v", err)
+		}
+
+		// Create OAuth2 config for GitHub module dependency
+		oauthConfig := &oauth2.Config{
+			ClientID:     authConfig.ClientID,
+			ClientSecret: authConfig.ClientSecret,
+			Scopes:       authConfig.Scopes,
+			RedirectURL:  authConfig.RedirectURL,
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  authConfig.AuthURL,
+				TokenURL: authConfig.TokenURL,
+			},
+		}
+
+		// Initialize GitHub module (dependency)
+		githubModule, err := github.NewModule(oauthConfig)
+		if err != nil {
+			log.Fatalf("Failed to create GitHub module: %v", err)
+		}
+
+		// Initialize auth module with GitHub dependency injection
+		authModule, err := auth.NewModule(authConfig, githubModule)
+		if err != nil {
+			log.Fatalf("Failed to create auth module: %v", err)
+		}
+
+		// Register auth routes using hexagonal architecture
+		authModule.RegisterRoutes(api, internal)
 	}
 
 	if dashConfig.Plugins.Has("ServiceCatalog") {
 		// Service Catalog plugin - initialize first to provide context resolver
+		fileConfig := configModule.GetFileConfigBytes()
 		serviceCatalogInstance = servicecatalog.MakeServiceCatalogHandlers(internal, fileConfig)
 	}
 
 	if dashConfig.Plugins.Has("Kubernetes") {
 		// Kubernetes plugin with service context integration
+		fileConfig := configModule.GetFileConfigBytes()
 		if serviceCatalogInstance != nil {
 			// Use service context resolver for enhanced integration
 			resolver := serviceCatalogInstance.GetKubernetesAdapter()
@@ -66,11 +110,22 @@ func main() {
 
 	if dashConfig.Plugins.Has("AWS") {
 		// ToDo transform into isolated plugins
+		fileConfig := configModule.GetFileConfigBytes()
 		aws.MakeAWSInstanceHandlers(internal, fileConfig)
 	}
 
-	spaHandler := spa.Handler{StaticPath: dashConfig.Front, IndexPath: "index.html"}
-	router.PathPrefix("/").Handler(spaHandler)
+	// Initialize SPA module using hexagonal architecture
+	spaConfig := &spaModels.SPAConfig{
+		StaticPath: dashConfig.Front,
+		IndexPath:  "index.html",
+	}
+	spaModule, err := spa.NewModule(spaConfig)
+	if err != nil {
+		log.Fatalf("Failed to create SPA module: %v", err)
+	}
+
+	// Use SPA handler from hexagonal architecture
+	router.PathPrefix("/").Handler(spaModule.Handler)
 
 	fmt.Println("DashOps server running!!")
 	srv := &http.Server{

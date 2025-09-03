@@ -207,28 +207,3 @@ func (m *Module) Validate() error {
 
 	return nil
 }
-
-// Legacy compatibility - Handler struct that matches the original spa.Handler
-type Handler struct {
-	StaticPath string
-	IndexPath  string
-}
-
-// ServeHTTP implements the original spa.Handler behavior for compatibility
-func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Create a simple config
-	config := &spaModels.SPAConfig{
-		StaticPath: h.StaticPath,
-		IndexPath:  h.IndexPath,
-	}
-
-	// Create module
-	module, err := NewModule(config)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	// Use the advanced handler
-	module.Handler.ServeHTTP(w, r)
-}

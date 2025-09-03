@@ -1,9 +1,9 @@
-package auth
+package ports
 
 import (
 	"context"
 
-	authModels "github.com/dash-ops/dash-ops/pkg/auth-new/models"
+	authModels "github.com/dash-ops/dash-ops/pkg/auth/models"
 )
 
 // UserRepository defines the interface for user data access

@@ -101,6 +101,11 @@ func (m *Module) GetPlugins() configModels.Plugins {
 	return m.config.Plugins
 }
 
+// GetFileConfigBytes returns raw config file bytes (for dependency injection)
+func (m *Module) GetFileConfigBytes() []byte {
+	return GetFileGlobalConfig() // Use existing function
+}
+
 // Legacy compatibility functions for existing main.go
 
 // GetFileGlobalConfig reads configuration file - legacy compatibility
@@ -116,49 +121,4 @@ func GetFileGlobalConfig() []byte {
 
 	// Expand environment variables like the original did
 	return []byte(os.ExpandEnv(string(data)))
-}
-
-// DashYaml legacy struct for compatibility
-type DashYaml struct {
-	Port    string   `yaml:"port"`
-	Origin  string   `yaml:"origin"`
-	Headers []string `yaml:"headers"`
-	Front   string   `yaml:"front"`
-	Plugins Plugins  `yaml:"plugins"`
-}
-
-// Plugins legacy type for compatibility
-type Plugins []string
-
-// Has checks if plugin exists - maintains compatibility
-func (list Plugins) Has(a string) bool {
-	plugins := configModels.Plugins(list)
-	return plugins.Has(a)
-}
-
-// GetGlobalConfig parses configuration - legacy compatibility
-func GetGlobalConfig(fileConfig []byte) DashYaml {
-	module, err := NewModule("")
-	if err != nil {
-		panic(err) // Maintain same behavior as original
-	}
-
-	config := module.GetConfig()
-	return DashYaml{
-		Port:    config.Port,
-		Origin:  config.Origin,
-		Headers: config.Headers,
-		Front:   config.Front,
-		Plugins: Plugins(config.Plugins),
-	}
-}
-
-// MakeConfigHandlers registers config handlers - legacy compatibility
-func MakeConfigHandlers(api *mux.Router, dashConfig DashYaml) {
-	module, err := NewModule("")
-	if err != nil {
-		panic(err) // Maintain same behavior as original
-	}
-
-	module.RegisterRoutes(api)
 }

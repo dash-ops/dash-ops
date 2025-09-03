@@ -6,7 +6,7 @@ import (
 
 	authLogic "github.com/dash-ops/dash-ops/pkg/auth/logic"
 	authModels "github.com/dash-ops/dash-ops/pkg/auth/models"
-	gh "github.com/dash-ops/dash-ops/pkg/github"
+	authPorts "github.com/dash-ops/dash-ops/pkg/auth/ports"
 	"golang.org/x/oauth2"
 )
 
@@ -15,7 +15,7 @@ type AuthController struct {
 	config          *authModels.AuthConfig
 	oauth2Processor *authLogic.OAuth2Processor
 	sessionManager  *authLogic.SessionManager
-	githubClient    gh.Client
+	githubService   authPorts.GitHubService
 }
 
 // NewAuthController creates a new auth controller
@@ -23,13 +23,13 @@ func NewAuthController(
 	config *authModels.AuthConfig,
 	oauth2Processor *authLogic.OAuth2Processor,
 	sessionManager *authLogic.SessionManager,
-	githubClient gh.Client,
+	githubService authPorts.GitHubService,
 ) *AuthController {
 	return &AuthController{
 		config:          config,
 		oauth2Processor: oauth2Processor,
 		sessionManager:  sessionManager,
-		githubClient:    githubClient,
+		githubService:   githubService,
 	}
 }
 
@@ -62,7 +62,7 @@ func (ac *AuthController) GetUserProfile(ctx context.Context, token *oauth2.Toke
 		return nil, fmt.Errorf("token is invalid")
 	}
 
-	user, err := ac.githubClient.GetUserLogger(token)
+	user, err := ac.githubService.GetUser(ctx, token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user profile: %w", err)
 	}
@@ -81,7 +81,7 @@ func (ac *AuthController) GetUserPermissions(ctx context.Context, token *oauth2.
 	}
 
 	orgPermission := ac.config.OrgPermission
-	teams, err := ac.githubClient.GetTeamsUserLogger(token)
+	teams, err := ac.githubService.GetUserTeams(ctx, token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user teams: %w", err)
 	}
@@ -102,7 +102,7 @@ func (ac *AuthController) BuildUserData(ctx context.Context, token *oauth2.Token
 	}
 
 	orgPermission := ac.config.OrgPermission
-	teams, err := ac.githubClient.GetTeamsUserLogger(token)
+	teams, err := ac.githubService.GetUserTeams(ctx, token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate organization permissions: %w", err)
 	}

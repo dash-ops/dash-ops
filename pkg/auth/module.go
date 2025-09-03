@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v2"
 
 	authAdapters "github.com/dash-ops/dash-ops/pkg/auth/adapters/http"
@@ -13,8 +12,8 @@ import (
 	authHandlers "github.com/dash-ops/dash-ops/pkg/auth/handlers"
 	authLogic "github.com/dash-ops/dash-ops/pkg/auth/logic"
 	authModels "github.com/dash-ops/dash-ops/pkg/auth/models"
+	authPorts "github.com/dash-ops/dash-ops/pkg/auth/ports"
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
-	gh "github.com/dash-ops/dash-ops/pkg/github"
 )
 
 // Module represents the auth module - main entry point for the plugin
@@ -25,9 +24,13 @@ type Module struct {
 }
 
 // NewModule creates and initializes a new auth module (main factory)
-func NewModule(config *authModels.AuthConfig) (*Module, error) {
+func NewModule(config *authModels.AuthConfig, githubService authPorts.GitHubService) (*Module, error) {
 	if config == nil {
 		return nil, fmt.Errorf("auth config cannot be nil")
+	}
+
+	if githubService == nil {
+		return nil, fmt.Errorf("github service is required")
 	}
 
 	// Validate configuration
@@ -39,28 +42,12 @@ func NewModule(config *authModels.AuthConfig) (*Module, error) {
 	oauth2Processor := authLogic.NewOAuth2Processor()
 	sessionManager := authLogic.NewSessionManager(24 * time.Hour)
 
-	// Initialize GitHub client for provider integration
-	oauthConfig := &oauth2.Config{
-		ClientID:     config.ClientID,
-		ClientSecret: config.ClientSecret,
-		Scopes:       config.Scopes,
-		RedirectURL:  config.RedirectURL,
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  config.AuthURL,
-			TokenURL: config.TokenURL,
-		},
-	}
-	githubClient, err := gh.NewClient(oauthConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create GitHub client: %w", err)
-	}
-
-	// Initialize controller with dependencies
+	// Initialize controller with dependencies (using injected GitHub service)
 	controller := authControllers.NewAuthController(
 		config,
 		oauth2Processor,
 		sessionManager,
-		githubClient,
+		githubService, // Injected dependency
 	)
 
 	// Initialize adapters
@@ -99,28 +86,8 @@ func (m *Module) GetConfig() *authModels.AuthConfig {
 	return m.config
 }
 
-// Legacy compatibility functions for existing main.go
-
-// MakeOauthHandlers registers OAuth handlers - legacy compatibility
-func MakeOauthHandlers(apiRouter, internalRouter *mux.Router, fileConfig []byte) {
-	// Parse config from bytes (similar to original oauth2 module)
-	config, err := parseAuthConfigFromBytes(fileConfig)
-	if err != nil {
-		panic(err) // Maintain same behavior as original
-	}
-
-	// Create module
-	module, err := NewModule(config)
-	if err != nil {
-		panic(err) // Maintain same behavior as original
-	}
-
-	// Register routes
-	module.RegisterRoutes(apiRouter, internalRouter)
-}
-
-// parseAuthConfigFromBytes parses auth config from YAML bytes (helper function)
-func parseAuthConfigFromBytes(fileConfig []byte) (*authModels.AuthConfig, error) {
+// ParseAuthConfigFromFileConfig parses auth config from YAML bytes (exported for main.go)
+func ParseAuthConfigFromFileConfig(fileConfig []byte) (*authModels.AuthConfig, error) {
 	// Parse YAML similar to the original oauth2.loadConfig
 	type dashYaml struct {
 		Oauth2 []struct {
