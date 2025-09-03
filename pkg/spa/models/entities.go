@@ -88,8 +88,14 @@ func (sc *SPAConfig) Validate() error {
 		return fmt.Errorf("index path is required")
 	}
 
-	// Validate paths
-	if !filepath.IsAbs(sc.StaticPath) && !strings.HasPrefix(sc.StaticPath, "./") {
+	// Validate paths - accept absolute paths or relative paths (including those without ./ prefix)
+	if filepath.IsAbs(sc.StaticPath) {
+		// Absolute path is valid
+	} else if strings.HasPrefix(sc.StaticPath, "./") || strings.HasPrefix(sc.StaticPath, "../") {
+		// Explicit relative paths are valid
+	} else if !strings.Contains(sc.StaticPath, "..") && sc.StaticPath != "" {
+		// Simple relative paths without .. are valid (like "front/dist")
+	} else {
 		return fmt.Errorf("static path must be absolute or relative")
 	}
 

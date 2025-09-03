@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	spaModels "github.com/dash-ops/dash-ops/pkg/spa-new/models"
+	spaModels "github.com/dash-ops/dash-ops/pkg/spa/models"
 )
 
 // FileProcessor handles file processing logic for SPA

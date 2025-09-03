@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	spaLogic "github.com/dash-ops/dash-ops/pkg/spa-new/logic"
-	spaModels "github.com/dash-ops/dash-ops/pkg/spa-new/models"
+	spaLogic "github.com/dash-ops/dash-ops/pkg/spa/logic"
+	spaModels "github.com/dash-ops/dash-ops/pkg/spa/models"
 )
 
 // Module represents the SPA module
@@ -206,4 +206,29 @@ func (m *Module) Validate() error {
 	}
 
 	return nil
+}
+
+// Legacy compatibility - Handler struct that matches the original spa.Handler
+type Handler struct {
+	StaticPath string
+	IndexPath  string
+}
+
+// ServeHTTP implements the original spa.Handler behavior for compatibility
+func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Create a simple config
+	config := &spaModels.SPAConfig{
+		StaticPath: h.StaticPath,
+		IndexPath:  h.IndexPath,
+	}
+
+	// Create module
+	module, err := NewModule(config)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Use the advanced handler
+	module.Handler.ServeHTTP(w, r)
 }
