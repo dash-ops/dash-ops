@@ -1,6 +1,6 @@
 # Contributing to DashOps Backend
 
-> **🏗️ Architecture**: All backend modules follow **Hexagonal Architecture** patterns for consistency and maintainability.
+> **🏗️ Architecture**: **4 modules migrated** to pure Hexagonal Architecture with **dependency injection**. Zero legacy code in migrated modules.
 
 ## Quick Reference
 
@@ -326,6 +326,63 @@ func (s3p *S3Processor) ValidateBucketName(name string) error {
 // 3. Add to controller (controllers/aws_controller.go)
 func (ac *AWSController) ListS3Buckets(ctx context.Context, accountKey string) ([]S3Bucket, error) {
     // Implementation
+}
+```
+
+## 🔄 **Dependency Inversion Best Practices**
+
+### **✅ DO: Define Interfaces in Dependent Module**
+
+```go
+// ✅ CORRECT: auth/ports/services.go
+package ports
+
+type GitHubService interface {
+    GetUser(ctx context.Context, token *oauth2.Token) (*github.User, error)
+    GetUserTeams(ctx context.Context, token *oauth2.Token) ([]*github.Team, error)
+}
+```
+
+### **✅ DO: Inject Dependencies in main.go**
+
+```go
+// ✅ CORRECT: main.go orchestrates all dependencies
+func main() {
+    // Initialize dependency first
+    githubModule, _ := github.NewModule(oauthConfig)
+    
+    // Inject dependency into dependent module
+    authModule, _ := auth.NewModule(authConfig, githubModule)
+    
+    // Register routes
+    authModule.RegisterRoutes(api, internal)
+}
+```
+
+### **✅ DO: Use Interfaces for Loose Coupling**
+
+```go
+// ✅ CORRECT: auth/controllers/auth_controller.go
+type AuthController struct {
+    githubService ports.GitHubService // Interface, not implementation
+}
+
+func (ac *AuthController) GetUserProfile(ctx context.Context, token *oauth2.Token) {
+    // Use interface, works with any implementation
+    return ac.githubService.GetUser(ctx, token)
+}
+```
+
+### **❌ DON'T: Import Business Modules Directly**
+
+```go
+// ❌ WRONG: Creates tight coupling
+package auth
+
+import "github.com/dash-ops/dash-ops/pkg/github" // BAD!
+
+type AuthController struct {
+    githubController *github.Controller // Tight coupling!
 }
 ```
 

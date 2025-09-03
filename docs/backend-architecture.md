@@ -1,6 +1,6 @@
 # Backend Architecture Guide
 
-> **🏗️ Current Status**: All 8 backend modules follow a consistent **Hexagonal Architecture** pattern
+> **🏗️ Current Status**: **4 modules migrated** to pure Hexagonal Architecture with **zero legacy code**. Remaining 4 modules pending migration.
 
 ## Quick Start for Developers
 
@@ -33,6 +33,8 @@ pkg/{module-name}/
 | **commons** | Shared utilities         | ✅ Complete | HTTP adapters, permissions, string utils  |
 | **config**  | Configuration management | ✅ Complete | Dynamic reload, validation, env vars      |
 | **auth**    | Authentication           | ✅ Complete | Multi-provider OAuth2, session management |
+| **github**  | Git integration          | ✅ Complete | Teams, repositories, permissions          |
+| **spa**     | Static file serving      | ✅ Complete | SPA routing, security headers, compression |
 
 ### Platform Modules
 
@@ -40,9 +42,64 @@ pkg/{module-name}/
 | ------------------- | ----------------------- | --------------- | ------------------------------------------------ |
 | **kubernetes**      | Container orchestration | ✅ Complete     | Clusters, deployments, pods, health monitoring   |
 | **aws**             | Cloud infrastructure    | ✅ Complete     | EC2 management, cost optimization, multi-account |
-| **github**          | Git integration         | ✅ 95% Complete | Teams, repositories, permissions                 |
 | **service-catalog** | Service registry        | ✅ Complete     | CRUD, versioning, K8s integration                |
-| **spa**             | Static file serving     | ✅ 95% Complete | SPA routing, security headers, compression       |
+
+## 🏗️ **Dependency Injection Best Practices**
+
+### **✅ DO: Use Interfaces for Dependencies**
+
+```go
+// ✅ CORRECT: Define interface in dependent module
+package auth
+
+// ports/services.go
+type GitHubService interface {
+    GetUser(ctx context.Context, token *oauth2.Token) (*github.User, error)
+    GetUserTeams(ctx context.Context, token *oauth2.Token) ([]*github.Team, error)
+}
+
+// controllers/auth_controller.go
+type AuthController struct {
+    githubService ports.GitHubService // Interface, not concrete type
+}
+```
+
+### **✅ DO: Inject Dependencies in main.go**
+
+```go
+// ✅ CORRECT: main.go orchestrates all dependencies
+func main() {
+    // 1. Initialize dependency first
+    githubModule, _ := github.NewModule(oauthConfig)
+    
+    // 2. Inject dependency into dependent module
+    authModule, _ := auth.NewModule(authConfig, githubModule)
+    
+    // 3. Register routes
+    authModule.RegisterRoutes(api, internal)
+}
+```
+
+### **❌ DON'T: Import Business Modules Directly**
+
+```go
+// ❌ WRONG: Creates tight coupling
+package auth
+
+import "github.com/dash-ops/dash-ops/pkg/github" // BAD!
+
+type AuthController struct {
+    githubController *github.Controller // Tight coupling!
+}
+```
+
+### **📋 DIP Checklist**
+
+- [ ] **No direct imports** between business modules
+- [ ] **Interfaces defined** in dependent module's `ports/`
+- [ ] **Dependencies injected** in `main.go` or module factory
+- [ ] **Easy to mock** for testing
+- [ ] **No circular dependencies** between modules
 
 ## 📝 Development Guidelines
 
