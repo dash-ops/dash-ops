@@ -4,18 +4,18 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dash-ops/dash-ops/pkg/config-new/logic"
-	"github.com/dash-ops/dash-ops/pkg/config-new/models"
+	configLogic "github.com/dash-ops/dash-ops/pkg/config/logic"
+	configModels "github.com/dash-ops/dash-ops/pkg/config/models"
 )
 
 // ConfigController handles configuration business logic orchestration
 type ConfigController struct {
-	processor *logic.ConfigProcessor
-	config    *models.DashConfig
+	processor *configLogic.ConfigProcessor
+	config    *configModels.DashConfig
 }
 
 // NewConfigController creates a new config controller
-func NewConfigController(processor *logic.ConfigProcessor, config *models.DashConfig) *ConfigController {
+func NewConfigController(processor *configLogic.ConfigProcessor, config *configModels.DashConfig) *ConfigController {
 	return &ConfigController{
 		processor: processor,
 		config:    config,
@@ -23,7 +23,7 @@ func NewConfigController(processor *logic.ConfigProcessor, config *models.DashCo
 }
 
 // GetConfig returns the current configuration
-func (cc *ConfigController) GetConfig(ctx context.Context) (*models.DashConfig, error) {
+func (cc *ConfigController) GetConfig(ctx context.Context) (*configModels.DashConfig, error) {
 	if cc.config == nil {
 		return nil, fmt.Errorf("configuration not loaded")
 	}
@@ -31,7 +31,7 @@ func (cc *ConfigController) GetConfig(ctx context.Context) (*models.DashConfig, 
 }
 
 // GetPlugins returns the list of enabled plugins
-func (cc *ConfigController) GetPlugins(ctx context.Context) (models.Plugins, error) {
+func (cc *ConfigController) GetPlugins(ctx context.Context) (configModels.Plugins, error) {
 	if cc.config == nil {
 		return nil, fmt.Errorf("configuration not loaded")
 	}
@@ -52,7 +52,7 @@ func (cc *ConfigController) IsPluginEnabled(ctx context.Context, pluginName stri
 }
 
 // ReloadConfig reloads configuration from file
-func (cc *ConfigController) ReloadConfig(ctx context.Context) (*models.DashConfig, error) {
+func (cc *ConfigController) ReloadConfig(ctx context.Context) (*configModels.DashConfig, error) {
 	filePath := cc.processor.GetConfigFilePath()
 
 	newConfig, err := cc.processor.LoadFromFile(filePath)
@@ -92,5 +92,5 @@ type SystemInfo struct {
 	Version     string
 	Environment string
 	Uptime      string
-	Config      *models.DashConfig
+	Config      *configModels.DashConfig
 }

@@ -1,8 +1,8 @@
 package commons
 
 import (
-	httpAdapter "github.com/dash-ops/dash-ops/pkg/commons-new/adapters/http"
-	"github.com/dash-ops/dash-ops/pkg/commons-new/logic"
+	httpAdapter "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
+	commonsLogic "github.com/dash-ops/dash-ops/pkg/commons/logic"
 )
 
 // Module represents the commons module with all its components
@@ -12,8 +12,8 @@ type Module struct {
 	RequestAdapter  *httpAdapter.RequestAdapter
 
 	// Logic
-	PermissionChecker *logic.PermissionChecker
-	StringProcessor   *logic.StringProcessor
+	PermissionChecker *commonsLogic.PermissionChecker
+	StringProcessor   *commonsLogic.StringProcessor
 }
 
 // NewModule creates and initializes a new commons module
@@ -24,8 +24,8 @@ func NewModule() *Module {
 		RequestAdapter:  httpAdapter.NewRequestAdapter(),
 
 		// Initialize logic components
-		PermissionChecker: logic.NewPermissionChecker(),
-		StringProcessor:   logic.NewStringProcessor(),
+		PermissionChecker: commonsLogic.NewPermissionChecker(),
+		StringProcessor:   commonsLogic.NewStringProcessor(),
 	}
 }
 
@@ -40,11 +40,11 @@ func (m *Module) GetRequestAdapter() *httpAdapter.RequestAdapter {
 }
 
 // GetPermissionChecker returns the permission checker
-func (m *Module) GetPermissionChecker() *logic.PermissionChecker {
+func (m *Module) GetPermissionChecker() *commonsLogic.PermissionChecker {
 	return m.PermissionChecker
 }
 
 // GetStringProcessor returns the string processor
-func (m *Module) GetStringProcessor() *logic.StringProcessor {
+func (m *Module) GetStringProcessor() *commonsLogic.StringProcessor {
 	return m.StringProcessor
 }

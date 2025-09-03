@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	configModels "github.com/dash-ops/dash-ops/pkg/config-new/models"
+	configModels "github.com/dash-ops/dash-ops/pkg/config/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

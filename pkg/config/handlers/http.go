@@ -5,21 +5,21 @@ import (
 
 	"github.com/gorilla/mux"
 
-	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons-new/adapters/http"
-	httpAdapter "github.com/dash-ops/dash-ops/pkg/config-new/adapters/http"
-	config "github.com/dash-ops/dash-ops/pkg/config-new/controllers"
+	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
+	httpAdapter "github.com/dash-ops/dash-ops/pkg/config/adapters/http"
+	configControllers "github.com/dash-ops/dash-ops/pkg/config/controllers"
 )
 
 // HTTPHandler handles HTTP requests for config module
 type HTTPHandler struct {
-	controller      *config.ConfigController
+	controller      *configControllers.ConfigController
 	configAdapter   *httpAdapter.ConfigAdapter
 	responseAdapter *commonsHttp.ResponseAdapter
 }
 
 // NewHTTPHandler creates a new HTTP handler
 func NewHTTPHandler(
-	controller *config.ConfigController,
+	controller *configControllers.ConfigController,
 	configAdapter *httpAdapter.ConfigAdapter,
 	responseAdapter *commonsHttp.ResponseAdapter,
 ) *HTTPHandler {
@@ -60,7 +60,8 @@ func (h *HTTPHandler) getPluginsHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	response := h.configAdapter.ModelToPluginsResponse(plugins)
+	// Return simple array for frontend compatibility
+	response := h.configAdapter.ModelToPluginsArray(plugins)
 	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
 }
 

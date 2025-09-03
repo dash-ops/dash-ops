@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dash-ops/dash-ops/pkg/commons-new/models"
+	commonsModels "github.com/dash-ops/dash-ops/pkg/commons/models"
 )
 
 // RequestAdapter handles HTTP request parsing and context management
@@ -35,8 +35,8 @@ func (r *RequestAdapter) ParseJSON(req *http.Request, v interface{}) error {
 }
 
 // GetUserFromContext extracts user data from request context
-func (r *RequestAdapter) GetUserFromContext(ctx context.Context) (*models.UserData, error) {
-	userData, ok := ctx.Value(models.UserDataKey).(*models.UserData)
+func (r *RequestAdapter) GetUserFromContext(ctx context.Context) (*commonsModels.UserData, error) {
+	userData, ok := ctx.Value(commonsModels.UserDataKey).(*commonsModels.UserData)
 	if !ok {
 		return nil, fmt.Errorf("user data not found in context")
 	}
@@ -50,7 +50,7 @@ func (r *RequestAdapter) GetUserFromContext(ctx context.Context) (*models.UserDa
 
 // GetTokenFromContext extracts token from request context
 func (r *RequestAdapter) GetTokenFromContext(ctx context.Context) (string, error) {
-	token, ok := ctx.Value(models.TokenKey).(string)
+	token, ok := ctx.Value(commonsModels.TokenKey).(string)
 	if !ok {
 		return "", fmt.Errorf("token not found in context")
 	}
@@ -63,13 +63,13 @@ func (r *RequestAdapter) GetTokenFromContext(ctx context.Context) (string, error
 }
 
 // SetUserInContext sets user data in request context
-func (r *RequestAdapter) SetUserInContext(ctx context.Context, userData *models.UserData) context.Context {
-	return context.WithValue(ctx, models.UserDataKey, userData)
+func (r *RequestAdapter) SetUserInContext(ctx context.Context, userData *commonsModels.UserData) context.Context {
+	return context.WithValue(ctx, commonsModels.UserDataKey, userData)
 }
 
 // SetTokenInContext sets token in request context
 func (r *RequestAdapter) SetTokenInContext(ctx context.Context, token string) context.Context {
-	return context.WithValue(ctx, models.TokenKey, token)
+	return context.WithValue(ctx, commonsModels.TokenKey, token)
 }
 
 // GetAuthorizationHeader extracts the Authorization header from request

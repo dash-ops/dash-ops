@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dash-ops/dash-ops/pkg/commons-new/wire"
+	commonsWire "github.com/dash-ops/dash-ops/pkg/commons/wire"
 )
 
 // ResponseAdapter handles HTTP response formatting and writing
@@ -35,7 +35,7 @@ func (r *ResponseAdapter) WriteJSON(w http.ResponseWriter, code int, payload int
 
 // WriteError writes an error response with the given status code and message
 func (r *ResponseAdapter) WriteError(w http.ResponseWriter, code int, message string) {
-	errorResponse := wire.ErrorResponse{
+	errorResponse := commonsWire.ErrorResponse{
 		Error: message,
 	}
 	r.WriteJSON(w, code, errorResponse)
@@ -43,7 +43,7 @@ func (r *ResponseAdapter) WriteError(w http.ResponseWriter, code int, message st
 
 // WriteErrorWithCode writes an error response with error code and details
 func (r *ResponseAdapter) WriteErrorWithCode(w http.ResponseWriter, httpCode int, errorCode, message, details string) {
-	errorResponse := wire.ErrorResponse{
+	errorResponse := commonsWire.ErrorResponse{
 		Error:   message,
 		Code:    errorCode,
 		Details: details,
@@ -53,7 +53,7 @@ func (r *ResponseAdapter) WriteErrorWithCode(w http.ResponseWriter, httpCode int
 
 // WriteSuccess writes a success response with optional data
 func (r *ResponseAdapter) WriteSuccess(w http.ResponseWriter, message string, data interface{}) {
-	successResponse := wire.SuccessResponse{
+	successResponse := commonsWire.SuccessResponse{
 		Message: message,
 		Data:    data,
 	}
@@ -62,7 +62,7 @@ func (r *ResponseAdapter) WriteSuccess(w http.ResponseWriter, message string, da
 
 // WriteHealth writes a health check response
 func (r *ResponseAdapter) WriteHealth(w http.ResponseWriter, status, version string, services map[string]string) {
-	healthResponse := wire.HealthResponse{
+	healthResponse := commonsWire.HealthResponse{
 		Status:    status,
 		Version:   version,
 		Timestamp: time.Now().Format(time.RFC3339),

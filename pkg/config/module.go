@@ -2,15 +2,16 @@ package config
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/gorilla/mux"
 
-	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons-new/adapters/http"
-	httpAdapter "github.com/dash-ops/dash-ops/pkg/config-new/adapters/http"
-	configControllers "github.com/dash-ops/dash-ops/pkg/config-new/controllers"
-	"github.com/dash-ops/dash-ops/pkg/config-new/handlers"
-	configLogic "github.com/dash-ops/dash-ops/pkg/config-new/logic"
-	configModels "github.com/dash-ops/dash-ops/pkg/config-new/models"
+	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
+	httpAdapter "github.com/dash-ops/dash-ops/pkg/config/adapters/http"
+	configControllers "github.com/dash-ops/dash-ops/pkg/config/controllers"
+	"github.com/dash-ops/dash-ops/pkg/config/handlers"
+	configLogic "github.com/dash-ops/dash-ops/pkg/config/logic"
+	configModels "github.com/dash-ops/dash-ops/pkg/config/models"
 )
 
 // Module represents the config module - main entry point for the plugin
@@ -107,13 +108,14 @@ func GetFileGlobalConfig() []byte {
 	processor := configLogic.NewConfigProcessor()
 	configPath := processor.GetConfigFilePath()
 
-	data, err := processor.LoadFromFile(configPath)
+	// Read raw file bytes for compatibility with other modules
+	data, err := os.ReadFile(configPath)
 	if err != nil {
 		panic(err) // Maintain same behavior as original
 	}
 
-	// Convert back to YAML for compatibility (simplified)
-	return []byte("port: " + data.Port + "\norigin: " + data.Origin)
+	// Expand environment variables like the original did
+	return []byte(os.ExpandEnv(string(data)))
 }
 
 // DashYaml legacy struct for compatibility

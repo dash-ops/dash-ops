@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	configModels "github.com/dash-ops/dash-ops/pkg/config-new/models"
+	configModels "github.com/dash-ops/dash-ops/pkg/config/models"
 )
 
 // ConfigProcessor handles configuration processing logic

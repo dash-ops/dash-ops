@@ -1,8 +1,8 @@
 package http
 
 import (
-	configModels "github.com/dash-ops/dash-ops/pkg/config-new/models"
-	configWire "github.com/dash-ops/dash-ops/pkg/config-new/wire"
+	configModels "github.com/dash-ops/dash-ops/pkg/config/models"
+	configWire "github.com/dash-ops/dash-ops/pkg/config/wire"
 )
 
 // ConfigAdapter handles transformation between models and wire formats
@@ -30,6 +30,11 @@ func (ca *ConfigAdapter) ModelToPluginsResponse(plugins configModels.Plugins) co
 		Plugins: plugins.List(),
 		Count:   plugins.Count(),
 	}
+}
+
+// ModelToPluginsArray converts plugins to simple array for legacy compatibility
+func (ca *ConfigAdapter) ModelToPluginsArray(plugins configModels.Plugins) []string {
+	return plugins.List()
 }
 
 // ModelToPluginStatusResponse converts plugin status to response
