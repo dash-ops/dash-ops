@@ -6,7 +6,7 @@ export function getPods(
   { context, namespace }: KubernetesTypes.PodFilter,
   config?: AxiosRequestConfig
 ): Promise<AxiosResponse<KubernetesTypes.Pod[]>> {
-  let url = `/v1/k8s/${context}/pods`;
+  let url = `/v1/k8s/clusters/${context}/pods`;
 
   const filterParams = new URLSearchParams({ namespace });
   url += filterParams.toString() ? `?${filterParams.toString()}` : '';
@@ -20,7 +20,7 @@ export function getPodLogs(
   { context, name, namespace }: KubernetesTypes.PodLogsFilter,
   config?: AxiosRequestConfig
 ): Promise<AxiosResponse<KubernetesTypes.LogContainer[]>> {
-  let url = `/v1/k8s/${context}/pod/${name}/logs`;
+  let url = `/v1/k8s/clusters/${context}/pod/${name}/logs`;
 
   const filterParams = new URLSearchParams({ namespace });
   url += filterParams.toString() ? `?${filterParams.toString()}` : '';

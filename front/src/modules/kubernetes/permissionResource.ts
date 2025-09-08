@@ -7,6 +7,6 @@ export function getPermissions(
   config?: AxiosRequestConfig
 ): Promise<AxiosResponse<KubernetesTypes.K8sPermission[]>> {
   return http
-    .get(`/v1/k8s/${filter.context}/permissions`, config)
+    .get(`/v1/k8s/clusters/${filter.context}/permissions`, config)
     .then((resp) => (resp.data ? resp : { ...resp, data: [] }));
 }

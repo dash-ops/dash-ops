@@ -6,21 +6,28 @@ import { BaseEntity, EntityWithStatus } from '../../types/api';
 
 // Kubernetes Resources
 export interface Cluster extends EntityWithStatus {
+  name: string;
   context: string;
+  version: string;
+  status: string;
+}
+
+export interface ClusterListResponse {
+  clusters: Cluster[];
+  total: number;
 }
 
 export interface Namespace extends EntityWithStatus {}
 
 export interface Node extends BaseEntity {
-  ready: string;
-  allocated_resources?: AllocatedResources;
-  conditions: NodeCondition[];
-  capacity: NodeCapacity;
-  created_at: string;
+  status: string;
+  roles: string[];
   age: string;
   version: string;
-  roles: string[];
-  taints: number;
+  internal_ip: string;
+  conditions: NodeCondition[];
+  resources: NodeResources;
+  created_at: string;
 }
 
 export interface NodeCondition {
@@ -28,13 +35,19 @@ export interface NodeCondition {
   status: string;
   reason?: string;
   message?: string;
+  last_transition_time?: string;
 }
 
-export interface NodeCapacity {
-  storage?: string;
-  ephemeral_storage?: string;
-  disk_pressure: boolean;
-  disk_usage_percent: number;
+export interface NodeResources {
+  capacity: ResourceSpec;
+  allocatable: ResourceSpec;
+  used: ResourceSpec;
+}
+
+export interface ResourceSpec {
+  cpu: string;
+  memory: string;
+  pods: string;
 }
 
 export interface AllocatedResources {
@@ -89,14 +102,16 @@ export interface Deployment extends BaseEntity {
 }
 
 export interface PodInfo {
-  current: number;
-  desired: number;
+  running: number;
+  pending: number;
+  failed: number;
+  total: number;
 }
 
 export interface DeploymentReplicas {
   ready: number;
   available: number;
-  updated: number;
+  current: number;
   desired: number;
 }
 

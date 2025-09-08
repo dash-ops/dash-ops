@@ -36,6 +36,7 @@ import { getNamespacesCached } from './namespacesCache';
 import Refresh from '../../components/Refresh';
 import PodContainers from './PodContainers';
 import PodQoSBadge from './PodQoSBadge';
+import { formatAge } from './helpers';
 import { FileText } from 'lucide-react';
 import { KubernetesTypes, BadgeVariant } from '@/types';
 
@@ -276,7 +277,7 @@ export default function PodPage(): JSX.Element {
                     </TableCell>
 
                     <TableCell className="text-sm text-muted-foreground">
-                      {pod.age}
+                      {formatAge(pod.age)}
                     </TableCell>
 
                     <TableCell>

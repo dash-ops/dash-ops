@@ -15,11 +15,13 @@ import { getNodes } from './nodesResource';
 import Refresh from '../../components/Refresh';
 import ResourceProgressBar from './ResourceProgressBar';
 import SimpleNodeStatus from './SimpleNodeStatus';
+import { formatAge, calculateUsagePercentage } from './helpers';
 import { KubernetesTypes } from '@/types';
 
 const INITIAL_STATE: KubernetesTypes.NodesState = { data: [], loading: false };
 const LOADING = 'LOADING';
 const SET_DATA = 'SET_DATA';
+
 
 function reducer(
   state: KubernetesTypes.NodesState,
@@ -110,10 +112,10 @@ export default function NodesPage(): JSX.Element {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[200px]">Name</TableHead>
-              <TableHead className="w-[120px]">CPU</TableHead>
-              <TableHead className="w-[120px]">Memory</TableHead>
-              <TableHead className="w-[120px]">Disk</TableHead>
-              <TableHead className="w-[80px]">Taints</TableHead>
+              <TableHead className="w-[120px]">CPU Usage</TableHead>
+              <TableHead className="w-[120px]">Memory Usage</TableHead>
+              <TableHead className="w-[120px]">Pod Usage</TableHead>
+              <TableHead className="w-[80px]">Status</TableHead>
               <TableHead className="w-[120px]">Roles</TableHead>
               <TableHead className="w-[100px]">Version</TableHead>
               <TableHead className="w-[80px]">Age</TableHead>
@@ -146,34 +148,33 @@ export default function NodesPage(): JSX.Element {
                   <TableCell>
                     <ResourceProgressBar
                       label=""
-                      percentage={
-                        node.allocated_resources?.cpu_requests_fraction || 0
-                      }
+                      percentage={calculateUsagePercentage(node.resources.used.cpu, node.resources.capacity.cpu)}
                       color="cpu"
+                      tooltip={`${node.resources.used.cpu} / ${node.resources.capacity.cpu}`}
                     />
                   </TableCell>
 
                   <TableCell>
                     <ResourceProgressBar
                       label=""
-                      percentage={
-                        node.allocated_resources?.memory_requests_fraction || 0
-                      }
+                      percentage={calculateUsagePercentage(node.resources.used.memory, node.resources.capacity.memory)}
                       color="memory"
+                      tooltip={`${node.resources.used.memory} / ${node.resources.capacity.memory}`}
                     />
                   </TableCell>
 
                   <TableCell>
                     <ResourceProgressBar
                       label=""
-                      percentage={node.capacity.disk_usage_percent || 0}
+                      percentage={calculateUsagePercentage(node.resources.used.pods, node.resources.capacity.pods)}
                       color="disk"
+                      tooltip={`${node.resources.used.pods} / ${node.resources.capacity.pods} pods`}
                     />
                   </TableCell>
 
                   <TableCell className="text-center">
                     <Badge variant="outline" className="text-xs">
-                      {node.taints}
+                      {node.status}
                     </Badge>
                   </TableCell>
 
@@ -196,7 +197,7 @@ export default function NodesPage(): JSX.Element {
                   </TableCell>
 
                   <TableCell className="text-sm text-muted-foreground">
-                    {node.age}
+                    {formatAge(node.age)}
                   </TableCell>
 
                   <TableCell>

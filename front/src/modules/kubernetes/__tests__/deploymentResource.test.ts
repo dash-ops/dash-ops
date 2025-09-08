@@ -29,7 +29,7 @@ it('should return deployments list', async () => {
   const resp = await getDeployments({ context, namespace }, {});
 
   expect(http.get).toBeCalledWith(
-    `/v1/k8s/${context}/deployments?namespace=${namespace}`,
+    `/v1/k8s/clusters/${context}/deployments?namespace=${namespace}`,
     {}
   );
   expect(resp.data).toEqual(mockResponse);
@@ -47,7 +47,7 @@ it('should restart deployment when restartDeployment called', async () => {
   const resp = await restartDeployment(context, name, namespace);
 
   expect(http.post).toBeCalledWith(
-    `/v1/k8s/${context}/deployment/restart/${namespace}/${name}`
+    `/v1/k8s/clusters/${context}/deployment/restart/${namespace}/${name}`
   );
   expect(resp.data).toEqual(mockResponse);
 });
@@ -65,7 +65,7 @@ it('should scale deployment when scaleDeployment called', async () => {
   const resp = await scaleDeployment(context, name, namespace, replicas);
 
   expect(http.post).toBeCalledWith(
-    `/v1/k8s/${context}/deployment/scale/${namespace}/${name}/${replicas}`
+    `/v1/k8s/clusters/${context}/deployment/scale/${namespace}/${name}/${replicas}`
   );
   expect(resp.data).toEqual(mockResponse);
 });

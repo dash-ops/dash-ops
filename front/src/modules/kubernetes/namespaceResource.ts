@@ -7,6 +7,6 @@ export function getNamespaces(
   config?: AxiosRequestConfig
 ): Promise<AxiosResponse<KubernetesTypes.Namespace[]>> {
   return http
-    .get(`/v1/k8s/${filter.context}/namespaces`, config)
+    .get(`/v1/k8s/clusters/${filter.context}/namespaces`, config)
     .then((resp) => (resp.data ? resp : { ...resp, data: [] }));
 }

@@ -28,6 +28,7 @@ import { getNamespacesCached } from './namespacesCache';
 import Refresh from '../../components/Refresh';
 import ModernDeploymentActions from './ModernDeploymentActions';
 import SimpleDeploymentStatus from './SimpleDeploymentStatus';
+import { formatAge } from './helpers';
 import { KubernetesTypes } from '@/types';
 
 const INITIAL_STATE: KubernetesTypes.DeploymentState = {
@@ -310,14 +311,14 @@ export default function DeploymentPage(): JSX.Element {
                     <TableCell>
                       <Badge
                         variant={
-                          deployment.pod_info.current > 0
+                          deployment.pod_info.running > 0
                             ? 'default'
                             : 'destructive'
                         }
                         className="text-xs"
                       >
-                        {deployment.pod_info.current}/
-                        {deployment.pod_info.desired}
+                        {deployment.pod_info.running}/
+                        {deployment.pod_info.total}
                       </Badge>
                     </TableCell>
 
@@ -327,17 +328,17 @@ export default function DeploymentPage(): JSX.Element {
                           {deployment.replicas.ready}/
                           {deployment.replicas.desired}
                         </span>
-                        {deployment.replicas.updated !==
+                        {deployment.replicas.current !==
                           deployment.replicas.desired && (
                           <span className="text-muted-foreground ml-1">
-                            ({deployment.replicas.updated} updated)
+                            ({deployment.replicas.current} updated)
                           </span>
                         )}
                       </div>
                     </TableCell>
 
                     <TableCell className="text-sm text-muted-foreground">
-                      {deployment.age}
+                      {formatAge(deployment.age)}
                     </TableCell>
 
                     <TableCell>
