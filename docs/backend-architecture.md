@@ -1,6 +1,6 @@
 # Backend Architecture Guide
 
-> **🏗️ Current Status**: **4 modules migrated** to pure Hexagonal Architecture with **zero legacy code**. Remaining 4 modules pending migration.
+> **🏗️ Current Status**: **6 modules migrated** to pure Hexagonal Architecture with **zero legacy code**. Remaining 2 modules pending migration.
 
 ## Quick Start for Developers
 
@@ -40,9 +40,9 @@ pkg/{module-name}/
 
 | Module              | Purpose                 | Status          | Key Features                                     |
 | ------------------- | ----------------------- | --------------- | ------------------------------------------------ |
-| **kubernetes**      | Container orchestration | ✅ Complete     | Clusters, deployments, pods, health monitoring   |
+| **kubernetes**      | Container orchestration | ✅ Complete     | Clusters, deployments, pods, health monitoring, service-catalog integration |
 | **aws**             | Cloud infrastructure    | ✅ Complete     | EC2 management, cost optimization, multi-account |
-| **service-catalog** | Service registry        | ✅ Complete     | CRUD, versioning, K8s integration                |
+| **service-catalog** | Service registry        | ✅ Complete     | CRUD, versioning, K8s integration, health monitoring |
 
 ## 🏗️ **Dependency Injection Best Practices**
 
@@ -366,6 +366,70 @@ Follow the **8-layer pattern** used by all existing modules:
 - **Adapters**: Implement efficient data transformations
 - **Handlers**: Validate input early, fail fast
 - **Models**: Use value objects for immutable data
+
+## 🔧 Module Initialization Best Practices
+
+### **✅ DO: Proper Module Initialization Order**
+
+When initializing modules in `main.go`, follow this order to avoid dependency issues:
+
+1. **Core modules first** (config, auth, github)
+2. **Platform modules** (kubernetes, aws, service-catalog)
+3. **Integration modules** (spa - should be last)
+
+### **✅ DO: Use Module Factories**
+
+```go
+// ✅ Correct: Use module factory with proper dependency injection
+k8sModule, err := kubernetes.NewModule(k8sModuleConfig)
+if err != nil {
+    log.Printf("Failed to create kubernetes module: %v", err)
+} else {
+    k8sModule.RegisterRoutes(internal)
+}
+```
+
+### **✅ DO: Inject Dependencies Between Modules**
+
+```go
+// ✅ Correct: Inject kubernetes service into service-catalog
+if serviceCatalogModule != nil {
+    k8sService := k8sModule.GetServiceCatalogAdapter()
+    serviceCatalogModule.UpdateKubernetesService(k8sService)
+}
+```
+
+### **❌ DON'T: Initialize Modules Directly**
+
+```go
+// ❌ Wrong: Don't initialize modules directly
+handler := handlers.NewHTTPHandler(...) // This bypasses the module factory
+```
+
+### **✅ DO: Handle Module Dependencies Gracefully**
+
+```go
+// ✅ Correct: Handle missing dependencies gracefully
+var serviceContextResolver k8sPorts.ServiceContextResolver
+if serviceCatalogModule != nil {
+    serviceContextResolver = serviceCatalogModule.GetKubernetesAdapter()
+}
+deploymentRepo := k8sExternal.NewDeploymentRepository(clusterRepo, serviceContextResolver)
+```
+
+### **✅ DO: Use Adapter Pattern for Module Integration**
+
+```go
+// ✅ Correct: Use adapters to integrate modules without circular dependencies
+type ServiceCatalogAdapter struct {
+    deploymentRepo k8sPorts.DeploymentRepository
+    clusterRepo    k8sPorts.ClusterRepository
+}
+
+func (a *ServiceCatalogAdapter) GetDeploymentHealth(...) (*scModels.DeploymentHealth, error) {
+    // Implementation that bridges kubernetes and service-catalog modules
+}
+```
 
 ## 📚 Additional Resources
 
