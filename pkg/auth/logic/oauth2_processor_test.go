@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	authModels "github.com/dash-ops/dash-ops/pkg/auth-new/models"
+	authModels "github.com/dash-ops/dash-ops/pkg/auth/models"
 )
 
 func TestOAuth2Processor_GenerateAuthURL(t *testing.T) {
