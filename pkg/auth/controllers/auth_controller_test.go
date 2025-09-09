@@ -42,7 +42,7 @@ func TestNewAuthController_CreatesControllerWithDependencies(t *testing.T) {
 		URLLoginSuccess: "http://localhost:3000/success",
 		OrgPermission:   "test-org",
 	}
-	
+
 	oauth2Processor := authLogic.NewOAuth2Processor()
 	sessionManager := authLogic.NewSessionManager(24 * time.Hour)
 	mockGitHubService := &MockGitHubService{}
@@ -69,11 +69,11 @@ func TestAuthController_GenerateAuthURL_WithValidConfig_ReturnsAuthURL(t *testin
 		TokenURL:        "https://github.com/login/oauth/access_token",
 		RedirectURL:     "http://localhost:8080/callback",
 	}
-	
+
 	oauth2Processor := authLogic.NewOAuth2Processor()
 	sessionManager := authLogic.NewSessionManager(24 * time.Hour)
 	controller := NewAuthController(config, oauth2Processor, sessionManager, &MockGitHubService{})
-	
+
 	redirectURL := "http://localhost:8080/callback"
 
 	// Act
@@ -91,13 +91,13 @@ func TestAuthController_BuildRedirectURL_WithTokenAndState_ReturnsCorrectURL(t *
 	config := &authModels.AuthConfig{
 		URLLoginSuccess: "http://localhost:3000/success",
 	}
-	
+
 	controller := NewAuthController(config, nil, nil, nil)
-	
+
 	token := &oauth2.Token{
 		AccessToken: "test-access-token",
 	}
-	
+
 	state := "/dashboard"
 
 	// Act
@@ -112,9 +112,9 @@ func TestAuthController_BuildRedirectURL_WithTokenNoState_ReturnsBaseURL(t *test
 	config := &authModels.AuthConfig{
 		URLLoginSuccess: "http://localhost:3000/success",
 	}
-	
+
 	controller := NewAuthController(config, nil, nil, nil)
-	
+
 	token := &oauth2.Token{
 		AccessToken: "test-access-token",
 	}
@@ -134,16 +134,16 @@ func TestAuthController_GetUserProfile_WithValidToken_ReturnsUserProfile(t *test
 		Name:  github.String("John Doe"),
 		Email: github.String("john@example.com"),
 	}
-	
+
 	mockGitHubService := &MockGitHubService{
 		GetUserFunc: func(ctx context.Context, token *oauth2.Token) (*github.User, error) {
 			return expectedUser, nil
 		},
 	}
-	
+
 	config := &authModels.AuthConfig{}
 	controller := NewAuthController(config, nil, nil, mockGitHubService)
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(1 * time.Hour),
@@ -155,7 +155,7 @@ func TestAuthController_GetUserProfile_WithValidToken_ReturnsUserProfile(t *test
 	// Assert
 	assert.NoError(t, err)
 	assert.NotNil(t, profile)
-	
+
 	user, ok := profile.(*github.User)
 	assert.True(t, ok)
 	assert.Equal(t, expectedUser, user)
@@ -179,7 +179,7 @@ func TestAuthController_GetUserProfile_WithNilToken_ReturnsError(t *testing.T) {
 func TestAuthController_GetUserProfile_WithInvalidToken_ReturnsError(t *testing.T) {
 	// Arrange
 	controller := NewAuthController(&authModels.AuthConfig{}, nil, nil, &MockGitHubService{})
-	
+
 	invalidToken := &oauth2.Token{
 		AccessToken: "expired-token",
 		Expiry:      time.Now().Add(-1 * time.Hour), // Expired
@@ -201,9 +201,9 @@ func TestAuthController_GetUserProfile_WhenServiceFails_ReturnsError(t *testing.
 			return nil, errors.New("GitHub API error")
 		},
 	}
-	
+
 	controller := NewAuthController(&authModels.AuthConfig{}, nil, nil, mockGitHubService)
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(1 * time.Hour),
@@ -238,20 +238,20 @@ func TestAuthController_GetUserPermissions_WithValidToken_ReturnsPermissions(t *
 			},
 		},
 	}
-	
+
 	mockGitHubService := &MockGitHubService{
 		GetUserTeamsFunc: func(ctx context.Context, token *oauth2.Token) ([]*github.Team, error) {
 			return mockTeams, nil
 		},
 	}
-	
+
 	config := &authModels.AuthConfig{
 		OrgPermission: "test-org",
 	}
-	
+
 	oauth2Processor := authLogic.NewOAuth2Processor()
 	controller := NewAuthController(config, oauth2Processor, nil, mockGitHubService)
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(1 * time.Hour),
@@ -288,14 +288,14 @@ func TestAuthController_GetUserPermissions_WhenServiceFails_ReturnsError(t *test
 			return nil, errors.New("teams API error")
 		},
 	}
-	
+
 	config := &authModels.AuthConfig{
 		OrgPermission: "test-org",
 	}
-	
+
 	oauth2Processor := authLogic.NewOAuth2Processor()
 	controller := NewAuthController(config, oauth2Processor, nil, mockGitHubService)
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(1 * time.Hour),
@@ -314,7 +314,7 @@ func TestAuthController_ValidateToken_WithValidToken_ReturnsNoError(t *testing.T
 	// Arrange
 	sessionManager := authLogic.NewSessionManager(24 * time.Hour)
 	controller := NewAuthController(&authModels.AuthConfig{}, nil, sessionManager, nil)
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(1 * time.Hour),
@@ -331,7 +331,7 @@ func TestAuthController_ValidateToken_WithExpiredToken_ReturnsError(t *testing.T
 	// Arrange
 	sessionManager := authLogic.NewSessionManager(24 * time.Hour)
 	controller := NewAuthController(&authModels.AuthConfig{}, nil, sessionManager, nil)
-	
+
 	expiredToken := &oauth2.Token{
 		AccessToken: "expired-token",
 		Expiry:      time.Now().Add(-1 * time.Hour),
@@ -357,20 +357,20 @@ func TestAuthController_BuildUserData_WithValidToken_ReturnsUserData(t *testing.
 			},
 		},
 	}
-	
+
 	mockGitHubService := &MockGitHubService{
 		GetUserTeamsFunc: func(ctx context.Context, token *oauth2.Token) ([]*github.Team, error) {
 			return mockTeams, nil
 		},
 	}
-	
+
 	config := &authModels.AuthConfig{
 		OrgPermission: "test-org",
 	}
-	
+
 	oauth2Processor := authLogic.NewOAuth2Processor()
 	controller := NewAuthController(config, oauth2Processor, nil, mockGitHubService)
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(1 * time.Hour),
@@ -412,20 +412,20 @@ func TestAuthController_BuildUserData_WithNoOrgAccess_ReturnsUserDataWithNoPermi
 			},
 		},
 	}
-	
+
 	mockGitHubService := &MockGitHubService{
 		GetUserTeamsFunc: func(ctx context.Context, token *oauth2.Token) ([]*github.Team, error) {
 			return mockTeams, nil
 		},
 	}
-	
+
 	config := &authModels.AuthConfig{
 		OrgPermission: "test-org", // Different from team's org
 	}
-	
+
 	oauth2Processor := authLogic.NewOAuth2Processor()
 	controller := NewAuthController(config, oauth2Processor, nil, mockGitHubService)
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(1 * time.Hour),

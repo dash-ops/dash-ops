@@ -36,7 +36,7 @@ func TestGitHubAPIAdapter_createAuthenticatedClient_CreatesClientWithToken(t *te
 		ClientSecret: "test-client-secret",
 	}
 	adapter := NewGitHubAPIAdapter(oauthConfig)
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "test-access-token",
 		TokenType:   "Bearer",
@@ -59,7 +59,7 @@ func TestGitHubAPIAdapter_GetUser_WithValidToken_ReturnsNoErrorForValidClient(t 
 		ClientSecret: "test-client-secret",
 	}
 	adapter := NewGitHubAPIAdapter(oauthConfig)
-	
+
 	// This test verifies the method exists and accepts correct parameters
 	// Actual API calls would require mocking the HTTP transport
 	validToken := &oauth2.Token{
@@ -84,7 +84,7 @@ func TestGitHubAPIAdapter_GetUserTeams_WithValidToken_ReturnsNoErrorForValidClie
 		ClientSecret: "test-client-secret",
 	}
 	adapter := NewGitHubAPIAdapter(oauthConfig)
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "test-token",
 		Expiry:      time.Now().Add(1 * time.Hour),
@@ -104,7 +104,7 @@ func TestGitHubAPIAdapter_GetUserOrganizations_WithValidToken_ReturnsNoErrorForV
 		ClientSecret: "test-client-secret",
 	}
 	adapter := NewGitHubAPIAdapter(oauthConfig)
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "test-token",
 		Expiry:      time.Now().Add(1 * time.Hour),
@@ -124,7 +124,7 @@ func TestGitHubAPIAdapter_GetUserRepositories_WithValidToken_ReturnsNoErrorForVa
 		ClientSecret: "test-client-secret",
 	}
 	adapter := NewGitHubAPIAdapter(oauthConfig)
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "test-token",
 		Expiry:      time.Now().Add(1 * time.Hour),
@@ -144,7 +144,7 @@ func TestGitHubAPIAdapter_GetOrganizationTeams_WithValidTokenAndOrg_ReturnsNoErr
 		ClientSecret: "test-client-secret",
 	}
 	adapter := NewGitHubAPIAdapter(oauthConfig)
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "test-token",
 		Expiry:      time.Now().Add(1 * time.Hour),

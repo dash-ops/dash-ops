@@ -15,11 +15,11 @@ import (
 
 // MockGitHubAPIClient is a mock implementation of GitHubAPIClient for testing
 type MockGitHubAPIClient struct {
-	GetUserFunc               func(ctx context.Context, token *oauth2.Token) (*github.User, error)
-	GetUserTeamsFunc          func(ctx context.Context, token *oauth2.Token) ([]*github.Team, error)
-	GetUserOrganizationsFunc  func(ctx context.Context, token *oauth2.Token) ([]*github.Organization, error)
-	GetUserRepositoriesFunc   func(ctx context.Context, token *oauth2.Token) ([]*github.Repository, error)
-	GetOrganizationTeamsFunc  func(ctx context.Context, token *oauth2.Token, orgLogin string) ([]*github.Team, error)
+	GetUserFunc              func(ctx context.Context, token *oauth2.Token) (*github.User, error)
+	GetUserTeamsFunc         func(ctx context.Context, token *oauth2.Token) ([]*github.Team, error)
+	GetUserOrganizationsFunc func(ctx context.Context, token *oauth2.Token) ([]*github.Organization, error)
+	GetUserRepositoriesFunc  func(ctx context.Context, token *oauth2.Token) ([]*github.Repository, error)
+	GetOrganizationTeamsFunc func(ctx context.Context, token *oauth2.Token, orgLogin string) ([]*github.Team, error)
 }
 
 func (m *MockGitHubAPIClient) GetUser(ctx context.Context, token *oauth2.Token) (*github.User, error) {
@@ -123,7 +123,7 @@ func TestGitHubController_GetUser_WithInvalidToken_ReturnsError(t *testing.T) {
 	// Arrange
 	mockClient := &MockGitHubAPIClient{}
 	controller := NewGitHubController(mockClient, githubLogic.NewTeamResolver(), &oauth2.Config{})
-	
+
 	invalidToken := &oauth2.Token{
 		AccessToken: "expired-token",
 		Expiry:      time.Now().Add(-1 * time.Hour), // Expired
@@ -141,7 +141,7 @@ func TestGitHubController_GetUser_WithInvalidToken_ReturnsError(t *testing.T) {
 func TestGitHubController_GetUser_WithAPIError_ReturnsError(t *testing.T) {
 	// Arrange
 	apiError := errors.New("GitHub API error: rate limit exceeded")
-	
+
 	mockClient := &MockGitHubAPIClient{
 		GetUserFunc: func(ctx context.Context, token *oauth2.Token) (*github.User, error) {
 			return nil, apiError
@@ -275,14 +275,14 @@ func TestGitHubController_GetUserProfile_WithCompleteData_ReturnsFullProfile(t *
 	// Assert
 	assert.NoError(t, err)
 	assert.NotNil(t, profile)
-	
+
 	// Assert User data
 	assert.Equal(t, int64(123), profile.User.ID)
 	assert.Equal(t, "johndoe", profile.User.Login)
 	assert.Equal(t, "John Doe", profile.User.Name)
 	assert.Equal(t, "john@example.com", profile.User.Email)
 	assert.Equal(t, "TechCorp", profile.User.Company)
-	
+
 	// Assert Teams data
 	assert.Len(t, profile.Teams, 1)
 	assert.Equal(t, "Backend Team", profile.Teams[0].Name)
@@ -290,7 +290,7 @@ func TestGitHubController_GetUserProfile_WithCompleteData_ReturnsFullProfile(t *
 	assert.Equal(t, "admin", profile.Teams[0].Permission)
 	assert.NotNil(t, profile.Teams[0].Organization)
 	assert.Equal(t, "techcorp", profile.Teams[0].Organization.Login)
-	
+
 	// Assert Organizations data
 	assert.Len(t, profile.Organizations, 1)
 	assert.Equal(t, int64(100), profile.Organizations[0].ID)
@@ -302,7 +302,7 @@ func TestGitHubController_GetUserProfile_WithCompleteData_ReturnsFullProfile(t *
 func TestGitHubController_GetUserProfile_WhenGetUserFails_ReturnsError(t *testing.T) {
 	// Arrange
 	userError := errors.New("failed to fetch user")
-	
+
 	mockClient := &MockGitHubAPIClient{
 		GetUserFunc: func(ctx context.Context, token *oauth2.Token) (*github.User, error) {
 			return nil, userError
@@ -526,7 +526,7 @@ func TestGitHubController_convertToUserProfile_ConvertsAllFieldsCorrectly(t *tes
 
 	// Assert
 	assert.NotNil(t, profile)
-	
+
 	// Assert User conversion
 	assert.Equal(t, int64(456), profile.User.ID)
 	assert.Equal(t, "janedoe", profile.User.Login)
@@ -543,7 +543,7 @@ func TestGitHubController_convertToUserProfile_ConvertsAllFieldsCorrectly(t *tes
 	assert.Equal(t, 42, profile.User.PublicRepos)
 	assert.Equal(t, 100, profile.User.Followers)
 	assert.Equal(t, 50, profile.User.Following)
-	
+
 	// Assert Teams conversion
 	assert.Len(t, profile.Teams, 1)
 	assert.Equal(t, int64(10), profile.Teams[0].ID)
@@ -554,7 +554,7 @@ func TestGitHubController_convertToUserProfile_ConvertsAllFieldsCorrectly(t *tes
 	assert.Equal(t, int64(200), profile.Teams[0].Organization.ID)
 	assert.Equal(t, "startupco", profile.Teams[0].Organization.Login)
 	assert.Equal(t, "StartupCo Inc", profile.Teams[0].Organization.Name)
-	
+
 	// Assert Organizations conversion
 	assert.Len(t, profile.Organizations, 1)
 	assert.Equal(t, int64(200), profile.Organizations[0].ID)

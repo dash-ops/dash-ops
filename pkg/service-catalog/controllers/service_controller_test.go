@@ -91,12 +91,12 @@ func (m *MockServiceRepository) Search(ctx context.Context, query string, limit 
 
 // MockVersioningRepository is a mock implementation of VersioningRepository
 type MockVersioningRepository struct {
-	IsEnabledFunc          func() bool
-	RecordChangeFunc       func(ctx context.Context, service *scModels.Service, user *scModels.UserContext, action string) error
-	RecordDeletionFunc     func(ctx context.Context, serviceName string, user *scModels.UserContext) error
-	GetServiceHistoryFunc  func(ctx context.Context, serviceName string) ([]scModels.ServiceChange, error)
-	GetAllHistoryFunc      func(ctx context.Context) ([]scModels.ServiceChange, error)
-	GetStatusFunc          func(ctx context.Context) (string, error)
+	IsEnabledFunc         func() bool
+	RecordChangeFunc      func(ctx context.Context, service *scModels.Service, user *scModels.UserContext, action string) error
+	RecordDeletionFunc    func(ctx context.Context, serviceName string, user *scModels.UserContext) error
+	GetServiceHistoryFunc func(ctx context.Context, serviceName string) ([]scModels.ServiceChange, error)
+	GetAllHistoryFunc     func(ctx context.Context) ([]scModels.ServiceChange, error)
+	GetStatusFunc         func(ctx context.Context) (string, error)
 }
 
 func (m *MockVersioningRepository) IsEnabled() bool {

@@ -83,7 +83,7 @@ func TestGitHubClient_GetUser_WithExpiredToken_ReturnsError(t *testing.T) {
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	expiredToken := &oauth2.Token{
 		AccessToken: "expired-token",
 		Expiry:      time.Now().Add(-time.Hour), // Expired
@@ -104,19 +104,19 @@ func TestGitHubClient_GetUser_WithValidToken_ReturnsUser(t *testing.T) {
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(time.Hour),
 	}
-	
+
 	expectedUser := &github.User{
 		ID:    github.Int64(123),
 		Login: github.String("testuser"),
 		Name:  github.String("Test User"),
 		Email: github.String("test@example.com"),
 	}
-	
+
 	mockAPI.On("GetUser", ctx, validToken).Return(expectedUser, nil)
 
 	// Act
@@ -138,12 +138,12 @@ func TestGitHubClient_GetUser_WhenAPIFails_ReturnsError(t *testing.T) {
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(time.Hour),
 	}
-	
+
 	apiError := errors.New("GitHub API error: rate limit exceeded")
 	mockAPI.On("GetUser", ctx, validToken).Return(nil, apiError)
 
@@ -181,7 +181,7 @@ func TestGitHubClient_GetUserTeams_WithExpiredToken_ReturnsError(t *testing.T) {
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	expiredToken := &oauth2.Token{
 		AccessToken: "expired-token",
 		Expiry:      time.Now().Add(-time.Hour),
@@ -202,12 +202,12 @@ func TestGitHubClient_GetUserTeams_WithValidToken_ReturnsTeams(t *testing.T) {
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(time.Hour),
 	}
-	
+
 	expectedTeams := []*github.Team{
 		{
 			ID:   github.Int64(1),
@@ -220,7 +220,7 @@ func TestGitHubClient_GetUserTeams_WithValidToken_ReturnsTeams(t *testing.T) {
 			Slug: github.String("devops"),
 		},
 	}
-	
+
 	mockAPI.On("GetUserTeams", ctx, validToken).Return(expectedTeams, nil)
 
 	// Act
@@ -241,12 +241,12 @@ func TestGitHubClient_GetUserTeams_WhenAPIFails_ReturnsError(t *testing.T) {
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(time.Hour),
 	}
-	
+
 	apiError := errors.New("GitHub API error: unauthorized")
 	mockAPI.On("GetUserTeams", ctx, validToken).Return(nil, apiError)
 
@@ -268,12 +268,12 @@ func TestGitHubClient_GetUserProfile_WithCompleteData_ReturnsFullProfile(t *test
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(time.Hour),
 	}
-	
+
 	expectedUser := &github.User{
 		ID:        github.Int64(123),
 		Login:     github.String("testuser"),
@@ -284,7 +284,7 @@ func TestGitHubClient_GetUserProfile_WithCompleteData_ReturnsFullProfile(t *test
 		Type:      github.String("User"),
 		SiteAdmin: github.Bool(false),
 	}
-	
+
 	expectedTeams := []*github.Team{
 		{
 			ID:         github.Int64(1),
@@ -298,7 +298,7 @@ func TestGitHubClient_GetUserProfile_WithCompleteData_ReturnsFullProfile(t *test
 			},
 		},
 	}
-	
+
 	expectedOrgs := []*github.Organization{
 		{
 			ID:          github.Int64(1),
@@ -307,7 +307,7 @@ func TestGitHubClient_GetUserProfile_WithCompleteData_ReturnsFullProfile(t *test
 			Description: github.String("Test organization"),
 		},
 	}
-	
+
 	mockAPI.On("GetUser", ctx, validToken).Return(expectedUser, nil)
 	mockAPI.On("GetUserTeams", ctx, validToken).Return(expectedTeams, nil)
 	mockAPI.On("GetUserOrganizations", ctx, validToken).Return(expectedOrgs, nil)
@@ -334,12 +334,12 @@ func TestGitHubClient_GetUserProfile_WhenGetUserFails_ReturnsError(t *testing.T)
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(time.Hour),
 	}
-	
+
 	userError := errors.New("failed to fetch user")
 	mockAPI.On("GetUser", ctx, validToken).Return(nil, userError)
 
@@ -359,17 +359,17 @@ func TestGitHubClient_GetUserProfile_WhenGetTeamsFails_ReturnsError(t *testing.T
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(time.Hour),
 	}
-	
+
 	mockAPI.On("GetUser", ctx, validToken).Return(&github.User{
 		ID:    github.Int64(123),
 		Login: github.String("testuser"),
 	}, nil)
-	
+
 	teamsError := errors.New("failed to fetch teams")
 	mockAPI.On("GetUserTeams", ctx, validToken).Return(nil, teamsError)
 
@@ -389,18 +389,18 @@ func TestGitHubClient_GetUserProfile_WhenGetOrganizationsFails_ReturnsError(t *t
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(time.Hour),
 	}
-	
+
 	mockAPI.On("GetUser", ctx, validToken).Return(&github.User{
 		ID:    github.Int64(123),
 		Login: github.String("testuser"),
 	}, nil)
 	mockAPI.On("GetUserTeams", ctx, validToken).Return([]*github.Team{}, nil)
-	
+
 	orgsError := errors.New("failed to fetch organizations")
 	mockAPI.On("GetUserOrganizations", ctx, validToken).Return(nil, orgsError)
 
@@ -422,12 +422,12 @@ func TestGitHubClient_GetUserTeamsAdvanced_WithOrgFilter_ReturnsFilteredTeams(t 
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(time.Hour),
 	}
-	
+
 	mockAPI.On("GetUser", ctx, validToken).Return(&github.User{
 		ID:    github.Int64(123),
 		Login: github.String("testuser"),
@@ -451,12 +451,12 @@ func TestGitHubClient_GetUserTeamsAdvanced_WhenGetUserProfileFails_ReturnsError(
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(time.Hour),
 	}
-	
+
 	userError := errors.New("profile error")
 	mockAPI.On("GetUser", ctx, validToken).Return(nil, userError)
 
@@ -478,12 +478,12 @@ func TestGitHubClient_ValidateTeamMembership_WithValidMembership_ReturnsResult(t
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(time.Hour),
 	}
-	
+
 	mockAPI.On("GetUser", ctx, validToken).Return(&github.User{
 		ID:    github.Int64(123),
 		Login: github.String("testuser"),
@@ -506,12 +506,12 @@ func TestGitHubClient_ValidateTeamMembership_WhenGetUserProfileFails_ReturnsErro
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(time.Hour),
 	}
-	
+
 	userError := errors.New("profile error")
 	mockAPI.On("GetUser", ctx, validToken).Return(nil, userError)
 
@@ -533,12 +533,12 @@ func TestGitHubClient_ValidateOrganizationMembership_WithValidMembership_Returns
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(time.Hour),
 	}
-	
+
 	mockAPI.On("GetUser", ctx, validToken).Return(&github.User{
 		ID:    github.Int64(123),
 		Login: github.String("testuser"),
@@ -561,12 +561,12 @@ func TestGitHubClient_ValidateOrganizationMembership_WhenGetUserProfileFails_Ret
 	teamResolver := githubLogic.NewTeamResolver()
 	client := NewGitHubClient(mockAPI, teamResolver)
 	ctx := context.Background()
-	
+
 	validToken := &oauth2.Token{
 		AccessToken: "valid-token",
 		Expiry:      time.Now().Add(time.Hour),
 	}
-	
+
 	userError := errors.New("profile error")
 	mockAPI.On("GetUser", ctx, validToken).Return(nil, userError)
 
@@ -648,12 +648,12 @@ func TestGitHubClient_convertToUserProfile_ConvertsAllFieldsCorrectly(t *testing
 	assert.Equal(t, "Test Company", profile.User.Company)
 	assert.Equal(t, "Test Location", profile.User.Location)
 	assert.Equal(t, 10, profile.User.PublicRepos)
-	
+
 	assert.Len(t, profile.Teams, 1)
 	assert.Equal(t, "team1", profile.Teams[0].Name)
 	assert.Equal(t, "team1", profile.Teams[0].Slug)
 	assert.Equal(t, "admin", profile.Teams[0].Permission)
-	
+
 	assert.Len(t, profile.Organizations, 1)
 	assert.Equal(t, "org1", profile.Organizations[0].Login)
 	assert.Equal(t, "Organization 1", profile.Organizations[0].Name)

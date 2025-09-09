@@ -16,10 +16,10 @@ const (
 type ResourceStatus string
 
 const (
-	ResourceStatusHealthy   ResourceStatus = "healthy"
-	ResourceStatusWarning   ResourceStatus = "warning"
-	ResourceStatusCritical  ResourceStatus = "critical"
-	ResourceStatusUnknown   ResourceStatus = "unknown"
+	ResourceStatusHealthy  ResourceStatus = "healthy"
+	ResourceStatusWarning  ResourceStatus = "warning"
+	ResourceStatusCritical ResourceStatus = "critical"
+	ResourceStatusUnknown  ResourceStatus = "unknown"
 )
 
 // ClusterHealth represents the overall health of a cluster
@@ -33,11 +33,11 @@ type ClusterHealth struct {
 
 // NodeHealth represents the health of a node
 type NodeHealth struct {
-	Name        string         `json:"name"`
-	Status      NodeStatus     `json:"status"`
+	Name        string          `json:"name"`
+	Status      NodeStatus      `json:"status"`
 	Conditions  []NodeCondition `json:"conditions"`
-	Resources   ResourceHealth `json:"resources"`
-	LastUpdated time.Time      `json:"last_updated"`
+	Resources   ResourceHealth  `json:"resources"`
+	LastUpdated time.Time       `json:"last_updated"`
 }
 
 // ResourceHealth represents the health of resources
@@ -55,4 +55,3 @@ type ResourceHealthDetail struct {
 	UtilizationPercent float64        `json:"utilization_percent"`
 	Status             ResourceStatus `json:"status"`
 }
-
