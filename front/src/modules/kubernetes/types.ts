@@ -61,20 +61,59 @@ export interface AllocatedResources {
 
 export interface Pod extends BaseEntity {
   namespace: string;
-  condition_status: ConditionStatus;
-  restart_count: number;
-  node_name: string;
-  controlled_by: string;
-  qos_class: string;
+  status: string;
+  phase: string;
+  node: string;
+  restarts: number;
+  ready: string;
+  ip: string;
   age: string;
   created_at: string;
   containers: PodContainer[];
+  conditions: PodCondition[];
+  qos_class?: string;
 }
 
 export interface PodContainer {
   name: string;
+  image: string;
   ready: boolean;
-  state: string;
+  restart_count: number;
+  state: PodContainerState;
+  resources: PodContainerResources;
+}
+
+export interface PodContainerState {
+  running?: {
+    started_at: string;
+  };
+  waiting?: {
+    reason: string;
+    message: string;
+  };
+  terminated?: {
+    exit_code: number;
+    reason: string;
+    started_at: string;
+    finished_at: string;
+  };
+}
+
+export interface PodContainerResources {
+  requests: {
+    cpu: string;
+    memory: string;
+  };
+  limits: {
+    cpu: string;
+    memory: string;
+  };
+}
+
+export interface PodCondition {
+  type: string;
+  status: string;
+  last_transition_time: string;
 }
 
 export interface ConditionStatus {
@@ -125,6 +164,19 @@ export interface DeploymentCondition {
 export interface LogContainer {
   name: string;
   log: string;
+}
+
+export interface PodLogEntry {
+  timestamp: string;
+  message: string;
+}
+
+export interface PodLogsResponse {
+  pod_name: string;
+  namespace: string;
+  container_name?: string;
+  logs: PodLogEntry[];
+  total_lines: number;
 }
 
 export interface K8sPermission extends BaseEntity {

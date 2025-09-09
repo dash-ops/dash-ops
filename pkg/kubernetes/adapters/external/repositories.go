@@ -755,6 +755,7 @@ func (pr *PodRepositoryImpl) convertPod(k8sPod corev1.Pod) k8sModels.Pod {
 		Containers: containers,
 		Conditions: conditions,
 		CreatedAt:  k8sPod.CreationTimestamp.Time,
+		QoSClass:   pr.calculateQoSClass(k8sPod),
 	}
 }
 
@@ -818,4 +819,74 @@ func (nr *NodeRepositoryImpl) getPodsOnNode(ctx context.Context, client *Kuberne
 	}
 
 	return nodePods, nil
+}
+
+// calculateQoSClass calculates the QoS class for a pod based on resource requests and limits
+func (pr *PodRepositoryImpl) calculateQoSClass(k8sPod corev1.Pod) string {
+	hasRequests := false
+	allContainersHaveRequests := true
+	allContainersHaveLimits := true
+
+	// Check all containers for requests and limits
+	for _, container := range k8sPod.Spec.Containers {
+		// Check CPU requests
+		if cpuRequest := container.Resources.Requests[corev1.ResourceCPU]; !cpuRequest.IsZero() {
+			hasRequests = true
+		} else {
+			allContainersHaveRequests = false
+		}
+
+		// Check Memory requests
+		if memoryRequest := container.Resources.Requests[corev1.ResourceMemory]; !memoryRequest.IsZero() {
+			hasRequests = true
+		} else {
+			allContainersHaveRequests = false
+		}
+
+		// Check CPU limits
+		if cpuLimit := container.Resources.Limits[corev1.ResourceCPU]; cpuLimit.IsZero() {
+			allContainersHaveLimits = false
+		}
+
+		// Check Memory limits
+		if memoryLimit := container.Resources.Limits[corev1.ResourceMemory]; memoryLimit.IsZero() {
+			allContainersHaveLimits = false
+		}
+	}
+
+	// Check init containers as well
+	for _, container := range k8sPod.Spec.InitContainers {
+		// Check CPU requests
+		if cpuRequest := container.Resources.Requests[corev1.ResourceCPU]; !cpuRequest.IsZero() {
+			hasRequests = true
+		} else {
+			allContainersHaveRequests = false
+		}
+
+		// Check Memory requests
+		if memoryRequest := container.Resources.Requests[corev1.ResourceMemory]; !memoryRequest.IsZero() {
+			hasRequests = true
+		} else {
+			allContainersHaveRequests = false
+		}
+
+		// Check CPU limits
+		if cpuLimit := container.Resources.Limits[corev1.ResourceCPU]; cpuLimit.IsZero() {
+			allContainersHaveLimits = false
+		}
+
+		// Check Memory limits
+		if memoryLimit := container.Resources.Limits[corev1.ResourceMemory]; memoryLimit.IsZero() {
+			allContainersHaveLimits = false
+		}
+	}
+
+	// Determine QoS class
+	if allContainersHaveRequests && allContainersHaveLimits {
+		return "Guaranteed"
+	} else if hasRequests {
+		return "Burstable"
+	} else {
+		return "BestEffort"
+	}
 }

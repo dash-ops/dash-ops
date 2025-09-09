@@ -252,28 +252,28 @@ export default function PodPage(): JSX.Element {
                     <TableCell className="text-center">
                       <Badge
                         variant={
-                          pod.restart_count > 0 ? 'destructive' : 'secondary'
+                          pod.restarts > 0 ? 'destructive' : 'secondary'
                         }
                         className="text-xs"
                       >
-                        {pod.restart_count}
+                        {pod.restarts}
                       </Badge>
                     </TableCell>
 
                     <TableCell>
                       <div className="text-sm text-muted-foreground truncate">
-                        {pod.controlled_by}
+                        {pod.containers && pod.containers.length > 0 && pod.containers[0] ? pod.containers[0].name : '-'}
                       </div>
                     </TableCell>
 
                     <TableCell>
                       <div className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer truncate">
-                        {pod.node_name}
+                        {pod.node}
                       </div>
                     </TableCell>
 
                     <TableCell>
-                      <PodQoSBadge qosClass={pod.qos_class} />
+                      <PodQoSBadge qosClass={pod.qos_class || "BestEffort"} />
                     </TableCell>
 
                     <TableCell className="text-sm text-muted-foreground">
@@ -282,10 +282,10 @@ export default function PodPage(): JSX.Element {
 
                     <TableCell>
                       <Badge
-                        variant={getStatusColor(pod.condition_status.status)}
+                        variant={getStatusColor(pod.status)}
                         className="text-xs"
                       >
-                        {pod.condition_status.status}
+                        {pod.status}
                       </Badge>
                     </TableCell>
 

@@ -140,6 +140,7 @@ type Pod struct {
 	Containers []Container    `json:"containers"`
 	Conditions []PodCondition `json:"conditions"`
 	CreatedAt  time.Time      `json:"created_at"`
+	QoSClass   string         `json:"qos_class,omitempty"`
 }
 
 // PodStatus represents pod operational status
