@@ -1,12 +1,12 @@
-# OAuth2 Plugin
+# Auth Plugin
 
 > **⚠️ Beta Plugin** - Basic authentication features only. Not production-ready.
 
-The OAuth2 plugin provides GitHub-based authentication for DashOPS, enabling secure access control and organization-level permissions.
+The Auth plugin provides GitHub-based authentication for DashOPS, enabling secure access control and organization-level permissions.
 
 ## 🎯 Features
 
-- **GitHub OAuth2** - Integration with GitHub authentication
+- **GitHub Auth** - Integration with GitHub authentication
 - **Organization Validation** - Restrict access to specific GitHub organizations
 - **Team-based Permissions** - Basic role assignment via GitHub teams
 - **Session Management** - Token-based authentication (browser storage)
@@ -44,15 +44,15 @@ First, create a GitHub OAuth App in your organization:
 
 ### **2. DashOPS Configuration**
 
-Add OAuth2 configuration to your `dash-ops.yaml`:
+Add Auth configuration to your `dash-ops.yaml`:
 
 ```yaml
-# Enable OAuth2 plugin
+# Enable Auth plugin
 plugins:
-  - 'OAuth2'
+  - 'Auth'
 
-# OAuth2 configuration
-oauth2:
+# Auth configuration
+auth:
   - provider: github
     clientId: ${GITHUB_CLIENT_ID} # From environment variable
     clientSecret: ${GITHUB_CLIENT_SECRET} # From environment variable
@@ -72,7 +72,7 @@ oauth2:
 Set these environment variables before running DashOPS:
 
 ```bash
-# Required OAuth2 credentials
+# Required Auth credentials
 export GITHUB_CLIENT_ID="your-github-oauth-client-id"
 export GITHUB_CLIENT_SECRET="your-github-oauth-client-secret"
 ```
@@ -84,7 +84,7 @@ export GITHUB_CLIENT_SECRET="your-github-oauth-client-secret"
 DashOPS validates that users belong to the specified GitHub organization:
 
 ```yaml
-oauth2:
+auth:
   - provider: github
     orgPermission: 'dash-ops' # Only members of 'dash-ops' org can access
 ```
@@ -146,7 +146,7 @@ kubernetes:
 
 ### **Missing Features**
 
-- **Multiple OAuth providers** - Only GitHub supported
+- **Multiple Auth providers** - Only GitHub supported
 - **Advanced RBAC** - Fine-grained permission system
 - **Session management** - Server-side session handling
 - **Token refresh** - Automatic token renewal
@@ -216,10 +216,10 @@ localStorage.setItem('dash-ops:debug', 'true')
 
 ## 🤝 Contributing
 
-To contribute to the OAuth2 plugin:
+To contribute to the Auth plugin:
 
 1. **Security improvements** - Enhanced authentication methods
-2. **Provider support** - Additional OAuth2 providers
+2. **Provider support** - Additional Auth providers
 3. **Permission system** - Advanced RBAC implementation
 4. **Testing** - Authentication flow tests
 5. **Documentation** - Setup guides and troubleshooting

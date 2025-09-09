@@ -19,7 +19,7 @@ headers:
   - "Content-Type"
   - "Authorization"
 plugins:
-  - "OAuth2"
+  - "Auth"
   - "Kubernetes"`
 
 	// Act
@@ -38,7 +38,7 @@ func TestConfigProcessor_ParseFromBytes_WithEnvironmentVariables_ReturnsConfigWi
 	configData := `port: ${PORT:-8080}
 origin: ${ORIGIN:-http://localhost:3000}
 plugins:
-  - "OAuth2"`
+  - "Auth"`
 
 	// Act
 	config, err := processor.ParseFromBytes([]byte(configData))
@@ -148,7 +148,7 @@ func TestConfigProcessor_MergeConfigs_WithBaseAndOverride_ReturnsMergedConfig(t 
 		Port:    "8080",
 		Origin:  "http://localhost:3000",
 		Headers: []string{"Content-Type"},
-		Plugins: configModels.Plugins{"OAuth2"},
+		Plugins: configModels.Plugins{"Auth"},
 	}
 	override := &configModels.DashConfig{
 		Port:    "9090",                             // Override
@@ -165,5 +165,5 @@ func TestConfigProcessor_MergeConfigs_WithBaseAndOverride_ReturnsMergedConfig(t 
 	assert.Equal(t, "/dist", merged.Front)                    // From override
 	assert.Equal(t, []string{"Content-Type"}, merged.Headers) // From base
 	assert.True(t, merged.Plugins.Has("Kubernetes"))          // From override
-	assert.False(t, merged.Plugins.Has("OAuth2"))             // Replaced
+	assert.False(t, merged.Plugins.Has("Auth"))               // Replaced
 }

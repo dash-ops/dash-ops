@@ -1,10 +1,10 @@
 import LoginPage from './LoginPage';
 import ProfilePage from './ProfilePage';
-import { OAuth2Module } from '@/types';
+import { AuthModule } from '@/types';
 import { createElement } from 'react';
 
-const oauth2Module: OAuth2Module = {
-  oAuth2: {
+const authModule: AuthModule = {
+  auth: {
     active: true,
     LoginPage,
   },
@@ -17,4 +17,4 @@ const oauth2Module: OAuth2Module = {
   ],
 };
 
-export default oauth2Module;
+export default authModule;

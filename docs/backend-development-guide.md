@@ -633,8 +633,8 @@ type ServiceContextResolver interface {
 
 ```go
 // Supported providers
-- GitHub OAuth2
-- Google OAuth2 (planned)
+- GitHub Auth
+- Google Auth (planned)
 - SAML (planned)
 - LDAP (planned)
 

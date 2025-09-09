@@ -8,8 +8,8 @@ import (
 
 func TestPlugins_Has_WithExistingPluginExactCase_ReturnsTrue(t *testing.T) {
 	// Arrange
-	plugins := Plugins{"OAuth2", "Kubernetes", "AWS"}
-	pluginName := "OAuth2"
+	plugins := Plugins{"Auth", "Kubernetes", "AWS"}
+	pluginName := "Auth"
 
 	// Act
 	result := plugins.Has(pluginName)
@@ -20,8 +20,8 @@ func TestPlugins_Has_WithExistingPluginExactCase_ReturnsTrue(t *testing.T) {
 
 func TestPlugins_Has_WithExistingPluginDifferentCase_ReturnsTrue(t *testing.T) {
 	// Arrange
-	plugins := Plugins{"OAuth2", "Kubernetes", "AWS"}
-	pluginName := "oauth2"
+	plugins := Plugins{"Auth", "Kubernetes", "AWS"}
+	pluginName := "auth"
 
 	// Act
 	result := plugins.Has(pluginName)
@@ -32,7 +32,7 @@ func TestPlugins_Has_WithExistingPluginDifferentCase_ReturnsTrue(t *testing.T) {
 
 func TestPlugins_Has_WithNonExistingPlugin_ReturnsFalse(t *testing.T) {
 	// Arrange
-	plugins := Plugins{"OAuth2", "Kubernetes", "AWS"}
+	plugins := Plugins{"Auth", "Kubernetes", "AWS"}
 	pluginName := "NonExistent"
 
 	// Act
@@ -44,7 +44,7 @@ func TestPlugins_Has_WithNonExistingPlugin_ReturnsFalse(t *testing.T) {
 
 func TestPlugins_Has_WithEmptyPluginName_ReturnsFalse(t *testing.T) {
 	// Arrange
-	plugins := Plugins{"OAuth2", "Kubernetes", "AWS"}
+	plugins := Plugins{"Auth", "Kubernetes", "AWS"}
 	pluginName := ""
 
 	// Act
@@ -56,7 +56,7 @@ func TestPlugins_Has_WithEmptyPluginName_ReturnsFalse(t *testing.T) {
 
 func TestPlugins_Add_WithNewPlugin_AddsPlugin(t *testing.T) {
 	// Arrange
-	plugins := Plugins{"OAuth2"}
+	plugins := Plugins{"Auth"}
 
 	// Act
 	plugins.Add("Kubernetes")
@@ -68,10 +68,10 @@ func TestPlugins_Add_WithNewPlugin_AddsPlugin(t *testing.T) {
 
 func TestPlugins_Add_WithDuplicatePlugin_DoesNotDuplicate(t *testing.T) {
 	// Arrange
-	plugins := Plugins{"OAuth2"}
+	plugins := Plugins{"Auth"}
 
 	// Act
-	plugins.Add("OAuth2")
+	plugins.Add("Auth")
 
 	// Assert
 	assert.Equal(t, 1, plugins.Count())
@@ -79,10 +79,10 @@ func TestPlugins_Add_WithDuplicatePlugin_DoesNotDuplicate(t *testing.T) {
 
 func TestPlugins_Add_WithDifferentCase_DoesNotDuplicate(t *testing.T) {
 	// Arrange
-	plugins := Plugins{"OAuth2"}
+	plugins := Plugins{"Auth"}
 
 	// Act
-	plugins.Add("oauth2")
+	plugins.Add("auth")
 
 	// Assert
 	assert.Equal(t, 1, plugins.Count())
@@ -90,7 +90,7 @@ func TestPlugins_Add_WithDifferentCase_DoesNotDuplicate(t *testing.T) {
 
 func TestPlugins_Remove_WithExistingPlugin_RemovesPlugin(t *testing.T) {
 	// Arrange
-	plugins := Plugins{"OAuth2", "Kubernetes", "AWS"}
+	plugins := Plugins{"Auth", "Kubernetes", "AWS"}
 
 	// Act
 	plugins.Remove("Kubernetes")
@@ -102,19 +102,19 @@ func TestPlugins_Remove_WithExistingPlugin_RemovesPlugin(t *testing.T) {
 
 func TestPlugins_Remove_WithDifferentCase_RemovesPlugin(t *testing.T) {
 	// Arrange
-	plugins := Plugins{"OAuth2", "Kubernetes", "AWS"}
+	plugins := Plugins{"Auth", "Kubernetes", "AWS"}
 
 	// Act
-	plugins.Remove("oauth2")
+	plugins.Remove("auth")
 
 	// Assert
-	assert.False(t, plugins.Has("OAuth2"))
+	assert.False(t, plugins.Has("Auth"))
 	assert.Equal(t, 2, plugins.Count())
 }
 
 func TestPlugins_Remove_WithNonExistingPlugin_DoesNotError(t *testing.T) {
 	// Arrange
-	plugins := Plugins{"OAuth2", "Kubernetes", "AWS"}
+	plugins := Plugins{"Auth", "Kubernetes", "AWS"}
 
 	// Act
 	plugins.Remove("NonExistent")
@@ -243,11 +243,11 @@ func TestDashConfig_GetHeaders_WithoutHeadersSet_ReturnsDefaultHeaders(t *testin
 func TestDashConfig_IsPluginEnabled_WithEnabledPluginExactCase_ReturnsTrue(t *testing.T) {
 	// Arrange
 	config := DashConfig{
-		Plugins: Plugins{"OAuth2", "Kubernetes"},
+		Plugins: Plugins{"Auth", "Kubernetes"},
 	}
 
 	// Act
-	result := config.IsPluginEnabled("OAuth2")
+	result := config.IsPluginEnabled("Auth")
 
 	// Assert
 	assert.True(t, result)
@@ -256,11 +256,11 @@ func TestDashConfig_IsPluginEnabled_WithEnabledPluginExactCase_ReturnsTrue(t *te
 func TestDashConfig_IsPluginEnabled_WithEnabledPluginDifferentCase_ReturnsTrue(t *testing.T) {
 	// Arrange
 	config := DashConfig{
-		Plugins: Plugins{"OAuth2", "Kubernetes"},
+		Plugins: Plugins{"Auth", "Kubernetes"},
 	}
 
 	// Act
-	result := config.IsPluginEnabled("oauth2") // Case insensitive
+	result := config.IsPluginEnabled("auth") // Case insensitive
 
 	// Assert
 	assert.True(t, result)
@@ -269,7 +269,7 @@ func TestDashConfig_IsPluginEnabled_WithEnabledPluginDifferentCase_ReturnsTrue(t
 func TestDashConfig_IsPluginEnabled_WithDisabledPlugin_ReturnsFalse(t *testing.T) {
 	// Arrange
 	config := DashConfig{
-		Plugins: Plugins{"OAuth2", "Kubernetes"},
+		Plugins: Plugins{"Auth", "Kubernetes"},
 	}
 
 	// Act
@@ -282,7 +282,7 @@ func TestDashConfig_IsPluginEnabled_WithDisabledPlugin_ReturnsFalse(t *testing.T
 func TestDashConfig_IsPluginEnabled_WithEmptyPluginName_ReturnsFalse(t *testing.T) {
 	// Arrange
 	config := DashConfig{
-		Plugins: Plugins{"OAuth2", "Kubernetes"},
+		Plugins: Plugins{"Auth", "Kubernetes"},
 	}
 
 	// Act

@@ -20,7 +20,7 @@ Welcome to the **DashOPS Documentation**! This comprehensive guide covers everyt
   
   <div class="card">
     <h3>🔌 Plugin Guides</h3>
-    <p>Configure AWS, Kubernetes, and OAuth2 plugins</p>
+    <p>Configure AWS, Kubernetes, and Auth plugins</p>
     <a href="./plugins/" class="btn">View Plugins →</a>
   </div>
   
@@ -42,7 +42,7 @@ Welcome to the **DashOPS Documentation**! This comprehensive guide covers everyt
 DashOPS is a **cloud operations platform** designed to simplify infrastructure management for development teams. It provides:
 
 - **🔗 Unified Interface** - Single dashboard for AWS, Kubernetes, and more
-- **🔐 Secure Access** - OAuth2 authentication with team-based permissions
+- **🔐 Secure Access** - Auth authentication with team-based permissions
 - **🧩 Plugin Architecture** - Modular design for easy extensibility
 - **👥 Developer-Focused** - Reduce cognitive load, increase productivity
 

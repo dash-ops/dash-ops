@@ -16,11 +16,11 @@ import { ThemeSelector } from './components/theme/ThemeSelector';
 import { ThemeProvider } from './contexts/ThemeContext';
 import DashboardModule from './modules/dashboard';
 import { Toaster } from '@/components/ui/sonner';
-import { Menu, Router, OAuth2Config } from '@/types';
+import { Menu, Router, AuthConfig } from '@/types';
 import './App.css';
 
 export default function App(): JSX.Element {
-  const [oAuth2, setOAuth2] = useState<OAuth2Config>({ active: false });
+  const [auth, setAuth] = useState<AuthConfig>({ active: false });
   const [menus, setMenus] = useState<Menu[]>([
     ...(DashboardModule.menus || []),
   ]);
@@ -36,7 +36,7 @@ export default function App(): JSX.Element {
     verifyToken();
     loadModulesConfig()
       .then((modules) => {
-        setOAuth2(modules.oAuth2);
+        setAuth(modules.auth);
         setMenus([...(DashboardModule.menus || []), ...modules.menus]);
         setRouters([...(DashboardModule.routers || []), ...modules.routers]);
       })
@@ -49,14 +49,14 @@ export default function App(): JSX.Element {
   return (
     <ThemeProvider>
       <Routes>
-        {oAuth2.active && oAuth2.LoginPage && (
-          <Route path="/login" element={<oAuth2.LoginPage />} />
+        {auth.active && auth.LoginPage && (
+          <Route path="/login" element={<auth.LoginPage />} />
         )}
         <Route
           path="*"
           element={
             <SidebarProvider>
-              <AppSidebar menus={menus} oAuth2={oAuth2.active} />
+              <AppSidebar menus={menus} oAuth2={auth.active} />
               <SidebarInset>
                 <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4">
                   <div className="flex items-center gap-2">

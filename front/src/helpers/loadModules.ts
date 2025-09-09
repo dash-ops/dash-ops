@@ -3,7 +3,7 @@ import { getPlugins } from '../modules/config/configResource';
 import {
   Menu,
   Router,
-  OAuth2Config,
+  AuthConfig,
   ModuleConfig,
   LoadedModulesConfig,
 } from '@/types';
@@ -55,13 +55,13 @@ export function loadModulesConfig(): Promise<LoadedModulesConfig> {
     });
 
     return Promise.all(modulesConfig).then((configs) => {
-      let oAuth2: OAuth2Config = { active: false };
+      let auth: AuthConfig = { active: false };
       let menus: Menu[] = [];
       let routers: Router[] = [];
 
       configs.forEach((config) => {
-        if (config.oAuth2) {
-          oAuth2 = config.oAuth2;
+        if (config.auth) {
+          auth = config.auth;
         }
         if (config.menus) {
           menus = [...menus, ...config.menus];
@@ -71,7 +71,7 @@ export function loadModulesConfig(): Promise<LoadedModulesConfig> {
         }
       });
 
-      return { oAuth2, menus, routers };
+      return { auth, menus, routers };
     });
   });
 }

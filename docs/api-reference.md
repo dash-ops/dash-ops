@@ -9,7 +9,7 @@ DashOPS provides a RESTful API built with Go, offering standardized endpoints fo
 ### **Base Configuration**
 
 - **Base URL**: `http://localhost:8080/api` (development)
-- **Authentication**: Bearer token (OAuth2)
+- **Authentication**: Bearer token (Auth)
 - **Content Type**: `application/json`
 - **CORS**: Configurable origins
 
@@ -49,7 +49,7 @@ All API endpoints return consistent JSON responses:
 
 ### **Authentication Flow**
 
-DashOPS uses OAuth2 with GitHub for authentication:
+DashOPS uses Auth with GitHub for authentication:
 
 ```
 1. GET /api/oauth/authorize → Redirect to GitHub
@@ -118,7 +118,7 @@ GET /api/health
     "status": "healthy",
     "version": "v0.1.0-beta",
     "uptime": "2h34m12s",
-    "plugins": ["OAuth2", "AWS", "Kubernetes"]
+    "plugins": ["Auth", "AWS", "Kubernetes"]
   }
 }
 ```
@@ -153,7 +153,7 @@ Authorization: Bearer {token}
 {
   "data": [
     {
-      "name": "OAuth2",
+      "name": "Auth",
       "enabled": true,
       "version": "v0.1.0"
     },
@@ -556,7 +556,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 ### **Security Limitations**
 
 - **Simple authentication** - Basic JWT implementation
-- **No API key management** - Only OAuth2 tokens supported
+- **No API key management** - Only Auth tokens supported
 - **Missing audit logs** - Limited request logging
 - **No request signing** - No additional security layers
 - **CORS restrictions** - Basic origin validation only

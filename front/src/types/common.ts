@@ -29,20 +29,20 @@ export interface Page {
 export interface ModuleConfig {
   menus?: Menu[];
   routers?: Router[];
-  oAuth2?: OAuth2Config; // OAuth2 module specific
+  auth?: AuthConfig; // Auth module specific
 }
 
-export interface OAuth2Config {
+export interface AuthConfig {
   active: boolean;
   LoginPage?: () => JSX.Element;
 }
 
-export interface OAuth2Module extends ModuleConfig {
-  oAuth2: OAuth2Config;
+export interface AuthModule extends ModuleConfig {
+  auth: AuthConfig;
 }
 
 export interface LoadedModulesConfig {
-  oAuth2: OAuth2Config;
+  auth: AuthConfig;
   menus: Menu[];
   routers: Router[];
 }

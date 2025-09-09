@@ -7,12 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { User, Settings, Github, Edit, Key } from 'lucide-react';
 import { getUserData, getUserPermissions } from './userResource';
-import { OAuth2Types } from '@/types';
+import { AuthTypes } from '@/types';
 
 function ProfilePage(): JSX.Element {
-  const [user, setUser] = useState<OAuth2Types.UserData | null>(null);
+  const [user, setUser] = useState<AuthTypes.UserData | null>(null);
   const [permissions, setPermissions] =
-    useState<OAuth2Types.UserPermission | null>(null);
+    useState<AuthTypes.UserPermission | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {

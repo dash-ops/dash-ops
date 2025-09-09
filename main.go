@@ -65,7 +65,7 @@ func main() {
 
 	// Initialize plugins with dependency injection
 	var serviceCatalogModule *servicecatalog.ServiceCatalog
-	if dashConfig.Plugins.Has("OAuth2") {
+	if dashConfig.Plugins.Has("Auth") {
 		// Parse auth config using hexagonal architecture
 		fileConfig := configModule.GetFileConfigBytes()
 		authConfig, err := auth.ParseAuthConfigFromFileConfig(fileConfig)
@@ -99,6 +99,7 @@ func main() {
 
 		// Register auth routes using hexagonal architecture
 		authModule.RegisterRoutes(api, internal)
+		log.Println("Auth module initialized successfully")
 	}
 
 	if dashConfig.Plugins.Has("ServiceCatalog") {
@@ -128,6 +129,7 @@ func main() {
 		}
 		// Register routes using hexagonal architecture (prefix handled by module)
 		scModule.RegisterRoutes(internal)
+		log.Println("Service Catalog module initialized successfully")
 		// Keep reference for kubernetes integration
 		serviceCatalogModule = scModule
 	}
@@ -238,6 +240,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create SPA module: %v", err)
 	}
+	log.Println("SPA module initialized successfully")
 
 	// Create middleware to handle API routes vs SPA routes
 	apiMiddleware := func(next http.Handler) http.Handler {
