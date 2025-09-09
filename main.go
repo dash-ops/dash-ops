@@ -27,12 +27,25 @@ import (
 // responseRecorder captures the status code for middleware
 type responseRecorder struct {
 	http.ResponseWriter
-	statusCode int
+	statusCode    int
+	headerWritten bool
 }
 
 func (r *responseRecorder) WriteHeader(code int) {
-	r.statusCode = code
-	r.ResponseWriter.WriteHeader(code)
+	if !r.headerWritten {
+		r.statusCode = code
+		r.headerWritten = true
+		r.ResponseWriter.WriteHeader(code)
+	}
+}
+
+func (r *responseRecorder) Write(data []byte) (int, error) {
+	// If Write is called before WriteHeader, Go automatically sets status to 200
+	if !r.headerWritten {
+		r.statusCode = http.StatusOK
+		r.headerWritten = true
+	}
+	return r.ResponseWriter.Write(data)
 }
 
 func main() {
