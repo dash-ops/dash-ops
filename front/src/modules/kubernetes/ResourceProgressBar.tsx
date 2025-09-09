@@ -24,7 +24,7 @@ export default function ResourceProgressBar({
   return (
     <div className={`space-y-1 ${className}`}>
       <div className="text-xs text-muted-foreground font-medium">{label}</div>
-      <div 
+      <div
         className="w-full bg-muted rounded-full h-2 relative group"
         title={tooltip}
       >

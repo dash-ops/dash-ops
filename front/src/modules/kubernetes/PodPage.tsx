@@ -251,9 +251,7 @@ export default function PodPage(): JSX.Element {
 
                     <TableCell className="text-center">
                       <Badge
-                        variant={
-                          pod.restarts > 0 ? 'destructive' : 'secondary'
-                        }
+                        variant={pod.restarts > 0 ? 'destructive' : 'secondary'}
                         className="text-xs"
                       >
                         {pod.restarts}
@@ -262,7 +260,11 @@ export default function PodPage(): JSX.Element {
 
                     <TableCell>
                       <div className="text-sm text-muted-foreground truncate">
-                        {pod.containers && pod.containers.length > 0 && pod.containers[0] ? pod.containers[0].name : '-'}
+                        {pod.containers &&
+                        pod.containers.length > 0 &&
+                        pod.containers[0]
+                          ? pod.containers[0].name
+                          : '-'}
                       </div>
                     </TableCell>
 
@@ -273,7 +275,7 @@ export default function PodPage(): JSX.Element {
                     </TableCell>
 
                     <TableCell>
-                      <PodQoSBadge qosClass={pod.qos_class || "BestEffort"} />
+                      <PodQoSBadge qosClass={pod.qos_class || 'BestEffort'} />
                     </TableCell>
 
                     <TableCell className="text-sm text-muted-foreground">

@@ -22,7 +22,6 @@ const INITIAL_STATE: KubernetesTypes.NodesState = { data: [], loading: false };
 const LOADING = 'LOADING';
 const SET_DATA = 'SET_DATA';
 
-
 function reducer(
   state: KubernetesTypes.NodesState,
   action: KubernetesTypes.NodesAction
@@ -148,7 +147,10 @@ export default function NodesPage(): JSX.Element {
                   <TableCell>
                     <ResourceProgressBar
                       label=""
-                      percentage={calculateUsagePercentage(node.resources.used.cpu, node.resources.capacity.cpu)}
+                      percentage={calculateUsagePercentage(
+                        node.resources.used.cpu,
+                        node.resources.capacity.cpu
+                      )}
                       color="cpu"
                       tooltip={`${node.resources.used.cpu} / ${node.resources.capacity.cpu}`}
                     />
@@ -157,7 +159,10 @@ export default function NodesPage(): JSX.Element {
                   <TableCell>
                     <ResourceProgressBar
                       label=""
-                      percentage={calculateUsagePercentage(node.resources.used.memory, node.resources.capacity.memory)}
+                      percentage={calculateUsagePercentage(
+                        node.resources.used.memory,
+                        node.resources.capacity.memory
+                      )}
                       color="memory"
                       tooltip={`${node.resources.used.memory} / ${node.resources.capacity.memory}`}
                     />
@@ -166,7 +171,10 @@ export default function NodesPage(): JSX.Element {
                   <TableCell>
                     <ResourceProgressBar
                       label=""
-                      percentage={calculateUsagePercentage(node.resources.used.pods, node.resources.capacity.pods)}
+                      percentage={calculateUsagePercentage(
+                        node.resources.used.pods,
+                        node.resources.capacity.pods
+                      )}
                       color="disk"
                       tooltip={`${node.resources.used.pods} / ${node.resources.capacity.pods} pods`}
                     />

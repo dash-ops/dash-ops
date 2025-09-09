@@ -20,14 +20,11 @@ const INITIAL_STATE: LogState = { data: null, loading: false };
 const LOADING = 'LOADING';
 const SET_DATA = 'SET_DATA';
 
-type LogAction = 
+type LogAction =
   | { type: 'LOADING' }
   | { type: 'SET_DATA'; response: KubernetesTypes.PodLogsResponse };
 
-function reducer(
-  state: LogState,
-  action: LogAction
-): LogState {
+function reducer(state: LogState, action: LogAction): LogState {
   switch (action.type) {
     case LOADING:
       return { ...state, loading: true, data: null };
@@ -48,27 +45,38 @@ async function fetchData(
     dispatch({ type: SET_DATA, response: result.data });
   } catch (error) {
     // Ignore cancellation errors
-    if (error && typeof error === 'object' && 'message' in error && 
-        (error as any).message === 'Request canceled') {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'message' in error &&
+      (error as any).message === 'Request canceled'
+    ) {
       return;
     }
-    
+
     // Check if it's an axios error
     if (error && typeof error === 'object' && 'response' in error) {
       const axiosError = error as any;
-      
+
       if (axiosError.response?.status === 404) {
-        toast.error('Pod logs not found. Check if the pod exists and is running.');
+        toast.error(
+          'Pod logs not found. Check if the pod exists and is running.'
+        );
       } else if (axiosError.response?.status === 401) {
         toast.error('Unauthorized. Please check your authentication.');
       } else {
-        toast.error(`Failed to fetch pod logs: ${axiosError.response?.statusText || 'Unknown error'}`);
+        toast.error(
+          `Failed to fetch pod logs: ${axiosError.response?.statusText || 'Unknown error'}`
+        );
       }
     } else {
       toast.error('Ops... Failed to fetch API data');
     }
-    
-    dispatch({ type: SET_DATA, response: { pod_name: '', namespace: '', logs: [], total_lines: 0 } });
+
+    dispatch({
+      type: SET_DATA,
+      response: { pod_name: '', namespace: '', logs: [], total_lines: 0 },
+    });
   }
 }
 
@@ -83,12 +91,17 @@ function copyToClipboard(text: string, containerName: string): void {
     });
 }
 
-function filterLogs(logs: KubernetesTypes.PodLogEntry[], searchTerm: string): KubernetesTypes.PodLogEntry[] {
+function filterLogs(
+  logs: KubernetesTypes.PodLogEntry[],
+  searchTerm: string
+): KubernetesTypes.PodLogEntry[] {
   if (!searchTerm.trim()) return logs;
 
   const lowerSearchTerm = searchTerm.toLowerCase();
 
-  return logs.filter((log) => log.message.toLowerCase().includes(lowerSearchTerm));
+  return logs.filter((log) =>
+    log.message.toLowerCase().includes(lowerSearchTerm)
+  );
 }
 
 export default function PodLogPage(): JSX.Element {
@@ -199,7 +212,9 @@ export default function PodLogPage(): JSX.Element {
             <div className="flex items-center gap-2">
               <Button
                 onClick={() => {
-                  const allLogs = logs.data!.logs.map(log => log.message).join('\n');
+                  const allLogs = logs
+                    .data!.logs.map((log) => log.message)
+                    .join('\n');
                   copyToClipboard(allLogs, logs.data!.pod_name);
                 }}
                 variant="ghost"
@@ -221,7 +236,9 @@ export default function PodLogPage(): JSX.Element {
               <div className="p-4">
                 {(() => {
                   const filteredLogs = filterLogs(logs.data!.logs, searchTerm);
-                  const matchCount = searchTerm.trim() ? filteredLogs.length : 0;
+                  const matchCount = searchTerm.trim()
+                    ? filteredLogs.length
+                    : 0;
 
                   if (searchTerm.trim()) {
                     return (
@@ -236,7 +253,7 @@ export default function PodLogPage(): JSX.Element {
 
                 {(() => {
                   const filteredLogs = filterLogs(logs.data!.logs, searchTerm);
-                  
+
                   if (filteredLogs.length > 0) {
                     return (
                       <div className="space-y-0">
@@ -248,10 +265,7 @@ export default function PodLogPage(): JSX.Element {
                               .includes(searchTerm.toLowerCase());
 
                           return (
-                            <div
-                              key={index}
-                              className="flex items-start group"
-                            >
+                            <div key={index} className="flex items-start group">
                               <div className="select-none text-slate-500 text-xs min-w-[3rem] pr-3 py-0.5 text-right border-r border-slate-700 mr-3">
                                 {index + 1}
                               </div>
