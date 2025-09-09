@@ -90,7 +90,7 @@ func (m *Module) GetConfig() *authModels.AuthConfig {
 func ParseAuthConfigFromFileConfig(fileConfig []byte) (*authModels.AuthConfig, error) {
 	// Parse YAML similar to the original oauth2.loadConfig
 	type dashYaml struct {
-		Oauth2 []struct {
+		Auth []struct {
 			Provider        string   `yaml:"provider"`
 			ClientID        string   `yaml:"clientId"`
 			ClientSecret    string   `yaml:"clientSecret"`
@@ -100,7 +100,7 @@ func ParseAuthConfigFromFileConfig(fileConfig []byte) (*authModels.AuthConfig, e
 			URLLoginSuccess string   `yaml:"urlLoginSuccess"`
 			OrgPermission   string   `yaml:"orgPermission"`
 			Scopes          []string `yaml:"scopes"`
-		} `yaml:"oauth2"`
+		} `yaml:"auth"`
 	}
 
 	var config dashYaml
@@ -108,11 +108,11 @@ func ParseAuthConfigFromFileConfig(fileConfig []byte) (*authModels.AuthConfig, e
 		return nil, fmt.Errorf("failed to parse YAML: %w", err)
 	}
 
-	if len(config.Oauth2) == 0 {
-		return nil, fmt.Errorf("no oauth2 configuration found")
+	if len(config.Auth) == 0 {
+		return nil, fmt.Errorf("no auth configuration found")
 	}
 
-	oauth := config.Oauth2[0]
+	oauth := config.Auth[0]
 	return &authModels.AuthConfig{
 		Provider:        authModels.ProviderGitHub,
 		Method:          authModels.MethodOAuth2,

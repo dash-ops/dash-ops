@@ -21,7 +21,7 @@ export function loadModulesConfig(): Promise<LoadedModulesConfig> {
       // Map plugin names to their actual folder names
       const pluginToFolderMap: Record<string, string> = {
         servicecatalog: 'service-catalog',
-        oauth2: 'oauth2',
+        auth: 'oauth2',
         kubernetes: 'kubernetes',
         aws: 'aws',
         config: 'config',
