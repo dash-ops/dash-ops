@@ -1,4 +1,4 @@
-package github
+package external
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-github/github"
 	"golang.org/x/oauth2"
 
+	githubLogic "github.com/dash-ops/dash-ops/pkg/github/logic"
 	githubModels "github.com/dash-ops/dash-ops/pkg/github/models"
 	githubPorts "github.com/dash-ops/dash-ops/pkg/github/ports"
 )
@@ -14,11 +15,11 @@ import (
 // GitHubClient handles GitHub business logic
 type GitHubClient struct {
 	apiClient    githubPorts.GitHubAPIClient
-	teamResolver *TeamResolver
+	teamResolver *githubLogic.TeamResolver
 }
 
 // NewGitHubClient creates a new GitHub client
-func NewGitHubClient(apiClient githubPorts.GitHubAPIClient, teamResolver *TeamResolver) *GitHubClient {
+func NewGitHubClient(apiClient githubPorts.GitHubAPIClient, teamResolver *githubLogic.TeamResolver) *GitHubClient {
 	return &GitHubClient{
 		apiClient:    apiClient,
 		teamResolver: teamResolver,

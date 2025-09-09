@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	k8sModels "github.com/dash-ops/dash-ops/pkg/kubernetes/models"
 )
 
@@ -45,193 +47,160 @@ func (m *MockClusterRepository) GetClusterInfo(ctx context.Context, context stri
 	return nil, errors.New("not implemented")
 }
 
-func TestClusterProcessor_ListClusters(t *testing.T) {
-	tests := []struct {
-		name           string
-		clusters       []k8sModels.Cluster
-		validateErrors map[string]error
-		expectedStatus k8sModels.ClusterStatus
-		expectError    bool
-	}{
+func TestClusterProcessor_ListClusters_WithSuccessfulList_ReturnsConnectedClusters(t *testing.T) {
+	// Arrange
+	clusters := []k8sModels.Cluster{
 		{
-			name: "successful list with connected clusters",
-			clusters: []k8sModels.Cluster{
-				{
-					Name:    "test-cluster-1",
-					Context: "test-context-1",
-					Status:  k8sModels.ClusterStatusUnknown,
-				},
-				{
-					Name:    "test-cluster-2",
-					Context: "test-context-2",
-					Status:  k8sModels.ClusterStatusUnknown,
-				},
-			},
-			expectedStatus: k8sModels.ClusterStatusConnected,
-			expectError:    false,
+			Name:    "test-cluster-1",
+			Context: "test-context-1",
+			Status:  k8sModels.ClusterStatusUnknown,
 		},
 		{
-			name: "list with validation errors",
-			clusters: []k8sModels.Cluster{
-				{
-					Name:    "test-cluster-1",
-					Context: "test-context-1",
-					Status:  k8sModels.ClusterStatusUnknown,
-				},
-			},
-			validateErrors: map[string]error{
-				"ValidateCluster": errors.New("connection failed"),
-			},
-			expectedStatus: k8sModels.ClusterStatusError,
-			expectError:    false,
-		},
-		{
-			name:     "repository error",
-			clusters: []k8sModels.Cluster{},
-			validateErrors: map[string]error{
-				"ListClusters": errors.New("repository error"),
-			},
-			expectError: true,
+			Name:    "test-cluster-2",
+			Context: "test-context-2",
+			Status:  k8sModels.ClusterStatusUnknown,
 		},
 	}
+	mockRepo := &MockClusterRepository{
+		clusters: clusters,
+		errors:   map[string]error{},
+	}
+	processor := NewClusterProcessor(mockRepo)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockRepo := &MockClusterRepository{
-				clusters: tt.clusters,
-				errors:   tt.validateErrors,
-			}
+	// Act
+	result, err := processor.ListClusters(context.Background())
 
-			processor := NewClusterProcessor(mockRepo)
-
-			result, err := processor.ListClusters(context.Background())
-
-			if tt.expectError {
-				if err == nil {
-					t.Errorf("expected error but got none")
-				}
-				return
-			}
-
-			if err != nil {
-				t.Errorf("unexpected error: %v", err)
-				return
-			}
-
-			if len(result) != len(tt.clusters) {
-				t.Errorf("expected %d clusters, got %d", len(tt.clusters), len(result))
-			}
-
-			for _, cluster := range result {
-				if cluster.Status != tt.expectedStatus {
-					t.Errorf("expected status %s, got %s", tt.expectedStatus, cluster.Status)
-				}
-			}
-		})
+	// Assert
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+	for _, cluster := range result {
+		assert.Equal(t, k8sModels.ClusterStatusConnected, cluster.Status)
 	}
 }
 
-func TestClusterProcessor_GetClusterStatus(t *testing.T) {
-	tests := []struct {
-		name           string
-		context        string
-		validateErrors map[string]error
-		expectedStatus k8sModels.ClusterStatus
-		expectError    bool
-	}{
+func TestClusterProcessor_ListClusters_WithValidationErrors_ReturnsErrorClusters(t *testing.T) {
+	// Arrange
+	clusters := []k8sModels.Cluster{
 		{
-			name:           "connected cluster",
-			context:        "test-context",
-			expectedStatus: k8sModels.ClusterStatusConnected,
-			expectError:    false,
-		},
-		{
-			name:    "error cluster",
-			context: "test-context",
-			validateErrors: map[string]error{
-				"ValidateCluster": errors.New("connection failed"),
-			},
-			expectedStatus: k8sModels.ClusterStatusError,
-			expectError:    false,
+			Name:    "test-cluster-1",
+			Context: "test-context-1",
+			Status:  k8sModels.ClusterStatusUnknown,
 		},
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockRepo := &MockClusterRepository{
-				errors: tt.validateErrors,
-			}
-
-			processor := NewClusterProcessor(mockRepo)
-
-			status, err := processor.GetClusterStatus(context.Background(), tt.context)
-
-			if tt.expectError {
-				if err == nil {
-					t.Errorf("expected error but got none")
-				}
-				return
-			}
-
-			if err != nil {
-				t.Errorf("unexpected error: %v", err)
-				return
-			}
-
-			if status != tt.expectedStatus {
-				t.Errorf("expected status %s, got %s", tt.expectedStatus, status)
-			}
-		})
+	validateErrors := map[string]error{
+		"ValidateCluster": errors.New("connection failed"),
 	}
+	mockRepo := &MockClusterRepository{
+		clusters: clusters,
+		errors:   validateErrors,
+	}
+	processor := NewClusterProcessor(mockRepo)
+
+	// Act
+	result, err := processor.ListClusters(context.Background())
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, k8sModels.ClusterStatusError, result[0].Status)
 }
 
-func TestClusterProcessor_ValidateClusterConfig(t *testing.T) {
-	tests := []struct {
-		name        string
-		cluster     *k8sModels.Cluster
-		expectError bool
-	}{
-		{
-			name: "valid cluster",
-			cluster: &k8sModels.Cluster{
-				Name:    "test-cluster",
-				Context: "test-context",
-			},
-			expectError: false,
-		},
-		{
-			name: "missing name",
-			cluster: &k8sModels.Cluster{
-				Context: "test-context",
-			},
-			expectError: true,
-		},
-		{
-			name: "missing context",
-			cluster: &k8sModels.Cluster{
-				Name: "test-cluster",
-			},
-			expectError: true,
-		},
+func TestClusterProcessor_ListClusters_WithRepositoryError_ReturnsError(t *testing.T) {
+	// Arrange
+	validateErrors := map[string]error{
+		"ListClusters": errors.New("repository error"),
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockRepo := &MockClusterRepository{}
-			processor := NewClusterProcessor(mockRepo)
-
-			err := processor.ValidateClusterConfig(tt.cluster)
-
-			if tt.expectError {
-				if err == nil {
-					t.Errorf("expected error but got none")
-				}
-				return
-			}
-
-			if err != nil {
-				t.Errorf("unexpected error: %v", err)
-			}
-		})
+	mockRepo := &MockClusterRepository{
+		clusters: []k8sModels.Cluster{},
+		errors:   validateErrors,
 	}
+	processor := NewClusterProcessor(mockRepo)
+
+	// Act
+	result, err := processor.ListClusters(context.Background())
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, result)
+}
+
+func TestClusterProcessor_GetClusterStatus_WithConnectedCluster_ReturnsConnected(t *testing.T) {
+	// Arrange
+	contextName := "test-context"
+	mockRepo := &MockClusterRepository{
+		errors: map[string]error{},
+	}
+	processor := NewClusterProcessor(mockRepo)
+
+	// Act
+	status, err := processor.GetClusterStatus(context.Background(), contextName)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, k8sModels.ClusterStatusConnected, status)
+}
+
+func TestClusterProcessor_GetClusterStatus_WithErrorCluster_ReturnsError(t *testing.T) {
+	// Arrange
+	contextName := "test-context"
+	validateErrors := map[string]error{
+		"ValidateCluster": errors.New("connection failed"),
+	}
+	mockRepo := &MockClusterRepository{
+		errors: validateErrors,
+	}
+	processor := NewClusterProcessor(mockRepo)
+
+	// Act
+	status, err := processor.GetClusterStatus(context.Background(), contextName)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, k8sModels.ClusterStatusError, status)
+}
+
+func TestClusterProcessor_ValidateClusterConfig_WithValidCluster_ReturnsNoError(t *testing.T) {
+	// Arrange
+	cluster := &k8sModels.Cluster{
+		Name:    "test-cluster",
+		Context: "test-context",
+	}
+	mockRepo := &MockClusterRepository{}
+	processor := NewClusterProcessor(mockRepo)
+
+	// Act
+	err := processor.ValidateClusterConfig(cluster)
+
+	// Assert
+	assert.NoError(t, err)
+}
+
+func TestClusterProcessor_ValidateClusterConfig_WithMissingName_ReturnsError(t *testing.T) {
+	// Arrange
+	cluster := &k8sModels.Cluster{
+		Context: "test-context",
+	}
+	mockRepo := &MockClusterRepository{}
+	processor := NewClusterProcessor(mockRepo)
+
+	// Act
+	err := processor.ValidateClusterConfig(cluster)
+
+	// Assert
+	assert.Error(t, err)
+}
+
+func TestClusterProcessor_ValidateClusterConfig_WithMissingContext_ReturnsError(t *testing.T) {
+	// Arrange
+	cluster := &k8sModels.Cluster{
+		Name: "test-cluster",
+	}
+	mockRepo := &MockClusterRepository{}
+	processor := NewClusterProcessor(mockRepo)
+
+	// Act
+	err := processor.ValidateClusterConfig(cluster)
+
+	// Assert
+	assert.Error(t, err)
 }

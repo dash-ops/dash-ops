@@ -16,7 +16,7 @@ import (
 // Module represents the github module - main entry point for the plugin
 type Module struct {
 	controller   *githubControllers.GitHubController
-	githubClient *githubLogic.GitHubClient
+	githubClient *githubAdapters.GitHubClient
 }
 
 // NewModule creates and initializes a new github module (main factory)
@@ -50,7 +50,7 @@ func (m *Module) GetController() *githubControllers.GitHubController {
 }
 
 // GetGitHubClient returns the GitHub client
-func (m *Module) GetGitHubClient() *githubLogic.GitHubClient {
+func (m *Module) GetGitHubClient() *githubAdapters.GitHubClient {
 	return m.githubClient
 }
 

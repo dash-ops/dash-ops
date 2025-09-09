@@ -2,154 +2,222 @@ package commons
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestStringProcessor_ToUnderscore(t *testing.T) {
+func TestStringProcessor_ToUnderscore_WithBasicConversion_ReturnsUnderscoreCase(t *testing.T) {
+	// Arrange
 	processor := NewStringProcessor()
+	input := "Hello World"
 
-	tests := []struct {
-		name     string
-		input    string
-		expected string
-	}{
-		{
-			name:     "basic conversion",
-			input:    "Hello World",
-			expected: "hello_world",
-		},
-		{
-			name:     "special characters",
-			input:    "Hello-World!@#",
-			expected: "hello_world",
-		},
-		{
-			name:     "multiple spaces",
-			input:    "Hello    World",
-			expected: "hello_world",
-		},
-		{
-			name:     "tabs and spaces",
-			input:    "Hello\t\nWorld",
-			expected: "hello_world",
-		},
-		{
-			name:     "empty string",
-			input:    "",
-			expected: "",
-		},
-		{
-			name:     "already underscore",
-			input:    "hello_world",
-			expected: "hello_world",
-		},
-		{
-			name:     "leading/trailing underscores",
-			input:    "_Hello World_",
-			expected: "hello_world",
-		},
-		{
-			name:     "numbers and letters",
-			input:    "Test123 Service",
-			expected: "test123_service",
-		},
-	}
+	// Act
+	result := processor.ToUnderscore(input)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := processor.ToUnderscore(tt.input)
-			if result != tt.expected {
-				t.Errorf("ToUnderscore(%q) = %q, expected %q", tt.input, result, tt.expected)
-			}
-		})
-	}
+	// Assert
+	assert.Equal(t, "hello_world", result)
 }
 
-func TestStringProcessor_ToKebabCase(t *testing.T) {
+func TestStringProcessor_ToUnderscore_WithSpecialCharacters_ReturnsCleanedString(t *testing.T) {
+	// Arrange
 	processor := NewStringProcessor()
+	input := "Hello-World!@#"
 
-	tests := []struct {
-		name     string
-		input    string
-		expected string
-	}{
-		{
-			name:     "basic conversion",
-			input:    "Hello World",
-			expected: "hello-world",
-		},
-		{
-			name:     "special characters",
-			input:    "Hello_World!@#",
-			expected: "hello-world",
-		},
-		{
-			name:     "multiple spaces",
-			input:    "Hello    World",
-			expected: "hello-world",
-		},
-		{
-			name:     "empty string",
-			input:    "",
-			expected: "",
-		},
-		{
-			name:     "already kebab-case",
-			input:    "hello-world",
-			expected: "hello-world",
-		},
-	}
+	// Act
+	result := processor.ToUnderscore(input)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := processor.ToKebabCase(tt.input)
-			if result != tt.expected {
-				t.Errorf("ToKebabCase(%q) = %q, expected %q", tt.input, result, tt.expected)
-			}
-		})
-	}
+	// Assert
+	assert.Equal(t, "hello_world", result)
 }
 
-func TestStringProcessor_Sanitize(t *testing.T) {
+func TestStringProcessor_ToUnderscore_WithMultipleSpaces_ReturnsNormalizedString(t *testing.T) {
+	// Arrange
 	processor := NewStringProcessor()
+	input := "Hello    World"
 
-	tests := []struct {
-		name     string
-		input    string
-		expected string
-	}{
-		{
-			name:     "basic string",
-			input:    "Hello World",
-			expected: "Hello World",
-		},
-		{
-			name:     "with control characters",
-			input:    "Hello\x00\x1f World",
-			expected: "Hello World",
-		},
-		{
-			name:     "with whitespace",
-			input:    "  Hello World  ",
-			expected: "Hello World",
-		},
-		{
-			name:     "empty string",
-			input:    "",
-			expected: "",
-		},
-		{
-			name:     "only control characters",
-			input:    "\x00\x1f\x7f",
-			expected: "",
-		},
-	}
+	// Act
+	result := processor.ToUnderscore(input)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := processor.Sanitize(tt.input)
-			if result != tt.expected {
-				t.Errorf("Sanitize(%q) = %q, expected %q", tt.input, result, tt.expected)
-			}
-		})
-	}
+	// Assert
+	assert.Equal(t, "hello_world", result)
+}
+
+func TestStringProcessor_ToUnderscore_WithTabsAndSpaces_ReturnsNormalizedString(t *testing.T) {
+	// Arrange
+	processor := NewStringProcessor()
+	input := "Hello\t\nWorld"
+
+	// Act
+	result := processor.ToUnderscore(input)
+
+	// Assert
+	assert.Equal(t, "hello_world", result)
+}
+
+func TestStringProcessor_ToUnderscore_WithEmptyString_ReturnsEmptyString(t *testing.T) {
+	// Arrange
+	processor := NewStringProcessor()
+	input := ""
+
+	// Act
+	result := processor.ToUnderscore(input)
+
+	// Assert
+	assert.Equal(t, "", result)
+}
+
+func TestStringProcessor_ToUnderscore_WithAlreadyUnderscore_ReturnsSameString(t *testing.T) {
+	// Arrange
+	processor := NewStringProcessor()
+	input := "hello_world"
+
+	// Act
+	result := processor.ToUnderscore(input)
+
+	// Assert
+	assert.Equal(t, "hello_world", result)
+}
+
+func TestStringProcessor_ToUnderscore_WithLeadingTrailingUnderscores_ReturnsCleanedString(t *testing.T) {
+	// Arrange
+	processor := NewStringProcessor()
+	input := "_Hello World_"
+
+	// Act
+	result := processor.ToUnderscore(input)
+
+	// Assert
+	assert.Equal(t, "hello_world", result)
+}
+
+func TestStringProcessor_ToUnderscore_WithNumbersAndLetters_ReturnsUnderscoreCase(t *testing.T) {
+	// Arrange
+	processor := NewStringProcessor()
+	input := "Test123 Service"
+
+	// Act
+	result := processor.ToUnderscore(input)
+
+	// Assert
+	assert.Equal(t, "test123_service", result)
+}
+
+func TestStringProcessor_ToKebabCase_WithBasicConversion_ReturnsKebabCase(t *testing.T) {
+	// Arrange
+	processor := NewStringProcessor()
+	input := "Hello World"
+
+	// Act
+	result := processor.ToKebabCase(input)
+
+	// Assert
+	assert.Equal(t, "hello-world", result)
+}
+
+func TestStringProcessor_ToKebabCase_WithSpecialCharacters_ReturnsCleanedString(t *testing.T) {
+	// Arrange
+	processor := NewStringProcessor()
+	input := "Hello_World!@#"
+
+	// Act
+	result := processor.ToKebabCase(input)
+
+	// Assert
+	assert.Equal(t, "hello-world", result)
+}
+
+func TestStringProcessor_ToKebabCase_WithMultipleSpaces_ReturnsNormalizedString(t *testing.T) {
+	// Arrange
+	processor := NewStringProcessor()
+	input := "Hello    World"
+
+	// Act
+	result := processor.ToKebabCase(input)
+
+	// Assert
+	assert.Equal(t, "hello-world", result)
+}
+
+func TestStringProcessor_ToKebabCase_WithEmptyString_ReturnsEmptyString(t *testing.T) {
+	// Arrange
+	processor := NewStringProcessor()
+	input := ""
+
+	// Act
+	result := processor.ToKebabCase(input)
+
+	// Assert
+	assert.Equal(t, "", result)
+}
+
+func TestStringProcessor_ToKebabCase_WithAlreadyKebabCase_ReturnsSameString(t *testing.T) {
+	// Arrange
+	processor := NewStringProcessor()
+	input := "hello-world"
+
+	// Act
+	result := processor.ToKebabCase(input)
+
+	// Assert
+	assert.Equal(t, "hello-world", result)
+}
+
+func TestStringProcessor_Sanitize_WithBasicString_ReturnsSameString(t *testing.T) {
+	// Arrange
+	processor := NewStringProcessor()
+	input := "Hello World"
+
+	// Act
+	result := processor.Sanitize(input)
+
+	// Assert
+	assert.Equal(t, "Hello World", result)
+}
+
+func TestStringProcessor_Sanitize_WithControlCharacters_ReturnsCleanedString(t *testing.T) {
+	// Arrange
+	processor := NewStringProcessor()
+	input := "Hello\x00\x1f World"
+
+	// Act
+	result := processor.Sanitize(input)
+
+	// Assert
+	assert.Equal(t, "Hello World", result)
+}
+
+func TestStringProcessor_Sanitize_WithWhitespace_ReturnsTrimmedString(t *testing.T) {
+	// Arrange
+	processor := NewStringProcessor()
+	input := "  Hello World  "
+
+	// Act
+	result := processor.Sanitize(input)
+
+	// Assert
+	assert.Equal(t, "Hello World", result)
+}
+
+func TestStringProcessor_Sanitize_WithEmptyString_ReturnsEmptyString(t *testing.T) {
+	// Arrange
+	processor := NewStringProcessor()
+	input := ""
+
+	// Act
+	result := processor.Sanitize(input)
+
+	// Assert
+	assert.Equal(t, "", result)
+}
+
+func TestStringProcessor_Sanitize_WithOnlyControlCharacters_ReturnsEmptyString(t *testing.T) {
+	// Arrange
+	processor := NewStringProcessor()
+	input := "\x00\x1f\x7f"
+
+	// Act
+	result := processor.Sanitize(input)
+
+	// Assert
+	assert.Equal(t, "", result)
 }

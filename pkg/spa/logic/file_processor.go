@@ -20,16 +20,24 @@ func NewFileProcessor() *FileProcessor {
 
 // ResolveFilePath resolves the file path for a request
 func (fp *FileProcessor) ResolveFilePath(requestPath, staticPath, indexPath string) (string, bool, error) {
+	// Security check - detect path traversal attempts before cleaning
+	if strings.Contains(requestPath, "..") {
+		return "", false, fmt.Errorf("path traversal attempt detected")
+	}
+
 	// Clean and validate request path
 	cleanPath := filepath.Clean(requestPath)
+
+	// For root paths, always serve index.html for SPA routing
 	if cleanPath == "." || cleanPath == "/" {
-		cleanPath = indexPath
+		indexFullPath := filepath.Join(staticPath, indexPath)
+		return indexFullPath, true, nil
 	}
 
 	// Build full file path
 	fullPath := filepath.Join(staticPath, cleanPath)
 
-	// Security check - ensure path is within static directory
+	// Additional security check - ensure path is within static directory
 	if !fp.isPathSafe(fullPath, staticPath) {
 		return "", false, fmt.Errorf("path traversal attempt detected")
 	}

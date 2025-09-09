@@ -6,212 +6,288 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPlugins_Has(t *testing.T) {
+func TestPlugins_Has_WithExistingPluginExactCase_ReturnsTrue(t *testing.T) {
+	// Arrange
 	plugins := Plugins{"OAuth2", "Kubernetes", "AWS"}
+	pluginName := "OAuth2"
 
-	tests := []struct {
-		name       string
-		pluginName string
-		expected   bool
-	}{
-		{
-			name:       "existing plugin exact case",
-			pluginName: "OAuth2",
-			expected:   true,
-		},
-		{
-			name:       "existing plugin different case",
-			pluginName: "oauth2",
-			expected:   true,
-		},
-		{
-			name:       "non-existing plugin",
-			pluginName: "NonExistent",
-			expected:   false,
-		},
-		{
-			name:       "empty plugin name",
-			pluginName: "",
-			expected:   false,
-		},
-	}
+	// Act
+	result := plugins.Has(pluginName)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := plugins.Has(tt.pluginName)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Assert
+	assert.True(t, result)
 }
 
-func TestPlugins_Add(t *testing.T) {
+func TestPlugins_Has_WithExistingPluginDifferentCase_ReturnsTrue(t *testing.T) {
+	// Arrange
+	plugins := Plugins{"OAuth2", "Kubernetes", "AWS"}
+	pluginName := "oauth2"
+
+	// Act
+	result := plugins.Has(pluginName)
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestPlugins_Has_WithNonExistingPlugin_ReturnsFalse(t *testing.T) {
+	// Arrange
+	plugins := Plugins{"OAuth2", "Kubernetes", "AWS"}
+	pluginName := "NonExistent"
+
+	// Act
+	result := plugins.Has(pluginName)
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestPlugins_Has_WithEmptyPluginName_ReturnsFalse(t *testing.T) {
+	// Arrange
+	plugins := Plugins{"OAuth2", "Kubernetes", "AWS"}
+	pluginName := ""
+
+	// Act
+	result := plugins.Has(pluginName)
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestPlugins_Add_WithNewPlugin_AddsPlugin(t *testing.T) {
+	// Arrange
 	plugins := Plugins{"OAuth2"}
 
-	// Add new plugin
+	// Act
 	plugins.Add("Kubernetes")
+
+	// Assert
 	assert.True(t, plugins.Has("Kubernetes"))
 	assert.Equal(t, 2, plugins.Count())
-
-	// Add duplicate plugin (should not duplicate)
-	plugins.Add("OAuth2")
-	assert.Equal(t, 2, plugins.Count())
-
-	// Add with different case (should not duplicate)
-	plugins.Add("oauth2")
-	assert.Equal(t, 2, plugins.Count())
 }
 
-func TestPlugins_Remove(t *testing.T) {
+func TestPlugins_Add_WithDuplicatePlugin_DoesNotDuplicate(t *testing.T) {
+	// Arrange
+	plugins := Plugins{"OAuth2"}
+
+	// Act
+	plugins.Add("OAuth2")
+
+	// Assert
+	assert.Equal(t, 1, plugins.Count())
+}
+
+func TestPlugins_Add_WithDifferentCase_DoesNotDuplicate(t *testing.T) {
+	// Arrange
+	plugins := Plugins{"OAuth2"}
+
+	// Act
+	plugins.Add("oauth2")
+
+	// Assert
+	assert.Equal(t, 1, plugins.Count())
+}
+
+func TestPlugins_Remove_WithExistingPlugin_RemovesPlugin(t *testing.T) {
+	// Arrange
 	plugins := Plugins{"OAuth2", "Kubernetes", "AWS"}
 
-	// Remove existing plugin
+	// Act
 	plugins.Remove("Kubernetes")
+
+	// Assert
 	assert.False(t, plugins.Has("Kubernetes"))
 	assert.Equal(t, 2, plugins.Count())
+}
 
-	// Remove with different case
+func TestPlugins_Remove_WithDifferentCase_RemovesPlugin(t *testing.T) {
+	// Arrange
+	plugins := Plugins{"OAuth2", "Kubernetes", "AWS"}
+
+	// Act
 	plugins.Remove("oauth2")
+
+	// Assert
 	assert.False(t, plugins.Has("OAuth2"))
-	assert.Equal(t, 1, plugins.Count())
+	assert.Equal(t, 2, plugins.Count())
+}
 
-	// Remove non-existing plugin (should not error)
+func TestPlugins_Remove_WithNonExistingPlugin_DoesNotError(t *testing.T) {
+	// Arrange
+	plugins := Plugins{"OAuth2", "Kubernetes", "AWS"}
+
+	// Act
 	plugins.Remove("NonExistent")
-	assert.Equal(t, 1, plugins.Count())
+
+	// Assert
+	assert.Equal(t, 3, plugins.Count())
 }
 
-func TestDashConfig_Validate(t *testing.T) {
-	tests := []struct {
-		name        string
-		config      DashConfig
-		expectError bool
-	}{
-		{
-			name: "valid config",
-			config: DashConfig{
-				Port:   "8080",
-				Origin: "http://localhost:3000",
-			},
-			expectError: false,
-		},
-		{
-			name: "missing port",
-			config: DashConfig{
-				Origin: "http://localhost:3000",
-			},
-			expectError: true,
-		},
-		{
-			name: "missing origin",
-			config: DashConfig{
-				Port: "8080",
-			},
-			expectError: true,
-		},
-		{
-			name:        "empty config",
-			config:      DashConfig{},
-			expectError: true,
-		},
+func TestDashConfig_Validate_WithValidConfig_ReturnsNoError(t *testing.T) {
+	// Arrange
+	config := DashConfig{
+		Port:   "8080",
+		Origin: "http://localhost:3000",
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.config.Validate()
+	// Act
+	err := config.Validate()
 
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
+	// Assert
+	assert.NoError(t, err)
 }
 
-func TestDashConfig_GetPort(t *testing.T) {
-	tests := []struct {
-		name     string
-		config   DashConfig
-		expected string
-	}{
-		{
-			name:     "with port set",
-			config:   DashConfig{Port: "9090"},
-			expected: "9090",
-		},
-		{
-			name:     "without port set",
-			config:   DashConfig{},
-			expected: "8080", // Default
-		},
+func TestDashConfig_Validate_WithMissingPort_ReturnsError(t *testing.T) {
+	// Arrange
+	config := DashConfig{
+		Origin: "http://localhost:3000",
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.config.GetPort()
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	err := config.Validate()
+
+	// Assert
+	assert.Error(t, err)
 }
 
-func TestDashConfig_GetOrigin(t *testing.T) {
-	tests := []struct {
-		name     string
-		config   DashConfig
-		expected string
-	}{
-		{
-			name:     "with origin set",
-			config:   DashConfig{Origin: "http://custom.local"},
-			expected: "http://custom.local",
-		},
-		{
-			name:     "without origin set",
-			config:   DashConfig{},
-			expected: "http://localhost:3000", // Default
-		},
+func TestDashConfig_Validate_WithMissingOrigin_ReturnsError(t *testing.T) {
+	// Arrange
+	config := DashConfig{
+		Port: "8080",
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.config.GetOrigin()
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	err := config.Validate()
+
+	// Assert
+	assert.Error(t, err)
 }
 
-func TestDashConfig_GetHeaders(t *testing.T) {
-	tests := []struct {
-		name     string
-		config   DashConfig
-		expected []string
-	}{
-		{
-			name:     "with headers set",
-			config:   DashConfig{Headers: []string{"Custom-Header"}},
-			expected: []string{"Custom-Header"},
-		},
-		{
-			name:     "without headers set",
-			config:   DashConfig{},
-			expected: []string{"Content-Type", "Authorization"}, // Default
-		},
-	}
+func TestDashConfig_Validate_WithEmptyConfig_ReturnsError(t *testing.T) {
+	// Arrange
+	config := DashConfig{}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.config.GetHeaders()
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	err := config.Validate()
+
+	// Assert
+	assert.Error(t, err)
 }
 
-func TestDashConfig_IsPluginEnabled(t *testing.T) {
+func TestDashConfig_GetPort_WithPortSet_ReturnsSetPort(t *testing.T) {
+	// Arrange
+	config := DashConfig{Port: "9090"}
+
+	// Act
+	result := config.GetPort()
+
+	// Assert
+	assert.Equal(t, "9090", result)
+}
+
+func TestDashConfig_GetPort_WithoutPortSet_ReturnsDefaultPort(t *testing.T) {
+	// Arrange
+	config := DashConfig{}
+
+	// Act
+	result := config.GetPort()
+
+	// Assert
+	assert.Equal(t, "8080", result) // Default
+}
+
+func TestDashConfig_GetOrigin_WithOriginSet_ReturnsSetOrigin(t *testing.T) {
+	// Arrange
+	config := DashConfig{Origin: "http://custom.local"}
+
+	// Act
+	result := config.GetOrigin()
+
+	// Assert
+	assert.Equal(t, "http://custom.local", result)
+}
+
+func TestDashConfig_GetOrigin_WithoutOriginSet_ReturnsDefaultOrigin(t *testing.T) {
+	// Arrange
+	config := DashConfig{}
+
+	// Act
+	result := config.GetOrigin()
+
+	// Assert
+	assert.Equal(t, "http://localhost:3000", result) // Default
+}
+
+func TestDashConfig_GetHeaders_WithHeadersSet_ReturnsSetHeaders(t *testing.T) {
+	// Arrange
+	config := DashConfig{Headers: []string{"Custom-Header"}}
+
+	// Act
+	result := config.GetHeaders()
+
+	// Assert
+	assert.Equal(t, []string{"Custom-Header"}, result)
+}
+
+func TestDashConfig_GetHeaders_WithoutHeadersSet_ReturnsDefaultHeaders(t *testing.T) {
+	// Arrange
+	config := DashConfig{}
+
+	// Act
+	result := config.GetHeaders()
+
+	// Assert
+	assert.Equal(t, []string{"Content-Type", "Authorization"}, result) // Default
+}
+
+func TestDashConfig_IsPluginEnabled_WithEnabledPluginExactCase_ReturnsTrue(t *testing.T) {
+	// Arrange
 	config := DashConfig{
 		Plugins: Plugins{"OAuth2", "Kubernetes"},
 	}
 
-	assert.True(t, config.IsPluginEnabled("OAuth2"))
-	assert.True(t, config.IsPluginEnabled("oauth2")) // Case insensitive
-	assert.False(t, config.IsPluginEnabled("AWS"))
-	assert.False(t, config.IsPluginEnabled(""))
+	// Act
+	result := config.IsPluginEnabled("OAuth2")
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestDashConfig_IsPluginEnabled_WithEnabledPluginDifferentCase_ReturnsTrue(t *testing.T) {
+	// Arrange
+	config := DashConfig{
+		Plugins: Plugins{"OAuth2", "Kubernetes"},
+	}
+
+	// Act
+	result := config.IsPluginEnabled("oauth2") // Case insensitive
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestDashConfig_IsPluginEnabled_WithDisabledPlugin_ReturnsFalse(t *testing.T) {
+	// Arrange
+	config := DashConfig{
+		Plugins: Plugins{"OAuth2", "Kubernetes"},
+	}
+
+	// Act
+	result := config.IsPluginEnabled("AWS")
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestDashConfig_IsPluginEnabled_WithEmptyPluginName_ReturnsFalse(t *testing.T) {
+	// Arrange
+	config := DashConfig{
+		Plugins: Plugins{"OAuth2", "Kubernetes"},
+	}
+
+	// Act
+	result := config.IsPluginEnabled("")
+
+	// Assert
+	assert.False(t, result)
 }

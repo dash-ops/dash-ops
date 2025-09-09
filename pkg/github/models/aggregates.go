@@ -121,7 +121,7 @@ func (up *UserProfile) GetTeamBySlug(orgLogin, teamSlug string) *GitHubTeam {
 
 // GetTeamsInOrganization returns all teams for a specific organization
 func (up *UserProfile) GetTeamsInOrganization(orgLogin string) []GitHubTeam {
-	var teams []GitHubTeam
+	teams := make([]GitHubTeam, 0)
 	for _, team := range up.Teams {
 		if team.Organization != nil && strings.EqualFold(team.Organization.Login, orgLogin) {
 			teams = append(teams, team)

@@ -93,8 +93,8 @@ func (m *MockServiceRepository) Search(ctx context.Context, query string, limit 
 	return args.Get(0).([]scModels.Service), args.Error(1)
 }
 
-func TestHTTPHandler_CreateService(t *testing.T) {
-	// Setup test dependencies
+func TestHTTPHandler_CreateService_SuccessfulCreation_ReturnsCreated(t *testing.T) {
+	// Arrange
 	mockRepo := &MockServiceRepository{}
 	validator := scLogic.NewServiceValidator()
 	processor := scLogic.NewServiceProcessor()
@@ -109,86 +109,50 @@ func TestHTTPHandler_CreateService(t *testing.T) {
 
 	handler := NewHTTPHandler(controller, serviceAdapter, responseAdapter, requestAdapter)
 
-	tests := []struct {
-		name           string
-		requestBody    scWire.CreateServiceRequest
-		expectedStatus int
-		setupMocks     func(*MockServiceRepository)
-	}{
-		{
-			name: "successful creation",
-			requestBody: scWire.CreateServiceRequest{
-				Name:        "test-service",
-				Description: "Test service description",
-				Tier:        "TIER-3",
-				Team: scWire.TeamRequest{
-					GitHubTeam: "test-team",
-				},
-			},
-			expectedStatus: http.StatusCreated,
-			setupMocks: func(repo *MockServiceRepository) {
-				repo.On("Exists", mock.Anything, "test-service").Return(false, nil)
-				repo.On("Create", mock.Anything, mock.Anything).Return(&scModels.Service{
-					Metadata: scModels.ServiceMetadata{
-						Name: "test-service",
-						Tier: scModels.TierStandard,
-					},
-					Spec: scModels.ServiceSpec{
-						Description: "Test service description",
-						Team: scModels.ServiceTeam{
-							GitHubTeam: "test-team",
-						},
-					},
-				}, nil)
-			},
-		},
-		{
-			name: "missing required fields",
-			requestBody: scWire.CreateServiceRequest{
-				Name: "test-service",
-				// Missing description and team
-			},
-			expectedStatus: http.StatusBadRequest,
-			setupMocks: func(repo *MockServiceRepository) {
-				// No mocks needed for validation errors
-			},
+	requestBody := scWire.CreateServiceRequest{
+		Name:        "test-service",
+		Description: "Test service description",
+		Tier:        "TIER-3",
+		Team: scWire.TeamRequest{
+			GitHubTeam: "test-team",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Setup mocks
-			tt.setupMocks(mockRepo)
+	mockRepo.On("Exists", mock.Anything, "test-service").Return(false, nil)
+	mockRepo.On("Create", mock.Anything, mock.Anything).Return(&scModels.Service{
+		Metadata: scModels.ServiceMetadata{
+			Name: "test-service",
+			Tier: scModels.TierStandard,
+		},
+		Spec: scModels.ServiceSpec{
+			Description: "Test service description",
+			Team: scModels.ServiceTeam{
+				GitHubTeam: "test-team",
+			},
+		},
+	}, nil)
 
-			// Create request
-			requestBody, err := json.Marshal(tt.requestBody)
-			require.NoError(t, err)
+	requestBodyBytes, err := json.Marshal(requestBody)
+	require.NoError(t, err)
 
-			req := httptest.NewRequest("POST", "/services", bytes.NewReader(requestBody))
-			req.Header.Set("Content-Type", "application/json")
-			w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/services", bytes.NewReader(requestBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
 
-			// Execute
-			handler.createServiceHandler(w, req)
+	// Act
+	handler.createServiceHandler(w, req)
 
-			// Assert
-			assert.Equal(t, tt.expectedStatus, w.Code)
+	// Assert
+	assert.Equal(t, http.StatusCreated, w.Code)
 
-			if tt.expectedStatus == http.StatusCreated {
-				var response scWire.ServiceResponse
-				err := json.Unmarshal(w.Body.Bytes(), &response)
-				assert.NoError(t, err)
-				assert.Equal(t, tt.requestBody.Name, response.Metadata.Name)
-			}
-
-			// Clear mock expectations
-			mockRepo.ExpectedCalls = nil
-		})
-	}
+	var response scWire.ServiceResponse
+	err = json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, requestBody.Name, response.Metadata.Name)
 }
 
-func TestHTTPHandler_GetService(t *testing.T) {
-	// Setup test dependencies
+func TestHTTPHandler_CreateService_MissingRequiredFields_ReturnsBadRequest(t *testing.T) {
+	// Arrange
 	mockRepo := &MockServiceRepository{}
 	validator := scLogic.NewServiceValidator()
 	processor := scLogic.NewServiceProcessor()
@@ -203,74 +167,125 @@ func TestHTTPHandler_GetService(t *testing.T) {
 
 	handler := NewHTTPHandler(controller, serviceAdapter, responseAdapter, requestAdapter)
 
-	tests := []struct {
-		name           string
-		serviceName    string
-		expectedStatus int
-		setupMocks     func(*MockServiceRepository)
-	}{
-		{
-			name:           "existing service",
-			serviceName:    "test-service",
-			expectedStatus: http.StatusOK,
-			setupMocks: func(repo *MockServiceRepository) {
-				repo.On("GetByName", mock.Anything, "test-service").Return(&scModels.Service{
-					Metadata: scModels.ServiceMetadata{
-						Name: "test-service",
-						Tier: scModels.TierStandard,
-					},
-					Spec: scModels.ServiceSpec{
-						Description: "Test service",
-						Team: scModels.ServiceTeam{
-							GitHubTeam: "test-team",
-						},
-					},
-				}, nil)
-			},
-		},
-		{
-			name:           "non-existing service",
-			serviceName:    "non-existent",
-			expectedStatus: http.StatusNotFound,
-			setupMocks: func(repo *MockServiceRepository) {
-				repo.On("GetByName", mock.Anything, "non-existent").Return(nil, fmt.Errorf("service not found"))
-			},
-		},
-		{
-			name:           "empty service name",
-			serviceName:    "",
-			expectedStatus: http.StatusBadRequest,
-			setupMocks: func(repo *MockServiceRepository) {
-				// No mocks needed for validation errors
-			},
-		},
+	requestBody := scWire.CreateServiceRequest{
+		Name: "test-service",
+		// Missing description and team
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Setup mocks
-			tt.setupMocks(mockRepo)
+	requestBodyBytes, err := json.Marshal(requestBody)
+	require.NoError(t, err)
 
-			// Create request
-			req := httptest.NewRequest("GET", "/services/"+tt.serviceName, nil)
-			req = mux.SetURLVars(req, map[string]string{"name": tt.serviceName})
-			w := httptest.NewRecorder()
+	req := httptest.NewRequest("POST", "/services", bytes.NewReader(requestBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
 
-			// Execute
-			handler.getServiceHandler(w, req)
+	// Act
+	handler.createServiceHandler(w, req)
 
-			// Assert
-			assert.Equal(t, tt.expectedStatus, w.Code)
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
 
-			if tt.expectedStatus == http.StatusOK {
-				var response scWire.ServiceResponse
-				err := json.Unmarshal(w.Body.Bytes(), &response)
-				assert.NoError(t, err)
-				assert.Equal(t, tt.serviceName, response.Metadata.Name)
-			}
+func TestHTTPHandler_GetService_ExistingService_ReturnsOK(t *testing.T) {
+	// Arrange
+	mockRepo := &MockServiceRepository{}
+	validator := scLogic.NewServiceValidator()
+	processor := scLogic.NewServiceProcessor()
 
-			// Clear mock expectations
-			mockRepo.ExpectedCalls = nil
-		})
-	}
+	controller := servicecatalog.NewServiceController(
+		mockRepo, nil, nil, nil, validator, processor,
+	)
+
+	serviceAdapter := scAdapters.NewServiceAdapter()
+	responseAdapter := commonsHttp.NewResponseAdapter()
+	requestAdapter := commonsHttp.NewRequestAdapter()
+
+	handler := NewHTTPHandler(controller, serviceAdapter, responseAdapter, requestAdapter)
+
+	serviceName := "test-service"
+	mockRepo.On("GetByName", mock.Anything, serviceName).Return(&scModels.Service{
+		Metadata: scModels.ServiceMetadata{
+			Name: serviceName,
+			Tier: scModels.TierStandard,
+		},
+		Spec: scModels.ServiceSpec{
+			Description: "Test service",
+			Team: scModels.ServiceTeam{
+				GitHubTeam: "test-team",
+			},
+		},
+	}, nil)
+
+	req := httptest.NewRequest("GET", "/services/"+serviceName, nil)
+	req = mux.SetURLVars(req, map[string]string{"name": serviceName})
+	w := httptest.NewRecorder()
+
+	// Act
+	handler.getServiceHandler(w, req)
+
+	// Assert
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var response scWire.ServiceResponse
+	err := json.Unmarshal(w.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, serviceName, response.Metadata.Name)
+}
+
+func TestHTTPHandler_GetService_NonExistingService_ReturnsNotFound(t *testing.T) {
+	// Arrange
+	mockRepo := &MockServiceRepository{}
+	validator := scLogic.NewServiceValidator()
+	processor := scLogic.NewServiceProcessor()
+
+	controller := servicecatalog.NewServiceController(
+		mockRepo, nil, nil, nil, validator, processor,
+	)
+
+	serviceAdapter := scAdapters.NewServiceAdapter()
+	responseAdapter := commonsHttp.NewResponseAdapter()
+	requestAdapter := commonsHttp.NewRequestAdapter()
+
+	handler := NewHTTPHandler(controller, serviceAdapter, responseAdapter, requestAdapter)
+
+	serviceName := "non-existent"
+	mockRepo.On("GetByName", mock.Anything, serviceName).Return(nil, fmt.Errorf("service not found"))
+
+	req := httptest.NewRequest("GET", "/services/"+serviceName, nil)
+	req = mux.SetURLVars(req, map[string]string{"name": serviceName})
+	w := httptest.NewRecorder()
+
+	// Act
+	handler.getServiceHandler(w, req)
+
+	// Assert
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestHTTPHandler_GetService_EmptyServiceName_ReturnsBadRequest(t *testing.T) {
+	// Arrange
+	mockRepo := &MockServiceRepository{}
+	validator := scLogic.NewServiceValidator()
+	processor := scLogic.NewServiceProcessor()
+
+	controller := servicecatalog.NewServiceController(
+		mockRepo, nil, nil, nil, validator, processor,
+	)
+
+	serviceAdapter := scAdapters.NewServiceAdapter()
+	responseAdapter := commonsHttp.NewResponseAdapter()
+	requestAdapter := commonsHttp.NewRequestAdapter()
+
+	handler := NewHTTPHandler(controller, serviceAdapter, responseAdapter, requestAdapter)
+
+	serviceName := ""
+	req := httptest.NewRequest("GET", "/services/"+serviceName, nil)
+	req = mux.SetURLVars(req, map[string]string{"name": serviceName})
+	w := httptest.NewRecorder()
+
+	// Act
+	handler.getServiceHandler(w, req)
+
+	// Assert
+	assert.Equal(t, http.StatusBadRequest, w.Code)
 }

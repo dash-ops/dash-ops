@@ -8,312 +8,388 @@ import (
 	k8sModels "github.com/dash-ops/dash-ops/pkg/kubernetes/models"
 )
 
-func TestHealthCalculator_CalculateDeploymentHealth(t *testing.T) {
+func TestHealthCalculator_CalculateDeploymentHealth_WithNilDeployment_ReturnsUnknown(t *testing.T) {
+	// Arrange
 	calculator := NewHealthCalculator()
+	deployment := (*k8sModels.Deployment)(nil)
 
-	tests := []struct {
-		name       string
-		deployment *k8sModels.Deployment
-		expected   DeploymentHealthStatus
-	}{
-		{
-			name:       "nil deployment",
-			deployment: nil,
-			expected:   DeploymentStatusUnknown,
-		},
-		{
-			name: "healthy deployment",
-			deployment: &k8sModels.Deployment{
-				Replicas: k8sModels.DeploymentReplicas{
-					Desired: 3,
-					Ready:   3,
-				},
-			},
-			expected: DeploymentStatusHealthy,
-		},
-		{
-			name: "degraded deployment",
-			deployment: &k8sModels.Deployment{
-				Replicas: k8sModels.DeploymentReplicas{
-					Desired: 3,
-					Ready:   2,
-				},
-			},
-			expected: DeploymentStatusDegraded,
-		},
-		{
-			name: "unhealthy deployment",
-			deployment: &k8sModels.Deployment{
-				Replicas: k8sModels.DeploymentReplicas{
-					Desired: 3,
-					Ready:   0,
-				},
-			},
-			expected: DeploymentStatusUnhealthy,
-		},
-		{
-			name: "stopped deployment",
-			deployment: &k8sModels.Deployment{
-				Replicas: k8sModels.DeploymentReplicas{
-					Desired: 0,
-					Ready:   0,
-				},
-			},
-			expected: DeploymentStatusStopped,
-		},
-	}
+	// Act
+	result := calculator.CalculateDeploymentHealth(deployment)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := calculator.CalculateDeploymentHealth(tt.deployment)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Assert
+	assert.Equal(t, DeploymentStatusUnknown, result)
 }
 
-func TestHealthCalculator_CalculatePodHealth(t *testing.T) {
+func TestHealthCalculator_CalculateDeploymentHealth_WithHealthyDeployment_ReturnsHealthy(t *testing.T) {
+	// Arrange
 	calculator := NewHealthCalculator()
-
-	tests := []struct {
-		name     string
-		pod      *k8sModels.Pod
-		expected PodHealthStatus
-	}{
-		{
-			name:     "nil pod",
-			pod:      nil,
-			expected: PodHealthStatusUnknown,
-		},
-		{
-			name: "healthy running pod",
-			pod: &k8sModels.Pod{
-				Status: k8sModels.PodStatusRunning,
-				Containers: []k8sModels.Container{
-					{Ready: true},
-					{Ready: true},
-				},
-			},
-			expected: PodHealthStatusHealthy,
-		},
-		{
-			name: "degraded running pod",
-			pod: &k8sModels.Pod{
-				Status: k8sModels.PodStatusRunning,
-				Containers: []k8sModels.Container{
-					{Ready: true},
-					{Ready: false},
-				},
-			},
-			expected: PodHealthStatusDegraded,
-		},
-		{
-			name: "pending pod",
-			pod: &k8sModels.Pod{
-				Status: k8sModels.PodStatusPending,
-			},
-			expected: PodHealthStatusPending,
-		},
-		{
-			name: "failed pod",
-			pod: &k8sModels.Pod{
-				Status: k8sModels.PodStatusFailed,
-			},
-			expected: PodHealthStatusFailed,
-		},
-		{
-			name: "succeeded pod",
-			pod: &k8sModels.Pod{
-				Status: k8sModels.PodStatusSucceeded,
-			},
-			expected: PodHealthStatusCompleted,
+	deployment := &k8sModels.Deployment{
+		Replicas: k8sModels.DeploymentReplicas{
+			Desired: 3,
+			Ready:   3,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := calculator.CalculatePodHealth(tt.pod)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	result := calculator.CalculateDeploymentHealth(deployment)
+
+	// Assert
+	assert.Equal(t, DeploymentStatusHealthy, result)
 }
 
-func TestHealthCalculator_CalculateNodeHealth(t *testing.T) {
+func TestHealthCalculator_CalculateDeploymentHealth_WithDegradedDeployment_ReturnsDegraded(t *testing.T) {
+	// Arrange
 	calculator := NewHealthCalculator()
-
-	tests := []struct {
-		name     string
-		node     *k8sModels.Node
-		expected NodeHealthStatus
-	}{
-		{
-			name:     "nil node",
-			node:     nil,
-			expected: NodeHealthStatusUnknown,
-		},
-		{
-			name: "ready node",
-			node: &k8sModels.Node{
-				Status: k8sModels.NodeStatusReady,
-			},
-			expected: NodeHealthStatusHealthy,
-		},
-		{
-			name: "not ready node",
-			node: &k8sModels.Node{
-				Status: k8sModels.NodeStatusNotReady,
-			},
-			expected: NodeHealthStatusUnhealthy,
-		},
-		{
-			name: "unknown status node",
-			node: &k8sModels.Node{
-				Status: k8sModels.NodeStatusUnknown,
-			},
-			expected: NodeHealthStatusUnknown,
+	deployment := &k8sModels.Deployment{
+		Replicas: k8sModels.DeploymentReplicas{
+			Desired: 3,
+			Ready:   2,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := calculator.CalculateNodeHealth(tt.node)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	result := calculator.CalculateDeploymentHealth(deployment)
+
+	// Assert
+	assert.Equal(t, DeploymentStatusDegraded, result)
 }
 
-func TestHealthCalculator_CalculateClusterHealth(t *testing.T) {
+func TestHealthCalculator_CalculateDeploymentHealth_WithUnhealthyDeployment_ReturnsUnhealthy(t *testing.T) {
+	// Arrange
 	calculator := NewHealthCalculator()
-
-	tests := []struct {
-		name        string
-		clusterInfo *k8sModels.ClusterInfo
-		expected    ClusterHealthStatus
-	}{
-		{
-			name:        "nil cluster info",
-			clusterInfo: nil,
-			expected:    ClusterHealthStatusDisconnected,
-		},
-		{
-			name: "disconnected cluster",
-			clusterInfo: &k8sModels.ClusterInfo{
-				Cluster: k8sModels.Cluster{
-					Status: k8sModels.ClusterStatusDisconnected,
-				},
-			},
-			expected: ClusterHealthStatusDisconnected,
-		},
-		{
-			name: "healthy cluster (all nodes ready)",
-			clusterInfo: &k8sModels.ClusterInfo{
-				Cluster: k8sModels.Cluster{
-					Status: k8sModels.ClusterStatusConnected,
-				},
-				Nodes: []k8sModels.Node{
-					{Status: k8sModels.NodeStatusReady},
-					{Status: k8sModels.NodeStatusReady},
-					{Status: k8sModels.NodeStatusReady},
-				},
-			},
-			expected: ClusterHealthStatusHealthy,
-		},
-		{
-			name: "degraded cluster (80% nodes ready)",
-			clusterInfo: &k8sModels.ClusterInfo{
-				Cluster: k8sModels.Cluster{
-					Status: k8sModels.ClusterStatusConnected,
-				},
-				Nodes: []k8sModels.Node{
-					{Status: k8sModels.NodeStatusReady},
-					{Status: k8sModels.NodeStatusReady},
-					{Status: k8sModels.NodeStatusReady},
-					{Status: k8sModels.NodeStatusReady},
-					{Status: k8sModels.NodeStatusNotReady}, // 80% ready
-				},
-			},
-			expected: ClusterHealthStatusDegraded,
-		},
-		{
-			name: "critical cluster (20% nodes ready)",
-			clusterInfo: &k8sModels.ClusterInfo{
-				Cluster: k8sModels.Cluster{
-					Status: k8sModels.ClusterStatusConnected,
-				},
-				Nodes: []k8sModels.Node{
-					{Status: k8sModels.NodeStatusReady},
-					{Status: k8sModels.NodeStatusNotReady},
-					{Status: k8sModels.NodeStatusNotReady},
-					{Status: k8sModels.NodeStatusNotReady},
-					{Status: k8sModels.NodeStatusNotReady}, // 20% ready
-				},
-			},
-			expected: ClusterHealthStatusCritical,
+	deployment := &k8sModels.Deployment{
+		Replicas: k8sModels.DeploymentReplicas{
+			Desired: 3,
+			Ready:   0,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := calculator.CalculateClusterHealth(tt.clusterInfo)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	result := calculator.CalculateDeploymentHealth(deployment)
+
+	// Assert
+	assert.Equal(t, DeploymentStatusUnhealthy, result)
 }
 
-func TestHealthCalculator_GetDeploymentHealthSummary(t *testing.T) {
+func TestHealthCalculator_CalculateDeploymentHealth_WithStoppedDeployment_ReturnsStopped(t *testing.T) {
+	// Arrange
 	calculator := NewHealthCalculator()
-
-	tests := []struct {
-		name           string
-		deployment     *k8sModels.Deployment
-		expectedStatus DeploymentHealthStatus
-		expectedIssues int
-	}{
-		{
-			name:           "nil deployment",
-			deployment:     nil,
-			expectedStatus: DeploymentStatusUnknown,
-			expectedIssues: 1,
-		},
-		{
-			name: "healthy deployment",
-			deployment: &k8sModels.Deployment{
-				Replicas: k8sModels.DeploymentReplicas{
-					Desired: 3,
-					Ready:   3,
-				},
-			},
-			expectedStatus: DeploymentStatusHealthy,
-			expectedIssues: 0,
-		},
-		{
-			name: "scaled to zero",
-			deployment: &k8sModels.Deployment{
-				Replicas: k8sModels.DeploymentReplicas{
-					Desired: 0,
-					Ready:   0,
-				},
-			},
-			expectedStatus: DeploymentStatusStopped,
-			expectedIssues: 1,
-		},
-		{
-			name: "no replicas ready",
-			deployment: &k8sModels.Deployment{
-				Replicas: k8sModels.DeploymentReplicas{
-					Desired: 3,
-					Ready:   0,
-				},
-			},
-			expectedStatus: DeploymentStatusUnhealthy,
-			expectedIssues: 1,
+	deployment := &k8sModels.Deployment{
+		Replicas: k8sModels.DeploymentReplicas{
+			Desired: 0,
+			Ready:   0,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			summary := calculator.GetDeploymentHealthSummary(tt.deployment)
-			assert.Equal(t, tt.expectedStatus, summary.Status)
-			assert.Equal(t, tt.expectedIssues, len(summary.Issues))
-		})
+	// Act
+	result := calculator.CalculateDeploymentHealth(deployment)
+
+	// Assert
+	assert.Equal(t, DeploymentStatusStopped, result)
+}
+
+func TestHealthCalculator_CalculatePodHealth_WithNilPod_ReturnsUnknown(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	pod := (*k8sModels.Pod)(nil)
+
+	// Act
+	result := calculator.CalculatePodHealth(pod)
+
+	// Assert
+	assert.Equal(t, PodHealthStatusUnknown, result)
+}
+
+func TestHealthCalculator_CalculatePodHealth_WithHealthyRunningPod_ReturnsHealthy(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	pod := &k8sModels.Pod{
+		Status: k8sModels.PodStatusRunning,
+		Containers: []k8sModels.Container{
+			{Ready: true},
+			{Ready: true},
+		},
 	}
+
+	// Act
+	result := calculator.CalculatePodHealth(pod)
+
+	// Assert
+	assert.Equal(t, PodHealthStatusHealthy, result)
+}
+
+func TestHealthCalculator_CalculatePodHealth_WithDegradedRunningPod_ReturnsDegraded(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	pod := &k8sModels.Pod{
+		Status: k8sModels.PodStatusRunning,
+		Containers: []k8sModels.Container{
+			{Ready: true},
+			{Ready: false},
+		},
+	}
+
+	// Act
+	result := calculator.CalculatePodHealth(pod)
+
+	// Assert
+	assert.Equal(t, PodHealthStatusDegraded, result)
+}
+
+func TestHealthCalculator_CalculatePodHealth_WithPendingPod_ReturnsPending(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	pod := &k8sModels.Pod{
+		Status: k8sModels.PodStatusPending,
+	}
+
+	// Act
+	result := calculator.CalculatePodHealth(pod)
+
+	// Assert
+	assert.Equal(t, PodHealthStatusPending, result)
+}
+
+func TestHealthCalculator_CalculatePodHealth_WithFailedPod_ReturnsFailed(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	pod := &k8sModels.Pod{
+		Status: k8sModels.PodStatusFailed,
+	}
+
+	// Act
+	result := calculator.CalculatePodHealth(pod)
+
+	// Assert
+	assert.Equal(t, PodHealthStatusFailed, result)
+}
+
+func TestHealthCalculator_CalculatePodHealth_WithSucceededPod_ReturnsCompleted(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	pod := &k8sModels.Pod{
+		Status: k8sModels.PodStatusSucceeded,
+	}
+
+	// Act
+	result := calculator.CalculatePodHealth(pod)
+
+	// Assert
+	assert.Equal(t, PodHealthStatusCompleted, result)
+}
+
+func TestHealthCalculator_CalculateNodeHealth_WithNilNode_ReturnsUnknown(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	node := (*k8sModels.Node)(nil)
+
+	// Act
+	result := calculator.CalculateNodeHealth(node)
+
+	// Assert
+	assert.Equal(t, NodeHealthStatusUnknown, result)
+}
+
+func TestHealthCalculator_CalculateNodeHealth_WithReadyNode_ReturnsHealthy(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	node := &k8sModels.Node{
+		Status: k8sModels.NodeStatusReady,
+	}
+
+	// Act
+	result := calculator.CalculateNodeHealth(node)
+
+	// Assert
+	assert.Equal(t, NodeHealthStatusHealthy, result)
+}
+
+func TestHealthCalculator_CalculateNodeHealth_WithNotReadyNode_ReturnsUnhealthy(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	node := &k8sModels.Node{
+		Status: k8sModels.NodeStatusNotReady,
+	}
+
+	// Act
+	result := calculator.CalculateNodeHealth(node)
+
+	// Assert
+	assert.Equal(t, NodeHealthStatusUnhealthy, result)
+}
+
+func TestHealthCalculator_CalculateNodeHealth_WithUnknownStatusNode_ReturnsUnknown(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	node := &k8sModels.Node{
+		Status: k8sModels.NodeStatusUnknown,
+	}
+
+	// Act
+	result := calculator.CalculateNodeHealth(node)
+
+	// Assert
+	assert.Equal(t, NodeHealthStatusUnknown, result)
+}
+
+func TestHealthCalculator_CalculateClusterHealth_WithNilClusterInfo_ReturnsDisconnected(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	clusterInfo := (*k8sModels.ClusterInfo)(nil)
+
+	// Act
+	result := calculator.CalculateClusterHealth(clusterInfo)
+
+	// Assert
+	assert.Equal(t, ClusterHealthStatusDisconnected, result)
+}
+
+func TestHealthCalculator_CalculateClusterHealth_WithDisconnectedCluster_ReturnsDisconnected(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	clusterInfo := &k8sModels.ClusterInfo{
+		Cluster: k8sModels.Cluster{
+			Status: k8sModels.ClusterStatusDisconnected,
+		},
+	}
+
+	// Act
+	result := calculator.CalculateClusterHealth(clusterInfo)
+
+	// Assert
+	assert.Equal(t, ClusterHealthStatusDisconnected, result)
+}
+
+func TestHealthCalculator_CalculateClusterHealth_WithHealthyCluster_ReturnsHealthy(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	clusterInfo := &k8sModels.ClusterInfo{
+		Cluster: k8sModels.Cluster{
+			Status: k8sModels.ClusterStatusConnected,
+		},
+		Nodes: []k8sModels.Node{
+			{Status: k8sModels.NodeStatusReady},
+			{Status: k8sModels.NodeStatusReady},
+			{Status: k8sModels.NodeStatusReady},
+		},
+	}
+
+	// Act
+	result := calculator.CalculateClusterHealth(clusterInfo)
+
+	// Assert
+	assert.Equal(t, ClusterHealthStatusHealthy, result)
+}
+
+func TestHealthCalculator_CalculateClusterHealth_WithDegradedCluster_ReturnsDegraded(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	clusterInfo := &k8sModels.ClusterInfo{
+		Cluster: k8sModels.Cluster{
+			Status: k8sModels.ClusterStatusConnected,
+		},
+		Nodes: []k8sModels.Node{
+			{Status: k8sModels.NodeStatusReady},
+			{Status: k8sModels.NodeStatusReady},
+			{Status: k8sModels.NodeStatusReady},
+			{Status: k8sModels.NodeStatusReady},
+			{Status: k8sModels.NodeStatusNotReady}, // 80% ready
+		},
+	}
+
+	// Act
+	result := calculator.CalculateClusterHealth(clusterInfo)
+
+	// Assert
+	assert.Equal(t, ClusterHealthStatusDegraded, result)
+}
+
+func TestHealthCalculator_CalculateClusterHealth_WithCriticalCluster_ReturnsCritical(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	clusterInfo := &k8sModels.ClusterInfo{
+		Cluster: k8sModels.Cluster{
+			Status: k8sModels.ClusterStatusConnected,
+		},
+		Nodes: []k8sModels.Node{
+			{Status: k8sModels.NodeStatusReady},
+			{Status: k8sModels.NodeStatusNotReady},
+			{Status: k8sModels.NodeStatusNotReady},
+			{Status: k8sModels.NodeStatusNotReady},
+			{Status: k8sModels.NodeStatusNotReady}, // 20% ready
+		},
+	}
+
+	// Act
+	result := calculator.CalculateClusterHealth(clusterInfo)
+
+	// Assert
+	assert.Equal(t, ClusterHealthStatusCritical, result)
+}
+
+func TestHealthCalculator_GetDeploymentHealthSummary_WithNilDeployment_ReturnsUnknownWithIssues(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	deployment := (*k8sModels.Deployment)(nil)
+
+	// Act
+	summary := calculator.GetDeploymentHealthSummary(deployment)
+
+	// Assert
+	assert.Equal(t, DeploymentStatusUnknown, summary.Status)
+	assert.Len(t, summary.Issues, 1)
+}
+
+func TestHealthCalculator_GetDeploymentHealthSummary_WithHealthyDeployment_ReturnsHealthyWithNoIssues(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	deployment := &k8sModels.Deployment{
+		Replicas: k8sModels.DeploymentReplicas{
+			Desired: 3,
+			Ready:   3,
+		},
+	}
+
+	// Act
+	summary := calculator.GetDeploymentHealthSummary(deployment)
+
+	// Assert
+	assert.Equal(t, DeploymentStatusHealthy, summary.Status)
+	assert.Len(t, summary.Issues, 0)
+}
+
+func TestHealthCalculator_GetDeploymentHealthSummary_WithScaledToZeroDeployment_ReturnsStoppedWithIssues(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	deployment := &k8sModels.Deployment{
+		Replicas: k8sModels.DeploymentReplicas{
+			Desired: 0,
+			Ready:   0,
+		},
+	}
+
+	// Act
+	summary := calculator.GetDeploymentHealthSummary(deployment)
+
+	// Assert
+	assert.Equal(t, DeploymentStatusStopped, summary.Status)
+	assert.Len(t, summary.Issues, 1)
+}
+
+func TestHealthCalculator_GetDeploymentHealthSummary_WithNoReplicasReadyDeployment_ReturnsUnhealthyWithIssues(t *testing.T) {
+	// Arrange
+	calculator := NewHealthCalculator()
+	deployment := &k8sModels.Deployment{
+		Replicas: k8sModels.DeploymentReplicas{
+			Desired: 3,
+			Ready:   0,
+		},
+	}
+
+	// Act
+	summary := calculator.GetDeploymentHealthSummary(deployment)
+
+	// Assert
+	assert.Equal(t, DeploymentStatusUnhealthy, summary.Status)
+	assert.Len(t, summary.Issues, 1)
 }

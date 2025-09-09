@@ -2,106 +2,136 @@ package commons
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestPermissionChecker_HasPermission(t *testing.T) {
+func TestPermissionChecker_HasPermission_WithUserHavingRequiredPermission_ReturnsTrue(t *testing.T) {
+	// Arrange
 	checker := NewPermissionChecker()
+	requiredPermissions := []string{"read", "write"}
+	userPermissions := []string{"read", "admin"}
 
-	tests := []struct {
-		name                string
-		requiredPermissions []string
-		userPermissions     []string
-		expected            bool
-	}{
-		{
-			name:                "user has required permission",
-			requiredPermissions: []string{"read", "write"},
-			userPermissions:     []string{"read", "admin"},
-			expected:            true,
-		},
-		{
-			name:                "user doesn't have required permission",
-			requiredPermissions: []string{"admin"},
-			userPermissions:     []string{"read", "write"},
-			expected:            false,
-		},
-		{
-			name:                "no permissions required",
-			requiredPermissions: []string{},
-			userPermissions:     []string{"read"},
-			expected:            true,
-		},
-		{
-			name:                "user has no permissions",
-			requiredPermissions: []string{"read"},
-			userPermissions:     []string{},
-			expected:            false,
-		},
-		{
-			name:                "case insensitive match",
-			requiredPermissions: []string{"READ"},
-			userPermissions:     []string{"read"},
-			expected:            true,
-		},
-		{
-			name:                "whitespace handling",
-			requiredPermissions: []string{" read "},
-			userPermissions:     []string{"read"},
-			expected:            true,
-		},
-	}
+	// Act
+	result := checker.HasPermission(requiredPermissions, userPermissions)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := checker.HasPermission(tt.requiredPermissions, tt.userPermissions)
-			if result != tt.expected {
-				t.Errorf("HasPermission() = %v, expected %v", result, tt.expected)
-			}
-		})
-	}
+	// Assert
+	assert.True(t, result)
 }
 
-func TestPermissionChecker_HasAllPermissions(t *testing.T) {
+func TestPermissionChecker_HasPermission_WithUserNotHavingRequiredPermission_ReturnsFalse(t *testing.T) {
+	// Arrange
 	checker := NewPermissionChecker()
+	requiredPermissions := []string{"admin"}
+	userPermissions := []string{"read", "write"}
 
-	tests := []struct {
-		name                string
-		requiredPermissions []string
-		userPermissions     []string
-		expected            bool
-	}{
-		{
-			name:                "user has all required permissions",
-			requiredPermissions: []string{"read", "write"},
-			userPermissions:     []string{"read", "write", "admin"},
-			expected:            true,
-		},
-		{
-			name:                "user missing one permission",
-			requiredPermissions: []string{"read", "write", "admin"},
-			userPermissions:     []string{"read", "write"},
-			expected:            false,
-		},
-		{
-			name:                "no permissions required",
-			requiredPermissions: []string{},
-			userPermissions:     []string{"read"},
-			expected:            true,
-		},
-		{
-			name:                "user has no permissions",
-			requiredPermissions: []string{"read"},
-			userPermissions:     []string{},
-			expected:            false,
-		},
-	}
+	// Act
+	result := checker.HasPermission(requiredPermissions, userPermissions)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := checker.HasAllPermissions(tt.requiredPermissions, tt.userPermissions)
-			if result != tt.expected {
-				t.Errorf("HasAllPermissions() = %v, expected %v", result, tt.expected)
-			}
-		})
-	}
+	// Assert
+	assert.False(t, result)
+}
+
+func TestPermissionChecker_HasPermission_WithNoPermissionsRequired_ReturnsTrue(t *testing.T) {
+	// Arrange
+	checker := NewPermissionChecker()
+	requiredPermissions := []string{}
+	userPermissions := []string{"read"}
+
+	// Act
+	result := checker.HasPermission(requiredPermissions, userPermissions)
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestPermissionChecker_HasPermission_WithUserHavingNoPermissions_ReturnsFalse(t *testing.T) {
+	// Arrange
+	checker := NewPermissionChecker()
+	requiredPermissions := []string{"read"}
+	userPermissions := []string{}
+
+	// Act
+	result := checker.HasPermission(requiredPermissions, userPermissions)
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestPermissionChecker_HasPermission_WithCaseInsensitiveMatch_ReturnsTrue(t *testing.T) {
+	// Arrange
+	checker := NewPermissionChecker()
+	requiredPermissions := []string{"READ"}
+	userPermissions := []string{"read"}
+
+	// Act
+	result := checker.HasPermission(requiredPermissions, userPermissions)
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestPermissionChecker_HasPermission_WithWhitespaceHandling_ReturnsTrue(t *testing.T) {
+	// Arrange
+	checker := NewPermissionChecker()
+	requiredPermissions := []string{" read "}
+	userPermissions := []string{"read"}
+
+	// Act
+	result := checker.HasPermission(requiredPermissions, userPermissions)
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestPermissionChecker_HasAllPermissions_WithUserHavingAllRequiredPermissions_ReturnsTrue(t *testing.T) {
+	// Arrange
+	checker := NewPermissionChecker()
+	requiredPermissions := []string{"read", "write"}
+	userPermissions := []string{"read", "write", "admin"}
+
+	// Act
+	result := checker.HasAllPermissions(requiredPermissions, userPermissions)
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestPermissionChecker_HasAllPermissions_WithUserMissingOnePermission_ReturnsFalse(t *testing.T) {
+	// Arrange
+	checker := NewPermissionChecker()
+	requiredPermissions := []string{"read", "write", "admin"}
+	userPermissions := []string{"read", "write"}
+
+	// Act
+	result := checker.HasAllPermissions(requiredPermissions, userPermissions)
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestPermissionChecker_HasAllPermissions_WithNoPermissionsRequired_ReturnsTrue(t *testing.T) {
+	// Arrange
+	checker := NewPermissionChecker()
+	requiredPermissions := []string{}
+	userPermissions := []string{"read"}
+
+	// Act
+	result := checker.HasAllPermissions(requiredPermissions, userPermissions)
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestPermissionChecker_HasAllPermissions_WithUserHavingNoPermissions_ReturnsFalse(t *testing.T) {
+	// Arrange
+	checker := NewPermissionChecker()
+	requiredPermissions := []string{"read"}
+	userPermissions := []string{}
+
+	// Act
+	result := checker.HasAllPermissions(requiredPermissions, userPermissions)
+
+	// Assert
+	assert.False(t, result)
 }

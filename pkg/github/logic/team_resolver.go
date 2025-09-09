@@ -23,6 +23,9 @@ func (tr *TeamResolver) ResolveUserTeams(userProfile *githubModels.UserProfile, 
 	}
 
 	if orgLogin == "" {
+		if userProfile.Teams == nil {
+			return []githubModels.GitHubTeam{}
+		}
 		return userProfile.Teams
 	}
 
@@ -147,8 +150,8 @@ type PermissionLevel int
 
 const (
 	PermissionLevelNone PermissionLevel = iota
-	PermissionLevelRead
 	PermissionLevelMember
+	PermissionLevelRead
 	PermissionLevelWrite
 	PermissionLevelAdmin
 )

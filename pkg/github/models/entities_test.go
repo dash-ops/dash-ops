@@ -6,114 +6,104 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGitHubUser_IsOrganization(t *testing.T) {
-	tests := []struct {
-		name     string
-		user     GitHubUser
-		expected bool
-	}{
-		{
-			name: "user account",
-			user: GitHubUser{
-				Login: "testuser",
-				Type:  "User",
-			},
-			expected: false,
-		},
-		{
-			name: "organization account",
-			user: GitHubUser{
-				Login: "testorg",
-				Type:  "Organization",
-			},
-			expected: true,
-		},
+func TestGitHubUser_IsOrganization_WithUserAccount_ReturnsFalse(t *testing.T) {
+	// Arrange
+	user := GitHubUser{
+		Login: "testuser",
+		Type:  "User",
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.user.IsOrganization()
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	result := user.IsOrganization()
+
+	// Assert
+	assert.False(t, result)
 }
 
-func TestGitHubUser_GetDisplayName(t *testing.T) {
-	tests := []struct {
-		name     string
-		user     GitHubUser
-		expected string
-	}{
-		{
-			name: "with name",
-			user: GitHubUser{
-				Login: "testuser",
-				Name:  "Test User",
-			},
-			expected: "Test User",
-		},
-		{
-			name: "without name",
-			user: GitHubUser{
-				Login: "testuser",
-				Name:  "",
-			},
-			expected: "testuser",
-		},
+func TestGitHubUser_IsOrganization_WithOrganizationAccount_ReturnsTrue(t *testing.T) {
+	// Arrange
+	user := GitHubUser{
+		Login: "testorg",
+		Type:  "Organization",
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.user.GetDisplayName()
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	result := user.IsOrganization()
+
+	// Assert
+	assert.True(t, result)
 }
 
-func TestGitHubUser_Validate(t *testing.T) {
-	tests := []struct {
-		name        string
-		user        GitHubUser
-		expectError bool
-	}{
-		{
-			name: "valid user",
-			user: GitHubUser{
-				ID:    12345,
-				Login: "testuser",
-			},
-			expectError: false,
-		},
-		{
-			name: "missing login",
-			user: GitHubUser{
-				ID: 12345,
-			},
-			expectError: true,
-		},
-		{
-			name: "missing ID",
-			user: GitHubUser{
-				Login: "testuser",
-			},
-			expectError: true,
-		},
+func TestGitHubUser_GetDisplayName_WithName_ReturnsName(t *testing.T) {
+	// Arrange
+	user := GitHubUser{
+		Login: "testuser",
+		Name:  "Test User",
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.user.Validate()
+	// Act
+	result := user.GetDisplayName()
 
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
+	// Assert
+	assert.Equal(t, "Test User", result)
 }
 
-func TestGitHubTeam_HasMember(t *testing.T) {
+func TestGitHubUser_GetDisplayName_WithoutName_ReturnsLogin(t *testing.T) {
+	// Arrange
+	user := GitHubUser{
+		Login: "testuser",
+		Name:  "",
+	}
+
+	// Act
+	result := user.GetDisplayName()
+
+	// Assert
+	assert.Equal(t, "testuser", result)
+}
+
+func TestGitHubUser_Validate_WithValidUser_ReturnsNoError(t *testing.T) {
+	// Arrange
+	user := GitHubUser{
+		ID:    12345,
+		Login: "testuser",
+	}
+
+	// Act
+	err := user.Validate()
+
+	// Assert
+	assert.NoError(t, err)
+}
+
+func TestGitHubUser_Validate_WithMissingLogin_ReturnsError(t *testing.T) {
+	// Arrange
+	user := GitHubUser{
+		ID: 12345,
+	}
+
+	// Act
+	err := user.Validate()
+
+	// Assert
+	assert.Error(t, err)
+}
+
+func TestGitHubUser_Validate_WithMissingID_ReturnsError(t *testing.T) {
+	// Arrange
+	user := GitHubUser{
+		Login: "testuser",
+	}
+
+	// Act
+	err := user.Validate()
+
+	// Assert
+	assert.Error(t, err)
+}
+
+func TestGitHubTeam_HasMember_WithExistingMember_ReturnsTrue(t *testing.T) {
+	// Arrange
 	team := GitHubTeam{
 		Name: "test-team",
 		Members: []GitHubUser{
@@ -122,117 +112,146 @@ func TestGitHubTeam_HasMember(t *testing.T) {
 			{Login: "User3"}, // Test case sensitivity
 		},
 	}
+	userLogin := "user1"
 
-	tests := []struct {
-		name      string
-		userLogin string
-		expected  bool
-	}{
-		{
-			name:      "existing member",
-			userLogin: "user1",
-			expected:  true,
-		},
-		{
-			name:      "case insensitive match",
-			userLogin: "USER3",
-			expected:  true,
-		},
-		{
-			name:      "non-existing member",
-			userLogin: "user4",
-			expected:  false,
-		},
-		{
-			name:      "empty login",
-			userLogin: "",
-			expected:  false,
-		},
-	}
+	// Act
+	result := team.HasMember(userLogin)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := team.HasMember(tt.userLogin)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Assert
+	assert.True(t, result)
 }
 
-func TestGitHubTeam_GetFullName(t *testing.T) {
-	tests := []struct {
-		name     string
-		team     GitHubTeam
-		expected string
-	}{
-		{
-			name: "with organization",
-			team: GitHubTeam{
-				Slug: "developers",
-				Organization: &GitHubOrganization{
-					Login: "myorg",
-				},
-			},
-			expected: "myorg/developers",
-		},
-		{
-			name: "without organization",
-			team: GitHubTeam{
-				Slug: "developers",
-			},
-			expected: "developers",
+func TestGitHubTeam_HasMember_WithCaseInsensitiveMatch_ReturnsTrue(t *testing.T) {
+	// Arrange
+	team := GitHubTeam{
+		Name: "test-team",
+		Members: []GitHubUser{
+			{Login: "user1"},
+			{Login: "user2"},
+			{Login: "User3"}, // Test case sensitivity
 		},
 	}
+	userLogin := "USER3"
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.team.GetFullName()
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	result := team.HasMember(userLogin)
+
+	// Assert
+	assert.True(t, result)
 }
 
-func TestGitHubRepository_CanUserPush(t *testing.T) {
-	tests := []struct {
-		name     string
-		repo     GitHubRepository
-		expected bool
-	}{
-		{
-			name: "user can push",
-			repo: GitHubRepository{
-				Permissions: &RepositoryPermissions{
-					Push: true,
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "user cannot push",
-			repo: GitHubRepository{
-				Permissions: &RepositoryPermissions{
-					Push: false,
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "no permissions set",
-			repo: GitHubRepository{
-				Permissions: nil,
-			},
-			expected: false,
+func TestGitHubTeam_HasMember_WithNonExistingMember_ReturnsFalse(t *testing.T) {
+	// Arrange
+	team := GitHubTeam{
+		Name: "test-team",
+		Members: []GitHubUser{
+			{Login: "user1"},
+			{Login: "user2"},
+			{Login: "User3"}, // Test case sensitivity
 		},
 	}
+	userLogin := "user4"
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.repo.CanUserPush()
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	result := team.HasMember(userLogin)
+
+	// Assert
+	assert.False(t, result)
 }
 
-func TestGitHubIssue_HasLabel(t *testing.T) {
+func TestGitHubTeam_HasMember_WithEmptyLogin_ReturnsFalse(t *testing.T) {
+	// Arrange
+	team := GitHubTeam{
+		Name: "test-team",
+		Members: []GitHubUser{
+			{Login: "user1"},
+			{Login: "user2"},
+			{Login: "User3"}, // Test case sensitivity
+		},
+	}
+	userLogin := ""
+
+	// Act
+	result := team.HasMember(userLogin)
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestGitHubTeam_GetFullName_WithOrganization_ReturnsFullName(t *testing.T) {
+	// Arrange
+	team := GitHubTeam{
+		Slug: "developers",
+		Organization: &GitHubOrganization{
+			Login: "myorg",
+		},
+	}
+
+	// Act
+	result := team.GetFullName()
+
+	// Assert
+	assert.Equal(t, "myorg/developers", result)
+}
+
+func TestGitHubTeam_GetFullName_WithoutOrganization_ReturnsSlug(t *testing.T) {
+	// Arrange
+	team := GitHubTeam{
+		Slug: "developers",
+	}
+
+	// Act
+	result := team.GetFullName()
+
+	// Assert
+	assert.Equal(t, "developers", result)
+}
+
+func TestGitHubRepository_CanUserPush_WithPushPermission_ReturnsTrue(t *testing.T) {
+	// Arrange
+	repo := GitHubRepository{
+		Permissions: &RepositoryPermissions{
+			Push: true,
+		},
+	}
+
+	// Act
+	result := repo.CanUserPush()
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestGitHubRepository_CanUserPush_WithoutPushPermission_ReturnsFalse(t *testing.T) {
+	// Arrange
+	repo := GitHubRepository{
+		Permissions: &RepositoryPermissions{
+			Push: false,
+		},
+	}
+
+	// Act
+	result := repo.CanUserPush()
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestGitHubRepository_CanUserPush_WithNoPermissionsSet_ReturnsFalse(t *testing.T) {
+	// Arrange
+	repo := GitHubRepository{
+		Permissions: nil,
+	}
+
+	// Act
+	result := repo.CanUserPush()
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestGitHubIssue_HasLabel_WithExistingLabel_ReturnsTrue(t *testing.T) {
+	// Arrange
 	issue := GitHubIssue{
 		Labels: []GitHubLabel{
 			{Name: "bug"},
@@ -240,88 +259,121 @@ func TestGitHubIssue_HasLabel(t *testing.T) {
 			{Name: "High Priority"},
 		},
 	}
+	labelName := "bug"
 
-	tests := []struct {
-		name      string
-		labelName string
-		expected  bool
-	}{
-		{
-			name:      "existing label",
-			labelName: "bug",
-			expected:  true,
-		},
-		{
-			name:      "case insensitive match",
-			labelName: "HIGH PRIORITY",
-			expected:  true,
-		},
-		{
-			name:      "non-existing label",
-			labelName: "documentation",
-			expected:  false,
-		},
-		{
-			name:      "empty label",
-			labelName: "",
-			expected:  false,
-		},
-	}
+	// Act
+	result := issue.HasLabel(labelName)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := issue.HasLabel(tt.labelName)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Assert
+	assert.True(t, result)
 }
 
-func TestGitHubPullRequest_GetChangeSize(t *testing.T) {
+func TestGitHubIssue_HasLabel_WithCaseInsensitiveMatch_ReturnsTrue(t *testing.T) {
+	// Arrange
+	issue := GitHubIssue{
+		Labels: []GitHubLabel{
+			{Name: "bug"},
+			{Name: "enhancement"},
+			{Name: "High Priority"},
+		},
+	}
+	labelName := "HIGH PRIORITY"
+
+	// Act
+	result := issue.HasLabel(labelName)
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestGitHubIssue_HasLabel_WithNonExistingLabel_ReturnsFalse(t *testing.T) {
+	// Arrange
+	issue := GitHubIssue{
+		Labels: []GitHubLabel{
+			{Name: "bug"},
+			{Name: "enhancement"},
+			{Name: "High Priority"},
+		},
+	}
+	labelName := "documentation"
+
+	// Act
+	result := issue.HasLabel(labelName)
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestGitHubIssue_HasLabel_WithEmptyLabel_ReturnsFalse(t *testing.T) {
+	// Arrange
+	issue := GitHubIssue{
+		Labels: []GitHubLabel{
+			{Name: "bug"},
+			{Name: "enhancement"},
+			{Name: "High Priority"},
+		},
+	}
+	labelName := ""
+
+	// Act
+	result := issue.HasLabel(labelName)
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestGitHubPullRequest_GetChangeSize_WithAdditionsAndDeletions_ReturnsTotal(t *testing.T) {
+	// Arrange
 	pr := GitHubPullRequest{
 		Additions: 150,
 		Deletions: 75,
 	}
 
+	// Act
 	result := pr.GetChangeSize()
+
+	// Assert
 	assert.Equal(t, 225, result)
 }
 
-func TestGitHubPullRequest_IsLargePR(t *testing.T) {
-	tests := []struct {
-		name     string
-		pr       GitHubPullRequest
-		expected bool
-	}{
-		{
-			name: "large PR",
-			pr: GitHubPullRequest{
-				Additions: 400,
-				Deletions: 200, // Total: 600 > 500
-			},
-			expected: true,
-		},
-		{
-			name: "small PR",
-			pr: GitHubPullRequest{
-				Additions: 50,
-				Deletions: 25, // Total: 75 < 500
-			},
-			expected: false,
-		},
-		{
-			name: "medium PR",
-			pr: GitHubPullRequest{
-				Additions: 300,
-				Deletions: 200, // Total: 500 = 500
-			},
-			expected: false,
-		},
+func TestGitHubPullRequest_IsLargePR_WithLargePR_ReturnsTrue(t *testing.T) {
+	// Arrange
+	pr := GitHubPullRequest{
+		Additions: 400,
+		Deletions: 200, // Total: 600 > 500
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.pr.IsLargePR()
-			assert.Equal(t, tt.expected, result)
-		})
+	// Act
+	result := pr.IsLargePR()
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestGitHubPullRequest_IsLargePR_WithSmallPR_ReturnsFalse(t *testing.T) {
+	// Arrange
+	pr := GitHubPullRequest{
+		Additions: 50,
+		Deletions: 25, // Total: 75 < 500
 	}
+
+	// Act
+	result := pr.IsLargePR()
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestGitHubPullRequest_IsLargePR_WithMediumPR_ReturnsFalse(t *testing.T) {
+	// Arrange
+	pr := GitHubPullRequest{
+		Additions: 300,
+		Deletions: 200, // Total: 500 = 500
+	}
+
+	// Act
+	result := pr.IsLargePR()
+
+	// Assert
+	assert.False(t, result)
 }

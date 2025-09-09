@@ -7,397 +7,481 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCluster_IsConnected(t *testing.T) {
-	tests := []struct {
-		name     string
-		cluster  Cluster
-		expected bool
-	}{
-		{
-			name: "connected cluster",
-			cluster: Cluster{
-				Name:    "test-cluster",
-				Context: "test-context",
-				Status:  ClusterStatusConnected,
-			},
-			expected: true,
-		},
-		{
-			name: "disconnected cluster",
-			cluster: Cluster{
-				Name:    "test-cluster",
-				Context: "test-context",
-				Status:  ClusterStatusDisconnected,
-			},
-			expected: false,
-		},
-		{
-			name: "error cluster",
-			cluster: Cluster{
-				Name:    "test-cluster",
-				Context: "test-context",
-				Status:  ClusterStatusError,
-			},
-			expected: false,
-		},
+func TestCluster_IsConnected_WithConnectedCluster_ReturnsTrue(t *testing.T) {
+	// Arrange
+	cluster := Cluster{
+		Name:    "test-cluster",
+		Context: "test-context",
+		Status:  ClusterStatusConnected,
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.cluster.IsConnected()
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	result := cluster.IsConnected()
+
+	// Assert
+	assert.True(t, result)
 }
 
-func TestCluster_Validate(t *testing.T) {
-	tests := []struct {
-		name        string
-		cluster     Cluster
-		expectError bool
-	}{
-		{
-			name: "valid cluster",
-			cluster: Cluster{
-				Name:    "test-cluster",
-				Context: "test-context",
-			},
-			expectError: false,
-		},
-		{
-			name: "missing name",
-			cluster: Cluster{
-				Context: "test-context",
-			},
-			expectError: true,
-		},
-		{
-			name: "missing context",
-			cluster: Cluster{
-				Name: "test-cluster",
-			},
-			expectError: true,
-		},
-		{
-			name:        "empty cluster",
-			cluster:     Cluster{},
-			expectError: true,
-		},
+func TestCluster_IsConnected_WithDisconnectedCluster_ReturnsFalse(t *testing.T) {
+	// Arrange
+	cluster := Cluster{
+		Name:    "test-cluster",
+		Context: "test-context",
+		Status:  ClusterStatusDisconnected,
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.cluster.Validate()
+	// Act
+	result := cluster.IsConnected()
 
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
+	// Assert
+	assert.False(t, result)
 }
 
-func TestNode_IsReady(t *testing.T) {
-	tests := []struct {
-		name     string
-		node     Node
-		expected bool
-	}{
-		{
-			name: "ready node",
-			node: Node{
-				Name:   "test-node",
-				Status: NodeStatusReady,
-			},
-			expected: true,
-		},
-		{
-			name: "not ready node",
-			node: Node{
-				Name:   "test-node",
-				Status: NodeStatusNotReady,
-			},
-			expected: false,
-		},
-		{
-			name: "unknown status node",
-			node: Node{
-				Name:   "test-node",
-				Status: NodeStatusUnknown,
-			},
-			expected: false,
-		},
+func TestCluster_IsConnected_WithErrorCluster_ReturnsFalse(t *testing.T) {
+	// Arrange
+	cluster := Cluster{
+		Name:    "test-cluster",
+		Context: "test-context",
+		Status:  ClusterStatusError,
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.node.IsReady()
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	result := cluster.IsConnected()
+
+	// Assert
+	assert.False(t, result)
 }
 
-func TestNode_HasRole(t *testing.T) {
+func TestCluster_Validate_WithValidCluster_ReturnsNoError(t *testing.T) {
+	// Arrange
+	cluster := Cluster{
+		Name:    "test-cluster",
+		Context: "test-context",
+	}
+
+	// Act
+	err := cluster.Validate()
+
+	// Assert
+	assert.NoError(t, err)
+}
+
+func TestCluster_Validate_WithMissingName_ReturnsError(t *testing.T) {
+	// Arrange
+	cluster := Cluster{
+		Context: "test-context",
+	}
+
+	// Act
+	err := cluster.Validate()
+
+	// Assert
+	assert.Error(t, err)
+}
+
+func TestCluster_Validate_WithMissingContext_ReturnsError(t *testing.T) {
+	// Arrange
+	cluster := Cluster{
+		Name: "test-cluster",
+	}
+
+	// Act
+	err := cluster.Validate()
+
+	// Assert
+	assert.Error(t, err)
+}
+
+func TestCluster_Validate_WithEmptyCluster_ReturnsError(t *testing.T) {
+	// Arrange
+	cluster := Cluster{}
+
+	// Act
+	err := cluster.Validate()
+
+	// Assert
+	assert.Error(t, err)
+}
+
+func TestNode_IsReady_WithReadyNode_ReturnsTrue(t *testing.T) {
+	// Arrange
+	node := Node{
+		Name:   "test-node",
+		Status: NodeStatusReady,
+	}
+
+	// Act
+	result := node.IsReady()
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestNode_IsReady_WithNotReadyNode_ReturnsFalse(t *testing.T) {
+	// Arrange
+	node := Node{
+		Name:   "test-node",
+		Status: NodeStatusNotReady,
+	}
+
+	// Act
+	result := node.IsReady()
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestNode_IsReady_WithUnknownStatusNode_ReturnsFalse(t *testing.T) {
+	// Arrange
+	node := Node{
+		Name:   "test-node",
+		Status: NodeStatusUnknown,
+	}
+
+	// Act
+	result := node.IsReady()
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestNode_HasRole_WithMasterRole_ReturnsTrue(t *testing.T) {
+	// Arrange
 	node := Node{
 		Name:  "test-node",
 		Roles: []string{"master", "control-plane"},
 	}
+	role := "master"
 
-	assert.True(t, node.HasRole("master"))
-	assert.True(t, node.HasRole("control-plane"))
-	assert.False(t, node.HasRole("worker"))
-	assert.False(t, node.HasRole(""))
+	// Act
+	result := node.HasRole(role)
+
+	// Assert
+	assert.True(t, result)
 }
 
-func TestNode_IsMaster(t *testing.T) {
-	tests := []struct {
-		name     string
-		node     Node
-		expected bool
-	}{
-		{
-			name: "master node",
-			node: Node{
-				Name:  "master-node",
-				Roles: []string{"master"},
-			},
-			expected: true,
-		},
-		{
-			name: "control-plane node",
-			node: Node{
-				Name:  "control-plane-node",
-				Roles: []string{"control-plane"},
-			},
-			expected: true,
-		},
-		{
-			name: "worker node",
-			node: Node{
-				Name:  "worker-node",
-				Roles: []string{"worker"},
-			},
-			expected: false,
-		},
-		{
-			name: "node with no roles",
-			node: Node{
-				Name:  "no-role-node",
-				Roles: []string{},
-			},
-			expected: false,
-		},
+func TestNode_HasRole_WithControlPlaneRole_ReturnsTrue(t *testing.T) {
+	// Arrange
+	node := Node{
+		Name:  "test-node",
+		Roles: []string{"master", "control-plane"},
 	}
+	role := "control-plane"
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.node.IsMaster()
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	result := node.HasRole(role)
+
+	// Assert
+	assert.True(t, result)
 }
 
-func TestDeployment_IsHealthy(t *testing.T) {
-	tests := []struct {
-		name       string
-		deployment Deployment
-		expected   bool
-	}{
-		{
-			name: "healthy deployment",
-			deployment: Deployment{
-				Name: "test-deployment",
-				Replicas: DeploymentReplicas{
-					Desired: 3,
-					Ready:   3,
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "degraded deployment",
-			deployment: Deployment{
-				Name: "test-deployment",
-				Replicas: DeploymentReplicas{
-					Desired: 3,
-					Ready:   2,
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "stopped deployment",
-			deployment: Deployment{
-				Name: "test-deployment",
-				Replicas: DeploymentReplicas{
-					Desired: 0,
-					Ready:   0,
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "failed deployment",
-			deployment: Deployment{
-				Name: "test-deployment",
-				Replicas: DeploymentReplicas{
-					Desired: 3,
-					Ready:   0,
-				},
-			},
-			expected: false,
-		},
+func TestNode_HasRole_WithWorkerRole_ReturnsFalse(t *testing.T) {
+	// Arrange
+	node := Node{
+		Name:  "test-node",
+		Roles: []string{"master", "control-plane"},
 	}
+	role := "worker"
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.deployment.IsHealthy()
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	result := node.HasRole(role)
+
+	// Assert
+	assert.False(t, result)
 }
 
-func TestDeployment_GetAvailabilityPercentage(t *testing.T) {
-	tests := []struct {
-		name       string
-		deployment Deployment
-		expected   float64
-	}{
-		{
-			name: "100% available",
-			deployment: Deployment{
-				Replicas: DeploymentReplicas{
-					Desired: 3,
-					Ready:   3,
-				},
-			},
-			expected: 100.0,
-		},
-		{
-			name: "66.67% available",
-			deployment: Deployment{
-				Replicas: DeploymentReplicas{
-					Desired: 3,
-					Ready:   2,
-				},
-			},
-			expected: 66.66666666666666,
-		},
-		{
-			name: "0% available",
-			deployment: Deployment{
-				Replicas: DeploymentReplicas{
-					Desired: 3,
-					Ready:   0,
-				},
-			},
-			expected: 0.0,
-		},
-		{
-			name: "stopped deployment",
-			deployment: Deployment{
-				Replicas: DeploymentReplicas{
-					Desired: 0,
-					Ready:   0,
-				},
-			},
-			expected: 0.0,
-		},
+func TestNode_HasRole_WithEmptyRole_ReturnsFalse(t *testing.T) {
+	// Arrange
+	node := Node{
+		Name:  "test-node",
+		Roles: []string{"master", "control-plane"},
 	}
+	role := ""
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.deployment.GetAvailabilityPercentage()
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	result := node.HasRole(role)
+
+	// Assert
+	assert.False(t, result)
 }
 
-func TestPod_IsRunning(t *testing.T) {
-	tests := []struct {
-		name     string
-		pod      Pod
-		expected bool
-	}{
-		{
-			name: "running pod",
-			pod: Pod{
-				Name:   "test-pod",
-				Status: PodStatusRunning,
-			},
-			expected: true,
-		},
-		{
-			name: "pending pod",
-			pod: Pod{
-				Name:   "test-pod",
-				Status: PodStatusPending,
-			},
-			expected: false,
-		},
-		{
-			name: "failed pod",
-			pod: Pod{
-				Name:   "test-pod",
-				Status: PodStatusFailed,
-			},
-			expected: false,
-		},
+func TestNode_IsMaster_WithMasterNode_ReturnsTrue(t *testing.T) {
+	// Arrange
+	node := Node{
+		Name:  "master-node",
+		Roles: []string{"master"},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.pod.IsRunning()
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	result := node.IsMaster()
+
+	// Assert
+	assert.True(t, result)
 }
 
-func TestPod_IsReady(t *testing.T) {
-	tests := []struct {
-		name     string
-		pod      Pod
-		expected bool
-	}{
-		{
-			name: "all containers ready",
-			pod: Pod{
-				Containers: []Container{
-					{Name: "container1", Ready: true},
-					{Name: "container2", Ready: true},
-				},
-			},
-			expected: true,
-		},
-		{
-			name: "some containers not ready",
-			pod: Pod{
-				Containers: []Container{
-					{Name: "container1", Ready: true},
-					{Name: "container2", Ready: false},
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "no containers",
-			pod: Pod{
-				Containers: []Container{},
-			},
-			expected: false,
-		},
+func TestNode_IsMaster_WithControlPlaneNode_ReturnsTrue(t *testing.T) {
+	// Arrange
+	node := Node{
+		Name:  "control-plane-node",
+		Roles: []string{"control-plane"},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.pod.IsReady()
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Act
+	result := node.IsMaster()
+
+	// Assert
+	assert.True(t, result)
 }
 
-func TestPod_GetTotalRestarts(t *testing.T) {
+func TestNode_IsMaster_WithWorkerNode_ReturnsFalse(t *testing.T) {
+	// Arrange
+	node := Node{
+		Name:  "worker-node",
+		Roles: []string{"worker"},
+	}
+
+	// Act
+	result := node.IsMaster()
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestNode_IsMaster_WithNodeWithNoRoles_ReturnsFalse(t *testing.T) {
+	// Arrange
+	node := Node{
+		Name:  "no-role-node",
+		Roles: []string{},
+	}
+
+	// Act
+	result := node.IsMaster()
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestDeployment_IsHealthy_WithHealthyDeployment_ReturnsTrue(t *testing.T) {
+	// Arrange
+	deployment := Deployment{
+		Name: "test-deployment",
+		Replicas: DeploymentReplicas{
+			Desired: 3,
+			Ready:   3,
+		},
+	}
+
+	// Act
+	result := deployment.IsHealthy()
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestDeployment_IsHealthy_WithDegradedDeployment_ReturnsFalse(t *testing.T) {
+	// Arrange
+	deployment := Deployment{
+		Name: "test-deployment",
+		Replicas: DeploymentReplicas{
+			Desired: 3,
+			Ready:   2,
+		},
+	}
+
+	// Act
+	result := deployment.IsHealthy()
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestDeployment_IsHealthy_WithStoppedDeployment_ReturnsFalse(t *testing.T) {
+	// Arrange
+	deployment := Deployment{
+		Name: "test-deployment",
+		Replicas: DeploymentReplicas{
+			Desired: 0,
+			Ready:   0,
+		},
+	}
+
+	// Act
+	result := deployment.IsHealthy()
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestDeployment_IsHealthy_WithFailedDeployment_ReturnsFalse(t *testing.T) {
+	// Arrange
+	deployment := Deployment{
+		Name: "test-deployment",
+		Replicas: DeploymentReplicas{
+			Desired: 3,
+			Ready:   0,
+		},
+	}
+
+	// Act
+	result := deployment.IsHealthy()
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestDeployment_GetAvailabilityPercentage_With100PercentAvailable_Returns100(t *testing.T) {
+	// Arrange
+	deployment := Deployment{
+		Replicas: DeploymentReplicas{
+			Desired: 3,
+			Ready:   3,
+		},
+	}
+
+	// Act
+	result := deployment.GetAvailabilityPercentage()
+
+	// Assert
+	assert.Equal(t, 100.0, result)
+}
+
+func TestDeployment_GetAvailabilityPercentage_With66PercentAvailable_Returns66(t *testing.T) {
+	// Arrange
+	deployment := Deployment{
+		Replicas: DeploymentReplicas{
+			Desired: 3,
+			Ready:   2,
+		},
+	}
+
+	// Act
+	result := deployment.GetAvailabilityPercentage()
+
+	// Assert
+	assert.Equal(t, 66.66666666666666, result)
+}
+
+func TestDeployment_GetAvailabilityPercentage_With0PercentAvailable_Returns0(t *testing.T) {
+	// Arrange
+	deployment := Deployment{
+		Replicas: DeploymentReplicas{
+			Desired: 3,
+			Ready:   0,
+		},
+	}
+
+	// Act
+	result := deployment.GetAvailabilityPercentage()
+
+	// Assert
+	assert.Equal(t, 0.0, result)
+}
+
+func TestDeployment_GetAvailabilityPercentage_WithStoppedDeployment_Returns0(t *testing.T) {
+	// Arrange
+	deployment := Deployment{
+		Replicas: DeploymentReplicas{
+			Desired: 0,
+			Ready:   0,
+		},
+	}
+
+	// Act
+	result := deployment.GetAvailabilityPercentage()
+
+	// Assert
+	assert.Equal(t, 0.0, result)
+}
+
+func TestPod_IsRunning_WithRunningPod_ReturnsTrue(t *testing.T) {
+	// Arrange
+	pod := Pod{
+		Name:   "test-pod",
+		Status: PodStatusRunning,
+	}
+
+	// Act
+	result := pod.IsRunning()
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestPod_IsRunning_WithPendingPod_ReturnsFalse(t *testing.T) {
+	// Arrange
+	pod := Pod{
+		Name:   "test-pod",
+		Status: PodStatusPending,
+	}
+
+	// Act
+	result := pod.IsRunning()
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestPod_IsRunning_WithFailedPod_ReturnsFalse(t *testing.T) {
+	// Arrange
+	pod := Pod{
+		Name:   "test-pod",
+		Status: PodStatusFailed,
+	}
+
+	// Act
+	result := pod.IsRunning()
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestPod_IsReady_WithAllContainersReady_ReturnsTrue(t *testing.T) {
+	// Arrange
+	pod := Pod{
+		Containers: []Container{
+			{Name: "container1", Ready: true},
+			{Name: "container2", Ready: true},
+		},
+	}
+
+	// Act
+	result := pod.IsReady()
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestPod_IsReady_WithSomeContainersNotReady_ReturnsFalse(t *testing.T) {
+	// Arrange
+	pod := Pod{
+		Containers: []Container{
+			{Name: "container1", Ready: true},
+			{Name: "container2", Ready: false},
+		},
+	}
+
+	// Act
+	result := pod.IsReady()
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestPod_IsReady_WithNoContainers_ReturnsFalse(t *testing.T) {
+	// Arrange
+	pod := Pod{
+		Containers: []Container{},
+	}
+
+	// Act
+	result := pod.IsReady()
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestPod_GetTotalRestarts_WithMultipleContainers_ReturnsSum(t *testing.T) {
+	// Arrange
 	pod := Pod{
 		Containers: []Container{
 			{Name: "container1", RestartCount: 2},
@@ -406,55 +490,60 @@ func TestPod_GetTotalRestarts(t *testing.T) {
 		},
 	}
 
+	// Act
 	result := pod.GetTotalRestarts()
+
+	// Assert
 	assert.Equal(t, int32(5), result)
 }
 
-func TestContainer_IsRunning(t *testing.T) {
-	tests := []struct {
-		name      string
-		container Container
-		expected  bool
-	}{
-		{
-			name: "running container",
-			container: Container{
-				State: ContainerState{
-					Running: &ContainerStateRunning{
-						StartedAt: time.Now(),
-					},
-				},
+func TestContainer_IsRunning_WithRunningContainer_ReturnsTrue(t *testing.T) {
+	// Arrange
+	container := Container{
+		State: ContainerState{
+			Running: &ContainerStateRunning{
+				StartedAt: time.Now(),
 			},
-			expected: true,
-		},
-		{
-			name: "waiting container",
-			container: Container{
-				State: ContainerState{
-					Waiting: &ContainerStateWaiting{
-						Reason: "ImagePullBackOff",
-					},
-				},
-			},
-			expected: false,
-		},
-		{
-			name: "terminated container",
-			container: Container{
-				State: ContainerState{
-					Terminated: &ContainerStateTerminated{
-						ExitCode: 0,
-					},
-				},
-			},
-			expected: false,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := tt.container.IsRunning()
-			assert.Equal(t, tt.expected, result)
-		})
+	// Act
+	result := container.IsRunning()
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestContainer_IsRunning_WithWaitingContainer_ReturnsFalse(t *testing.T) {
+	// Arrange
+	container := Container{
+		State: ContainerState{
+			Waiting: &ContainerStateWaiting{
+				Reason: "ImagePullBackOff",
+			},
+		},
 	}
+
+	// Act
+	result := container.IsRunning()
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestContainer_IsRunning_WithTerminatedContainer_ReturnsFalse(t *testing.T) {
+	// Arrange
+	container := Container{
+		State: ContainerState{
+			Terminated: &ContainerStateTerminated{
+				ExitCode: 0,
+			},
+		},
+	}
+
+	// Act
+	result := container.IsRunning()
+
+	// Assert
+	assert.False(t, result)
 }

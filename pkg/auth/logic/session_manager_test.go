@@ -10,9 +10,9 @@ import (
 	authModels "github.com/dash-ops/dash-ops/pkg/auth/models"
 )
 
-func TestSessionManager_CreateSession(t *testing.T) {
+func TestSessionManager_CreateSession_WithValidUserAndToken_ReturnsSession(t *testing.T) {
+	// Arrange
 	manager := NewSessionManager(24 * time.Hour)
-
 	user := &authModels.User{
 		ID:       "user-123",
 		Username: "testuser",
@@ -20,171 +20,191 @@ func TestSessionManager_CreateSession(t *testing.T) {
 		Email:    "test@example.com",
 		Provider: authModels.ProviderGitHub,
 	}
-
 	token := &authModels.Token{
 		AccessToken: "access-token",
 		TokenType:   "Bearer",
 		ExpiresAt:   time.Now().Add(time.Hour),
 		Provider:    authModels.ProviderGitHub,
 	}
+	ipAddress := "192.168.1.1"
+	userAgent := "Mozilla/5.0"
 
-	tests := []struct {
-		name        string
-		user        *authModels.User
-		token       *authModels.Token
-		ipAddress   string
-		userAgent   string
-		expectError bool
-	}{
-		{
-			name:        "valid session creation",
-			user:        user,
-			token:       token,
-			ipAddress:   "192.168.1.1",
-			userAgent:   "Mozilla/5.0",
-			expectError: false,
-		},
-		{
-			name:        "nil user",
-			user:        nil,
-			token:       token,
-			ipAddress:   "192.168.1.1",
-			userAgent:   "Mozilla/5.0",
-			expectError: true,
-		},
-		{
-			name:        "nil token",
-			user:        user,
-			token:       nil,
-			ipAddress:   "192.168.1.1",
-			userAgent:   "Mozilla/5.0",
-			expectError: true,
-		},
-	}
+	// Act
+	session, err := manager.CreateSession(user, token, ipAddress, userAgent)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			session, err := manager.CreateSession(tt.user, tt.token, tt.ipAddress, tt.userAgent)
-
-			if tt.expectError {
-				assert.Error(t, err)
-				assert.Nil(t, session)
-			} else {
-				require.NoError(t, err)
-				require.NotNil(t, session)
-
-				assert.NotEmpty(t, session.SessionID)
-				assert.Equal(t, tt.user.ID, session.UserID)
-				assert.Equal(t, tt.token, session.Token)
-				assert.Equal(t, tt.ipAddress, session.IPAddress)
-				assert.Equal(t, tt.userAgent, session.UserAgent)
-				assert.True(t, session.IsActive())
-				assert.False(t, time.Now().After(session.ExpiresAt))
-			}
-		})
-	}
+	// Assert
+	require.NoError(t, err)
+	require.NotNil(t, session)
+	assert.NotEmpty(t, session.SessionID)
+	assert.Equal(t, user.ID, session.UserID)
+	assert.Equal(t, token, session.Token)
+	assert.Equal(t, ipAddress, session.IPAddress)
+	assert.Equal(t, userAgent, session.UserAgent)
+	assert.True(t, session.IsActive())
+	assert.False(t, time.Now().After(session.ExpiresAt))
 }
 
-func TestSessionManager_ValidateSession(t *testing.T) {
+func TestSessionManager_CreateSession_WithNilUser_ReturnsError(t *testing.T) {
+	// Arrange
 	manager := NewSessionManager(24 * time.Hour)
+	token := &authModels.Token{
+		AccessToken: "access-token",
+		TokenType:   "Bearer",
+		ExpiresAt:   time.Now().Add(time.Hour),
+		Provider:    authModels.ProviderGitHub,
+	}
+	ipAddress := "192.168.1.1"
+	userAgent := "Mozilla/5.0"
 
+	// Act
+	session, err := manager.CreateSession(nil, token, ipAddress, userAgent)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, session)
+}
+
+func TestSessionManager_CreateSession_WithNilToken_ReturnsError(t *testing.T) {
+	// Arrange
+	manager := NewSessionManager(24 * time.Hour)
+	user := &authModels.User{
+		ID:       "user-123",
+		Username: "testuser",
+		Name:     "Test User",
+		Email:    "test@example.com",
+		Provider: authModels.ProviderGitHub,
+	}
+	ipAddress := "192.168.1.1"
+	userAgent := "Mozilla/5.0"
+
+	// Act
+	session, err := manager.CreateSession(user, nil, ipAddress, userAgent)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Nil(t, session)
+}
+
+func TestSessionManager_ValidateSession_WithValidSession_ReturnsNoError(t *testing.T) {
+	// Arrange
+	manager := NewSessionManager(24 * time.Hour)
 	validToken := &authModels.Token{
 		AccessToken: "access-token",
 		TokenType:   "Bearer",
 		ExpiresAt:   time.Now().Add(time.Hour),
 		Provider:    authModels.ProviderGitHub,
 	}
+	session := &authModels.AuthSession{
+		SessionID: "session-123",
+		UserID:    "user-123",
+		Token:     validToken,
+		CreatedAt: time.Now(),
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+		LastUsed:  time.Now(),
+	}
 
+	// Act
+	err := manager.ValidateSession(session)
+
+	// Assert
+	assert.NoError(t, err)
+}
+
+func TestSessionManager_ValidateSession_WithNilSession_ReturnsError(t *testing.T) {
+	// Arrange
+	manager := NewSessionManager(24 * time.Hour)
+
+	// Act
+	err := manager.ValidateSession(nil)
+
+	// Assert
+	assert.Error(t, err)
+}
+
+func TestSessionManager_ValidateSession_WithEmptySessionID_ReturnsError(t *testing.T) {
+	// Arrange
+	manager := NewSessionManager(24 * time.Hour)
+	validToken := &authModels.Token{
+		AccessToken: "access-token",
+		TokenType:   "Bearer",
+		ExpiresAt:   time.Now().Add(time.Hour),
+		Provider:    authModels.ProviderGitHub,
+	}
+	session := &authModels.AuthSession{
+		SessionID: "",
+		UserID:    "user-123",
+		Token:     validToken,
+		CreatedAt: time.Now(),
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+		LastUsed:  time.Now(),
+	}
+
+	// Act
+	err := manager.ValidateSession(session)
+
+	// Assert
+	assert.Error(t, err)
+}
+
+func TestSessionManager_ValidateSession_WithEmptyUserID_ReturnsError(t *testing.T) {
+	// Arrange
+	manager := NewSessionManager(24 * time.Hour)
+	validToken := &authModels.Token{
+		AccessToken: "access-token",
+		TokenType:   "Bearer",
+		ExpiresAt:   time.Now().Add(time.Hour),
+		Provider:    authModels.ProviderGitHub,
+	}
+	session := &authModels.AuthSession{
+		SessionID: "session-123",
+		UserID:    "",
+		Token:     validToken,
+		CreatedAt: time.Now(),
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+		LastUsed:  time.Now(),
+	}
+
+	// Act
+	err := manager.ValidateSession(session)
+
+	// Assert
+	assert.Error(t, err)
+}
+
+func TestSessionManager_ValidateSession_WithExpiredSession_ReturnsError(t *testing.T) {
+	// Arrange
+	manager := NewSessionManager(24 * time.Hour)
 	expiredToken := &authModels.Token{
 		AccessToken: "expired-token",
 		TokenType:   "Bearer",
 		ExpiresAt:   time.Now().Add(-time.Hour), // Expired
 		Provider:    authModels.ProviderGitHub,
 	}
-
-	tests := []struct {
-		name        string
-		session     *authModels.AuthSession
-		expectError bool
-	}{
-		{
-			name: "valid session",
-			session: &authModels.AuthSession{
-				SessionID: "session-123",
-				UserID:    "user-123",
-				Token:     validToken,
-				CreatedAt: time.Now(),
-				ExpiresAt: time.Now().Add(24 * time.Hour),
-				LastUsed:  time.Now(),
-			},
-			expectError: false,
-		},
-		{
-			name:        "nil session",
-			session:     nil,
-			expectError: true,
-		},
-		{
-			name: "empty session ID",
-			session: &authModels.AuthSession{
-				SessionID: "",
-				UserID:    "user-123",
-				Token:     validToken,
-				CreatedAt: time.Now(),
-				ExpiresAt: time.Now().Add(24 * time.Hour),
-				LastUsed:  time.Now(),
-			},
-			expectError: true,
-		},
-		{
-			name: "empty user ID",
-			session: &authModels.AuthSession{
-				SessionID: "session-123",
-				UserID:    "",
-				Token:     validToken,
-				CreatedAt: time.Now(),
-				ExpiresAt: time.Now().Add(24 * time.Hour),
-				LastUsed:  time.Now(),
-			},
-			expectError: true,
-		},
-		{
-			name: "expired session",
-			session: &authModels.AuthSession{
-				SessionID: "session-123",
-				UserID:    "user-123",
-				Token:     expiredToken,
-				CreatedAt: time.Now().Add(-25 * time.Hour),
-				ExpiresAt: time.Now().Add(-time.Hour), // Expired
-				LastUsed:  time.Now().Add(-time.Hour),
-			},
-			expectError: true,
-		},
+	session := &authModels.AuthSession{
+		SessionID: "session-123",
+		UserID:    "user-123",
+		Token:     expiredToken,
+		CreatedAt: time.Now().Add(-25 * time.Hour),
+		ExpiresAt: time.Now().Add(-time.Hour), // Expired
+		LastUsed:  time.Now().Add(-time.Hour),
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := manager.ValidateSession(tt.session)
+	// Act
+	err := manager.ValidateSession(session)
 
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
+	// Assert
+	assert.Error(t, err)
 }
 
-func TestSessionManager_RefreshSession(t *testing.T) {
+func TestSessionManager_RefreshSession_WithValidSession_ExtendsExpiry(t *testing.T) {
+	// Arrange
 	manager := NewSessionManager(24 * time.Hour)
-
 	validToken := &authModels.Token{
 		AccessToken: "access-token",
 		TokenType:   "Bearer",
 		ExpiresAt:   time.Now().Add(time.Hour),
 		Provider:    authModels.ProviderGitHub,
 	}
-
 	session := &authModels.AuthSession{
 		SessionID: "session-123",
 		UserID:    "user-123",
@@ -193,64 +213,69 @@ func TestSessionManager_RefreshSession(t *testing.T) {
 		ExpiresAt: time.Now().Add(time.Hour), // Will expire soon
 		LastUsed:  time.Now(),
 	}
-
 	originalExpiresAt := session.ExpiresAt
 	originalLastUsed := session.LastUsed
 
 	// Wait a bit to ensure time difference
 	time.Sleep(10 * time.Millisecond)
 
+	// Act
 	err := manager.RefreshSession(session)
-	require.NoError(t, err)
 
-	// Check that expiry was extended
+	// Assert
+	require.NoError(t, err)
 	assert.True(t, session.ExpiresAt.After(originalExpiresAt))
 	assert.True(t, session.LastUsed.After(originalLastUsed))
 }
 
-func TestSessionManager_IsSessionExpired(t *testing.T) {
+func TestSessionManager_IsSessionExpired_WithNilSession_ReturnsTrue(t *testing.T) {
+	// Arrange
 	manager := NewSessionManager(24 * time.Hour)
 
-	tests := []struct {
-		name     string
-		session  *authModels.AuthSession
-		expected bool
-	}{
-		{
-			name:     "nil session",
-			session:  nil,
-			expected: true,
-		},
-		{
-			name: "active session",
-			session: &authModels.AuthSession{
-				ExpiresAt: time.Now().Add(time.Hour),
-			},
-			expected: false,
-		},
-		{
-			name: "expired session",
-			session: &authModels.AuthSession{
-				ExpiresAt: time.Now().Add(-time.Hour),
-			},
-			expected: true,
-		},
-	}
+	// Act
+	result := manager.IsSessionExpired(nil)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := manager.IsSessionExpired(tt.session)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
+	// Assert
+	assert.True(t, result)
 }
 
-func TestSessionManager_generateSessionID(t *testing.T) {
+func TestSessionManager_IsSessionExpired_WithActiveSession_ReturnsFalse(t *testing.T) {
+	// Arrange
+	manager := NewSessionManager(24 * time.Hour)
+	session := &authModels.AuthSession{
+		ExpiresAt: time.Now().Add(time.Hour),
+	}
+
+	// Act
+	result := manager.IsSessionExpired(session)
+
+	// Assert
+	assert.False(t, result)
+}
+
+func TestSessionManager_IsSessionExpired_WithExpiredSession_ReturnsTrue(t *testing.T) {
+	// Arrange
+	manager := NewSessionManager(24 * time.Hour)
+	session := &authModels.AuthSession{
+		ExpiresAt: time.Now().Add(-time.Hour),
+	}
+
+	// Act
+	result := manager.IsSessionExpired(session)
+
+	// Assert
+	assert.True(t, result)
+}
+
+func TestSessionManager_generateSessionID_GeneratesUniqueIDs(t *testing.T) {
+	// Arrange
 	manager := NewSessionManager(24 * time.Hour)
 
+	// Act
 	id1, err1 := manager.generateSessionID()
 	id2, err2 := manager.generateSessionID()
 
+	// Assert
 	assert.NoError(t, err1)
 	assert.NoError(t, err2)
 	assert.NotEmpty(t, id1)

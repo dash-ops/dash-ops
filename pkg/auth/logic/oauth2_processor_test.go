@@ -8,9 +8,9 @@ import (
 	authModels "github.com/dash-ops/dash-ops/pkg/auth/models"
 )
 
-func TestOAuth2Processor_GenerateAuthURL(t *testing.T) {
+func TestOAuth2Processor_GenerateAuthURL_WithValidOAuth2Config_ReturnsURL(t *testing.T) {
+	// Arrange
 	processor := NewOAuth2Processor()
-
 	config := &authModels.AuthConfig{
 		Provider:     authModels.ProviderGitHub,
 		Method:       authModels.MethodOAuth2,
@@ -22,56 +22,42 @@ func TestOAuth2Processor_GenerateAuthURL(t *testing.T) {
 		Scopes:       []string{"user", "repo"},
 		Enabled:      true,
 	}
+	state := "test-state"
 
-	tests := []struct {
-		name        string
-		config      *authModels.AuthConfig
-		state       string
-		expectError bool
-	}{
-		{
-			name:        "valid OAuth2 config",
-			config:      config,
-			state:       "test-state",
-			expectError: false,
-		},
-		{
-			name: "non-OAuth2 config",
-			config: &authModels.AuthConfig{
-				Provider: authModels.ProviderGitHub,
-				Method:   authModels.MethodJWT,
-			},
-			state:       "test-state",
-			expectError: true,
-		},
+	// Act
+	url, err := processor.GenerateAuthURL(config, state)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.NotEmpty(t, url)
+	assert.Contains(t, url, config.AuthURL)
+	assert.Contains(t, url, config.ClientID)
+	assert.Contains(t, url, state)
+}
+
+func TestOAuth2Processor_GenerateAuthURL_WithNonOAuth2Config_ReturnsError(t *testing.T) {
+	// Arrange
+	processor := NewOAuth2Processor()
+	config := &authModels.AuthConfig{
+		Provider: authModels.ProviderGitHub,
+		Method:   authModels.MethodJWT,
 	}
+	state := "test-state"
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			url, err := processor.GenerateAuthURL(tt.config, tt.state)
+	// Act
+	url, err := processor.GenerateAuthURL(config, state)
 
-			if tt.expectError {
-				assert.Error(t, err)
-				assert.Empty(t, url)
-			} else {
-				assert.NoError(t, err)
-				assert.NotEmpty(t, url)
-				assert.Contains(t, url, tt.config.AuthURL)
-				assert.Contains(t, url, tt.config.ClientID)
-				if tt.state != "" {
-					assert.Contains(t, url, tt.state)
-				}
-			}
-		})
-	}
+	// Assert
+	assert.Error(t, err)
+	assert.Empty(t, url)
 }
 
 // ValidateToken test removed - OAuth2Processor doesn't have ValidateToken method
 // Token validation is handled by SessionManager.ValidateToken
 
-func TestOAuth2Processor_buildOAuth2Config(t *testing.T) {
+func TestOAuth2Processor_buildOAuth2Config_WithValidConfig_ReturnsOAuth2Config(t *testing.T) {
+	// Arrange
 	processor := NewOAuth2Processor()
-
 	config := &authModels.AuthConfig{
 		Provider:     authModels.ProviderGitHub,
 		Method:       authModels.MethodOAuth2,
@@ -83,8 +69,10 @@ func TestOAuth2Processor_buildOAuth2Config(t *testing.T) {
 		Scopes:       []string{"user", "repo"},
 	}
 
+	// Act
 	oauthConfig := processor.buildOAuth2Config(config)
 
+	// Assert
 	assert.Equal(t, config.ClientID, oauthConfig.ClientID)
 	assert.Equal(t, config.ClientSecret, oauthConfig.ClientSecret)
 	assert.Equal(t, config.RedirectURL, oauthConfig.RedirectURL)
@@ -93,12 +81,15 @@ func TestOAuth2Processor_buildOAuth2Config(t *testing.T) {
 	assert.Equal(t, config.TokenURL, oauthConfig.Endpoint.TokenURL)
 }
 
-func TestOAuth2Processor_generateState(t *testing.T) {
+func TestOAuth2Processor_generateState_GeneratesUniqueStates(t *testing.T) {
+	// Arrange
 	processor := NewOAuth2Processor()
 
+	// Act
 	state1 := processor.generateState()
 	state2 := processor.generateState()
 
+	// Assert
 	assert.NotEmpty(t, state1)
 	assert.NotEmpty(t, state2)
 	// Note: States might be equal if generated in the same second due to timestamp-based generation

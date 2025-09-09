@@ -174,6 +174,35 @@ func (sp *ServiceProcessor) normalizeServiceName(name string) string {
 	normalized = strings.ReplaceAll(normalized, " ", "-")
 	normalized = strings.ReplaceAll(normalized, "_", "-")
 
+	// Replace special characters with hyphens
+	normalized = strings.ReplaceAll(normalized, "@", "-")
+	normalized = strings.ReplaceAll(normalized, "#", "-")
+	normalized = strings.ReplaceAll(normalized, "$", "-")
+	normalized = strings.ReplaceAll(normalized, "%", "-")
+	normalized = strings.ReplaceAll(normalized, "&", "-")
+	normalized = strings.ReplaceAll(normalized, "*", "-")
+	normalized = strings.ReplaceAll(normalized, "+", "-")
+	normalized = strings.ReplaceAll(normalized, "=", "-")
+	normalized = strings.ReplaceAll(normalized, "!", "-")
+	normalized = strings.ReplaceAll(normalized, "?", "-")
+	normalized = strings.ReplaceAll(normalized, "(", "-")
+	normalized = strings.ReplaceAll(normalized, ")", "-")
+	normalized = strings.ReplaceAll(normalized, "[", "-")
+	normalized = strings.ReplaceAll(normalized, "]", "-")
+	normalized = strings.ReplaceAll(normalized, "{", "-")
+	normalized = strings.ReplaceAll(normalized, "}", "-")
+	normalized = strings.ReplaceAll(normalized, "|", "-")
+	normalized = strings.ReplaceAll(normalized, "\\", "-")
+	normalized = strings.ReplaceAll(normalized, "/", "-")
+	normalized = strings.ReplaceAll(normalized, ":", "-")
+	normalized = strings.ReplaceAll(normalized, ";", "-")
+	normalized = strings.ReplaceAll(normalized, "\"", "-")
+	normalized = strings.ReplaceAll(normalized, "'", "-")
+	normalized = strings.ReplaceAll(normalized, "<", "-")
+	normalized = strings.ReplaceAll(normalized, ">", "-")
+	normalized = strings.ReplaceAll(normalized, ",", "-")
+	normalized = strings.ReplaceAll(normalized, ".", "-")
+
 	// Remove consecutive hyphens
 	for strings.Contains(normalized, "--") {
 		normalized = strings.ReplaceAll(normalized, "--", "-")
@@ -218,6 +247,15 @@ func (sp *ServiceProcessor) applyPagination(serviceList *scModels.ServiceList, l
 		return &scModels.ServiceList{
 			Services: []scModels.Service{},
 			Total:    0,
+			Filters:  serviceList.Filters,
+		}
+	}
+
+	// If limit is 0, return all services from offset
+	if limit == 0 {
+		return &scModels.ServiceList{
+			Services: serviceList.Services[offset:],
+			Total:    total, // Keep original total for pagination info
 			Filters:  serviceList.Filters,
 		}
 	}
