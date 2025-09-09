@@ -3,12 +3,16 @@ package aws
 import (
 	"fmt"
 
-	awsAdaptersHttp "github.com/dash-ops/dash-ops/pkg/aws-new/adapters/http"
-	aws "github.com/dash-ops/dash-ops/pkg/aws-new/controllers"
-	"github.com/dash-ops/dash-ops/pkg/aws-new/handlers"
-	awsLogic "github.com/dash-ops/dash-ops/pkg/aws-new/logic"
-	awsPorts "github.com/dash-ops/dash-ops/pkg/aws-new/ports"
-	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons-new/adapters/http"
+	"github.com/gorilla/mux"
+
+	awsAdaptersExternal "github.com/dash-ops/dash-ops/pkg/aws/adapters/external"
+	awsAdaptersHttp "github.com/dash-ops/dash-ops/pkg/aws/adapters/http"
+	awsAdaptersStorage "github.com/dash-ops/dash-ops/pkg/aws/adapters/storage"
+	aws "github.com/dash-ops/dash-ops/pkg/aws/controllers"
+	"github.com/dash-ops/dash-ops/pkg/aws/handlers"
+	awsLogic "github.com/dash-ops/dash-ops/pkg/aws/logic"
+	awsPorts "github.com/dash-ops/dash-ops/pkg/aws/ports"
+	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
 )
 
 // Module represents the AWS module with all its components
@@ -160,6 +164,14 @@ func (m *Module) WithAudit(auditService awsPorts.AuditService) *Module {
 	return m
 }
 
+// RegisterRoutes registers HTTP routes for the AWS module
+func (m *Module) RegisterRoutes(router *mux.Router) {
+	if m.Handler == nil {
+		return
+	}
+	m.Handler.RegisterRoutes(router)
+}
+
 // Validate validates the module configuration
 func (m *Module) Validate() error {
 	if m.AccountRepo == nil {
@@ -179,4 +191,22 @@ func (m *Module) Validate() error {
 	}
 
 	return nil
+}
+
+// NewAccountRepositoryAdapter creates a new account repository adapter
+func NewAccountRepositoryAdapter(fileConfig []byte) (awsPorts.AccountRepository, error) {
+	return awsAdaptersStorage.NewAccountRepositoryAdapter(fileConfig)
+}
+
+// NewAWSClientServiceAdapter creates a new AWS client service adapter
+func NewAWSClientServiceAdapter() awsPorts.AWSClientService {
+	return awsAdaptersExternal.NewAWSClientServiceAdapter()
+}
+
+// NewInstanceRepositoryAdapter creates a new instance repository adapter
+func NewInstanceRepositoryAdapter(
+	awsClientService awsPorts.AWSClientService,
+	accountRepo awsPorts.AccountRepository,
+) awsPorts.InstanceRepository {
+	return awsAdaptersStorage.NewInstanceRepositoryAdapter(awsClientService, accountRepo)
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	awsModels "github.com/dash-ops/dash-ops/pkg/aws-new/models"
+	awsModels "github.com/dash-ops/dash-ops/pkg/aws/models"
 )
 
 // AWSClientService defines the interface for AWS SDK operations

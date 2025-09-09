@@ -311,3 +311,12 @@ func (bo *BatchOperation) GetDuration() time.Duration {
 	}
 	return bo.CompletedAt.Sub(bo.StartedAt)
 }
+
+// CostSavings represents potential cost savings analysis
+type CostSavings struct {
+	CurrentMonthlyCost float64   `json:"current_monthly_cost"`
+	PotentialSavings   float64   `json:"potential_savings"`
+	StoppableInstances int       `json:"stoppable_instances"`
+	SavingsPercentage  float64   `json:"savings_percentage"`
+	LastCalculated     time.Time `json:"last_calculated"`
+}

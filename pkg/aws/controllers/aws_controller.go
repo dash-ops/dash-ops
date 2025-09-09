@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	awsLogic "github.com/dash-ops/dash-ops/pkg/aws-new/logic"
-	awsModels "github.com/dash-ops/dash-ops/pkg/aws-new/models"
-	awsPorts "github.com/dash-ops/dash-ops/pkg/aws-new/ports"
+	awsLogic "github.com/dash-ops/dash-ops/pkg/aws/logic"
+	awsModels "github.com/dash-ops/dash-ops/pkg/aws/models"
+	awsPorts "github.com/dash-ops/dash-ops/pkg/aws/ports"
 )
 
 // AWSController handles AWS business logic orchestration
@@ -217,12 +217,6 @@ func (ac *AWSController) BatchOperation(ctx context.Context, accountKey, region,
 			continue
 		}
 		instances = append(instances, *instance)
-	}
-
-	// Process batch operation
-	batchOp, err := ac.processor.ProcessBatchOperation(instances, operation)
-	if err != nil {
-		return nil, fmt.Errorf("failed to process batch operation: %w", err)
 	}
 
 	// Execute batch operation

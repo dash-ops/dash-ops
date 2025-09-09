@@ -7,5 +7,10 @@ export function getAccounts(
 ): Promise<AxiosResponse<AWSTypes.Account[]>> {
   return http
     .get('/v1/aws/accounts', config)
-    .then((resp) => (resp.data ? resp : { ...resp, data: [] }));
+    .then((resp) => {
+      if (resp.data && resp.data.accounts) {
+        return { ...resp, data: resp.data.accounts };
+      }
+      return { ...resp, data: [] };
+    });
 }

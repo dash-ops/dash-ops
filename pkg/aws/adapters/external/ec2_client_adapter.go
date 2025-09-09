@@ -11,8 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 
-	awsModels "github.com/dash-ops/dash-ops/pkg/aws-new/models"
-	awsPorts "github.com/dash-ops/dash-ops/pkg/aws-new/ports"
+	awsModels "github.com/dash-ops/dash-ops/pkg/aws/models"
+	awsPorts "github.com/dash-ops/dash-ops/pkg/aws/ports"
 )
 
 // EC2ClientAdapter implements EC2Client interface using AWS SDK
@@ -173,7 +173,7 @@ func (eca *EC2ClientAdapter) RebootInstances(ctx context.Context, instanceIDs []
 		InstanceIds: aws.StringSlice(instanceIDs),
 	}
 
-	err := eca.client.RebootInstancesWithContext(ctx, input)
+	_, err := eca.client.RebootInstancesWithContext(ctx, input)
 	if err != nil {
 		return nil, fmt.Errorf("failed to reboot instances: %w", err)
 	}

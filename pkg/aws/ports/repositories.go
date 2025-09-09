@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	awsModels "github.com/dash-ops/dash-ops/pkg/aws-new/models"
+	awsModels "github.com/dash-ops/dash-ops/pkg/aws/models"
 )
 
 // AccountRepository defines the interface for AWS account data access

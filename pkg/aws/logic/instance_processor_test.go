@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	awsModels "github.com/dash-ops/dash-ops/pkg/aws-new/models"
+	awsModels "github.com/dash-ops/dash-ops/pkg/aws/models"
 )
 
 func TestInstanceProcessor_ValidateInstanceOperation(t *testing.T) {

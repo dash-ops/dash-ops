@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	awsModels "github.com/dash-ops/dash-ops/pkg/aws-new/models"
+	awsModels "github.com/dash-ops/dash-ops/pkg/aws/models"
 )
 
 // InstanceProcessor handles EC2 instance processing logic
@@ -30,6 +30,11 @@ func (ip *InstanceProcessor) ProcessInstanceList(instances []awsModels.EC2Instan
 		Instances: filteredInstances,
 		Total:     len(filteredInstances),
 		Filter:    filter,
+	}
+
+	// Ensure Instances is never nil
+	if instanceList.Instances == nil {
+		instanceList.Instances = []awsModels.EC2Instance{}
 	}
 
 	if filter == nil {

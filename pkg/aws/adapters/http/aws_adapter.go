@@ -1,8 +1,8 @@
 package http
 
 import (
-	awsModels "github.com/dash-ops/dash-ops/pkg/aws-new/models"
-	awsWire "github.com/dash-ops/dash-ops/pkg/aws-new/wire"
+	awsModels "github.com/dash-ops/dash-ops/pkg/aws/models"
+	awsWire "github.com/dash-ops/dash-ops/pkg/aws/wire"
 )
 
 // AWSAdapter handles transformation between models and wire formats
@@ -89,8 +89,10 @@ func (aa *AWSAdapter) InstanceToResponse(instance *awsModels.EC2Instance) awsWir
 // InstanceListToResponse converts InstanceList model to InstanceListResponse
 func (aa *AWSAdapter) InstanceListToResponse(instanceList *awsModels.InstanceList) awsWire.InstanceListResponse {
 	var instances []awsWire.InstanceResponse
-	for _, instance := range instanceList.Instances {
-		instances = append(instances, aa.InstanceToResponse(&instance))
+	if instanceList != nil && instanceList.Instances != nil {
+		for _, instance := range instanceList.Instances {
+			instances = append(instances, aa.InstanceToResponse(&instance))
+		}
 	}
 
 	return awsWire.InstanceListResponse{

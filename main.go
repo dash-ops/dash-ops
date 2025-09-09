@@ -203,9 +203,30 @@ func main() {
 	}
 
 	if dashConfig.Plugins.Has("AWS") {
-		// ToDo transform into isolated plugins
+		// Initialize AWS module using hexagonal architecture
 		fileConfig := configModule.GetFileConfigBytes()
-		aws.MakeAWSInstanceHandlers(internal, fileConfig)
+
+		// Create account repository
+		accountRepo, err := aws.NewAccountRepositoryAdapter(fileConfig)
+		if err != nil {
+			log.Printf("Failed to create AWS account repository: %v", err)
+		} else {
+			// Create AWS client service
+			awsClientService := aws.NewAWSClientServiceAdapter()
+
+			// Create instance repository
+			instanceRepo := aws.NewInstanceRepositoryAdapter(awsClientService, accountRepo)
+
+			// Create AWS module with minimal dependencies
+			awsModule, err := aws.NewMinimalModule(accountRepo, instanceRepo)
+			if err != nil {
+				log.Printf("Failed to create AWS module: %v", err)
+			} else {
+				// Register routes using hexagonal architecture
+				awsModule.RegisterRoutes(internal)
+				log.Println("AWS module initialized successfully")
+			}
+		}
 	}
 
 	// Initialize SPA module using hexagonal architecture

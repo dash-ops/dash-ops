@@ -4,7 +4,7 @@ import (
 	"strings"
 	"time"
 
-	awsModels "github.com/dash-ops/dash-ops/pkg/aws-new/models"
+	awsModels "github.com/dash-ops/dash-ops/pkg/aws/models"
 )
 
 // CostCalculator provides AWS cost calculation logic
@@ -76,7 +76,7 @@ func (cc *CostCalculator) CalculateAccountMonthlyCost(instances []awsModels.EC2I
 }
 
 // CalculateCostSavings calculates potential cost savings if instances were stopped
-func (cc *CostCalculator) CalculateCostSavings(instances []awsModels.EC2Instance) CostSavings {
+func (cc *CostCalculator) CalculateCostSavings(instances []awsModels.EC2Instance) awsModels.CostSavings {
 	var currentCost, potentialSavings float64
 	var stoppableInstances int
 
@@ -90,7 +90,7 @@ func (cc *CostCalculator) CalculateCostSavings(instances []awsModels.EC2Instance
 		}
 	}
 
-	return CostSavings{
+	return awsModels.CostSavings{
 		CurrentMonthlyCost: currentCost,
 		PotentialSavings:   potentialSavings,
 		StoppableInstances: stoppableInstances,
@@ -160,15 +160,6 @@ func (cc *CostCalculator) calculatePercentage(part, total float64) float64 {
 		return 0
 	}
 	return (part / total) * 100
-}
-
-// CostSavings represents potential cost savings analysis
-type CostSavings struct {
-	CurrentMonthlyCost float64   `json:"current_monthly_cost"`
-	PotentialSavings   float64   `json:"potential_savings"`
-	StoppableInstances int       `json:"stoppable_instances"`
-	SavingsPercentage  float64   `json:"savings_percentage"`
-	LastCalculated     time.Time `json:"last_calculated"`
 }
 
 // OperationCostEstimate represents cost estimate for an operation

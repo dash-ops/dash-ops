@@ -9,7 +9,12 @@ export function getInstances(
 ): Promise<AxiosResponse<AWSTypes.Instance[]>> {
   return http
     .get(`/v1/aws/${filter.accountKey}/ec2/instances`, config)
-    .then((resp) => (resp.data ? resp : { ...resp, data: [] }));
+    .then((resp) => {
+      if (resp.data && resp.data.instances) {
+        return { ...resp, data: resp.data.instances };
+      }
+      return { ...resp, data: [] };
+    });
 }
 
 export function startInstance(
