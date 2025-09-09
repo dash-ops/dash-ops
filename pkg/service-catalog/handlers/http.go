@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 
@@ -89,7 +90,12 @@ func (h *HTTPHandler) createServiceHandler(w http.ResponseWriter, r *http.Reques
 	// Call controller
 	createdService, err := h.controller.CreateService(r.Context(), service, user)
 	if err != nil {
-		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to create service: "+err.Error())
+		// Check if it's a validation error
+		if strings.Contains(err.Error(), "validation failed") {
+			h.responseAdapter.WriteError(w, http.StatusBadRequest, "Validation failed: "+err.Error())
+		} else {
+			h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to create service: "+err.Error())
+		}
 		return
 	}
 
