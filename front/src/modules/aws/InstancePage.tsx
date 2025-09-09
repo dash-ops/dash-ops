@@ -107,13 +107,13 @@ export default function InstancePage(): JSX.Element {
   }, [key]);
 
   const updateInstanceState = (id: string, state: string): void => {
-    const newInstances = instances.data.map((inst) =>
+    const newInstances = (instances.data || []).map((inst) =>
       inst.instance_id === id ? { ...inst, state } : inst
     );
     dispatch({ type: SET_DATA, response: newInstances });
   };
 
-  const filteredData = instances.data.filter(
+  const filteredData = (instances.data || []).filter(
     (instance) => search === '' || instance.name.includes(search)
   );
 
@@ -150,7 +150,7 @@ export default function InstancePage(): JSX.Element {
         </div>
       </div>
 
-      {instances.data.length > 0 && (
+      {(instances.data || []).length > 0 && (
         <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>

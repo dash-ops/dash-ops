@@ -16,8 +16,8 @@ export async function getClustersCached(): Promise<KubernetesTypes.Cluster[]> {
   loadingPromise = (async () => {
     try {
       const { data } = await getClusters();
-      clustersCache = data;
-      return data;
+      clustersCache = data.clusters;
+      return data.clusters;
     } finally {
       loadingPromise = null;
     }

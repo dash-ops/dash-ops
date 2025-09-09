@@ -8,7 +8,7 @@ DashOPS uses a **modular plugin architecture** that allows you to enable only th
 
 | Plugin                                      | Status   | Features                                             | Production Ready    |
 | ------------------------------------------- | -------- | ---------------------------------------------------- | ------------------- |
-| **[OAuth2](./oauth2.md)**                   | 🔄 Beta  | GitHub authentication, org validation                | ❌ Testing only     |
+| **[Auth](./auth.md)**                     | 🔄 Beta  | GitHub authentication, org validation                | ❌ Testing only     |
 | **[Service Catalog](./service-catalog.md)** | 🔄 Beta  | Service registry, health monitoring, K8s integration | ❌ Testing only     |
 | **[AWS](./aws.md)**                         | 🔄 Alpha | EC2 management, multi-account, optimized UI          | ❌ Development only |
 | **[Kubernetes](./kubernetes.md)**           | 🔄 Alpha | Multi-cluster, enhanced UI, pod logs, scaling        | ❌ Development only |
@@ -21,7 +21,7 @@ In your `dash-ops.yaml` configuration:
 
 ```yaml
 plugins:
-  - 'OAuth2' # Required - Authentication
+  - 'Auth' # Required - Authentication
   - 'ServiceCatalog' # Optional - Service registry
   - 'AWS' # Optional - AWS operations
   - 'Kubernetes' # Optional - K8s operations
@@ -31,7 +31,7 @@ plugins:
 
 Each plugin requires specific configuration. See individual plugin documentation:
 
-- **[OAuth2 Setup](./oauth2.md#configuration)** - GitHub OAuth App configuration
+- **[Auth Setup](./auth.md#configuration)** - GitHub OAuth App configuration
 - **[Service Catalog Setup](./service-catalog.md#configuration)** - Service registry and GitHub integration
 - **[AWS Setup](./aws.md#configuration)** - AWS credentials and permissions
 - **[Kubernetes Setup](./kubernetes.md#configuration)** - Cluster access and RBAC

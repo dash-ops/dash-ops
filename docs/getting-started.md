@@ -141,12 +141,12 @@ headers:
   - 'Authorization'
 front: app
 
-# Enable plugins (start with OAuth2 only)
+# Enable plugins (start with Auth only)
 plugins:
-  - 'OAuth2'
+  - 'Auth'
 
-# GitHub OAuth2 setup (required)
-oauth2:
+# GitHub Auth setup (required)
+auth:
   - provider: github
     clientId: ${GITHUB_CLIENT_ID}
     clientSecret: ${GITHUB_CLIENT_SECRET}
@@ -163,7 +163,7 @@ oauth2:
 Create a `.env` file or export variables:
 
 ```bash
-# Required for OAuth2
+# Required for Auth
 export GITHUB_CLIENT_ID="your-github-oauth-client-id"
 export GITHUB_CLIENT_SECRET="your-github-oauth-client-secret"
 
@@ -244,7 +244,7 @@ Once you have the basic setup working, you can enable additional plugins:
 ```yaml
 # 1. Add to plugins list
 plugins:
-  - 'OAuth2'
+  - 'Auth'
   - 'AWS' # Add this line
 
 # 2. Add AWS configuration
@@ -260,7 +260,7 @@ aws:
 ```yaml
 # 1. Add to plugins list
 plugins:
-  - 'OAuth2'
+  - 'Auth'
   - 'Kubernetes' # Add this line
 
 # 2. Add Kubernetes configuration
@@ -313,7 +313,7 @@ rm -rf node_modules yarn.lock
 yarn
 ```
 
-#### **OAuth2 Login Fails**
+#### **Auth Login Fails**
 
 - ✅ Check GitHub OAuth App configuration
 - ✅ Verify callback URL matches exactly

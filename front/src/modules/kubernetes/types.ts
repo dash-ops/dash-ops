@@ -6,21 +6,28 @@ import { BaseEntity, EntityWithStatus } from '../../types/api';
 
 // Kubernetes Resources
 export interface Cluster extends EntityWithStatus {
+  name: string;
   context: string;
+  version: string;
+  status: string;
+}
+
+export interface ClusterListResponse {
+  clusters: Cluster[];
+  total: number;
 }
 
 export interface Namespace extends EntityWithStatus {}
 
 export interface Node extends BaseEntity {
-  ready: string;
-  allocated_resources?: AllocatedResources;
-  conditions: NodeCondition[];
-  capacity: NodeCapacity;
-  created_at: string;
+  status: string;
+  roles: string[];
   age: string;
   version: string;
-  roles: string[];
-  taints: number;
+  internal_ip: string;
+  conditions: NodeCondition[];
+  resources: NodeResources;
+  created_at: string;
 }
 
 export interface NodeCondition {
@@ -28,13 +35,19 @@ export interface NodeCondition {
   status: string;
   reason?: string;
   message?: string;
+  last_transition_time?: string;
 }
 
-export interface NodeCapacity {
-  storage?: string;
-  ephemeral_storage?: string;
-  disk_pressure: boolean;
-  disk_usage_percent: number;
+export interface NodeResources {
+  capacity: ResourceSpec;
+  allocatable: ResourceSpec;
+  used: ResourceSpec;
+}
+
+export interface ResourceSpec {
+  cpu: string;
+  memory: string;
+  pods: string;
 }
 
 export interface AllocatedResources {
@@ -48,20 +61,59 @@ export interface AllocatedResources {
 
 export interface Pod extends BaseEntity {
   namespace: string;
-  condition_status: ConditionStatus;
-  restart_count: number;
-  node_name: string;
-  controlled_by: string;
-  qos_class: string;
+  status: string;
+  phase: string;
+  node: string;
+  restarts: number;
+  ready: string;
+  ip: string;
   age: string;
   created_at: string;
   containers: PodContainer[];
+  conditions: PodCondition[];
+  qos_class?: string;
 }
 
 export interface PodContainer {
   name: string;
+  image: string;
   ready: boolean;
-  state: string;
+  restart_count: number;
+  state: PodContainerState;
+  resources: PodContainerResources;
+}
+
+export interface PodContainerState {
+  running?: {
+    started_at: string;
+  };
+  waiting?: {
+    reason: string;
+    message: string;
+  };
+  terminated?: {
+    exit_code: number;
+    reason: string;
+    started_at: string;
+    finished_at: string;
+  };
+}
+
+export interface PodContainerResources {
+  requests: {
+    cpu: string;
+    memory: string;
+  };
+  limits: {
+    cpu: string;
+    memory: string;
+  };
+}
+
+export interface PodCondition {
+  type: string;
+  status: string;
+  last_transition_time: string;
 }
 
 export interface ConditionStatus {
@@ -89,14 +141,16 @@ export interface Deployment extends BaseEntity {
 }
 
 export interface PodInfo {
-  current: number;
-  desired: number;
+  running: number;
+  pending: number;
+  failed: number;
+  total: number;
 }
 
 export interface DeploymentReplicas {
   ready: number;
   available: number;
-  updated: number;
+  current: number;
   desired: number;
 }
 
@@ -110,6 +164,19 @@ export interface DeploymentCondition {
 export interface LogContainer {
   name: string;
   log: string;
+}
+
+export interface PodLogEntry {
+  timestamp: string;
+  message: string;
+}
+
+export interface PodLogsResponse {
+  pod_name: string;
+  namespace: string;
+  container_name?: string;
+  logs: PodLogEntry[];
+  total_lines: number;
 }
 
 export interface K8sPermission extends BaseEntity {

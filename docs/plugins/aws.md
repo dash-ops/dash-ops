@@ -330,7 +330,7 @@ POST /api/aws/instances/{instanceId}/stop
 
 - ✅ Verify GitHub team membership
 - ✅ Check team naming format: `org*team`
-- ✅ Ensure user is authenticated via OAuth2
+- ✅ Ensure user is authenticated via Auth
 
 ### **Debug Mode**
 

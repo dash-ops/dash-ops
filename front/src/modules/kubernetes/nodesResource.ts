@@ -7,6 +7,6 @@ export function getNodes(
   config?: AxiosRequestConfig
 ): Promise<AxiosResponse<KubernetesTypes.Node[]>> {
   return http
-    .get(`/v1/k8s/${filter.context}/nodes`, config)
+    .get(`/v1/k8s/clusters/${filter.context}/nodes`, config)
     .then((resp) => (resp.data ? resp : { ...resp, data: [] }));
 }

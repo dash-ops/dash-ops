@@ -1,5 +1,5 @@
 /**
- * OAuth2 Module specific types
+ * Auth Module specific types
  */
 
 import { BaseEntity } from '../../types/api';

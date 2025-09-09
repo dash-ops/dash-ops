@@ -52,6 +52,33 @@ yarn dev
 
 ## 🏗️ Architecture
 
+### Backend Architecture
+
+The DashOps backend follows a **Hexagonal Architecture** pattern with 8 consistent layers across all modules:
+
+```
+pkg/{module}/
+├── adapters/     # Data transformation & external integrations
+├── controllers/  # Business logic orchestration
+├── handlers/     # HTTP endpoints
+├── logic/        # Pure business logic (100% tested)
+├── models/       # Domain entities with behavior
+├── ports/        # Interfaces & contracts
+├── wire/         # API contracts (DTOs)
+└── module.go     # Module factory
+```
+
+**Key Benefits**:
+
+- **Consistent Structure**: Same pattern across all 8 modules
+- **High Testability**: 80+ unit tests ensuring reliability
+- **Extensibility**: Interface-based design for easy extension
+- **Maintainability**: Clear separation of concerns
+
+**📚 For Developers**: See [Backend Architecture Guide](./docs/backend-architecture.md) for detailed contribution guidelines.
+
+### Frontend Architecture
+
 DashOPS is built as an **Integration Hub** that connects your existing tools with AI-powered UX:
 
 ### **🎯 Integration Philosophy**

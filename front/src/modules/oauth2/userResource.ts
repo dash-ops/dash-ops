@@ -1,13 +1,13 @@
 import http from '../../helpers/http';
 import { AxiosResponse } from 'axios';
-import { OAuth2Types } from '@/types';
+import { AuthTypes } from '@/types';
 
-export function getUserData(): Promise<AxiosResponse<OAuth2Types.UserData>> {
+export function getUserData(): Promise<AxiosResponse<AuthTypes.UserData>> {
   return http.get('/v1/me');
 }
 
 export function getUserPermissions(): Promise<
-  AxiosResponse<OAuth2Types.UserPermission[]>
+  AxiosResponse<AuthTypes.UserPermission[]>
 > {
   return http.get('/v1/me/permissions');
 }

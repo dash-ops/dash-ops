@@ -12,7 +12,7 @@ it('should return instances list', async () => {
     },
   ];
   http.get.mockResolvedValue({
-    data: mockResponse,
+    data: { instances: mockResponse },
   });
 
   const accID = 'prod';

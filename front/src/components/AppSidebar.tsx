@@ -35,7 +35,7 @@ import {
   getUserPermissions,
 } from '../modules/oauth2/userResource';
 import { cleanToken } from '../helpers/oauth';
-import { OAuth2Types, Menu } from '@/types';
+import { AuthTypes, Menu } from '@/types';
 
 interface AppSidebarProps {
   menus?: Menu[];
@@ -45,9 +45,9 @@ interface AppSidebarProps {
 function AppSidebar({ menus = [], oAuth2 }: AppSidebarProps): JSX.Element {
   const location = useLocation();
   const navigate = useNavigate();
-  const [user, setUser] = useState<OAuth2Types.UserData | null>(null);
+  const [user, setUser] = useState<AuthTypes.UserData | null>(null);
   const [permissions, setPermissions] =
-    useState<OAuth2Types.UserPermission | null>(null);
+    useState<AuthTypes.UserPermission | null>(null);
   const userDataFetched = useRef<boolean>(false);
 
   const logout = useCallback(() => {

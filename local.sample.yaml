@@ -5,11 +5,11 @@ headers:
   - 'Authorization'
 front: front/dist
 plugins:
-  - 'OAuth2'
+  - 'Auth'
   - 'ServiceCatalog'
   - 'Kubernetes'
   - 'AWS'
-oauth2:
+auth:
   - provider: github
     clientId: ${GITHUB_CLIENT_ID}
     clientSecret: ${GITHUB_CLIENT_SECRET}

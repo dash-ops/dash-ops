@@ -74,14 +74,14 @@ service-catalog:
 
 ### **2. GitHub Integration (Required)**
 
-Service Catalog requires OAuth2 plugin for GitHub team integration:
+Service Catalog requires Auth plugin for GitHub team integration:
 
 ```yaml
 plugins:
-  - 'OAuth2' # Required for GitHub teams
+  - 'Auth' # Required for GitHub teams
   - 'ServiceCatalog'
 
-oauth2:
+auth:
   github:
     clientId: ${GITHUB_CLIENT_ID}
     clientSecret: ${GITHUB_CLIENT_SECRET}
@@ -94,7 +94,7 @@ For real-time health checks, configure Kubernetes plugin:
 
 ```yaml
 plugins:
-  - 'OAuth2'
+  - 'Auth'
   - 'Kubernetes'
   - 'ServiceCatalog'
 
@@ -337,10 +337,10 @@ POST /api/v1/service-catalog/services/health/batch
 
 ### **Authentication Requirements**
 
-Service Catalog requires OAuth2 authentication with GitHub:
+Service Catalog requires Auth authentication with GitHub:
 
 ```yaml
-oauth2:
+auth:
   github:
     clientId: ${GITHUB_CLIENT_ID}
     clientSecret: ${GITHUB_CLIENT_SECRET}
@@ -365,7 +365,7 @@ oauth2:
 
 GitHub team membership is resolved at runtime:
 
-1. **User Authentication** - OAuth2 GitHub token validation
+1. **User Authentication** - Auth GitHub token validation
 2. **Organization Check** - Verify user is member of configured organization
 3. **Team Membership** - Fetch user's team memberships via GitHub API
 4. **Permission Mapping** - Match teams against service ownership
@@ -399,7 +399,7 @@ service-catalog:
       repository: 'your-org/service-definitions'
       branch: 'main'
       path: 'services/'
-      oauth2_client: true # Use OAuth2 GitHub client
+      auth_client: true # Use Auth GitHub client
 ```
 
 #### **S3 Storage** (Roadmap):
@@ -669,7 +669,7 @@ curl http://localhost:8080/api/v1/service-catalog/services/test-api/health
 
 #### **Services Not Appearing**
 
-- ✅ Check GitHub OAuth2 authentication is working
+- ✅ Check GitHub Auth authentication is working
 - ✅ Verify user is member of configured GitHub organization
 - ✅ Confirm service files exist in configured directory
 - ✅ Check file permissions for service directory
@@ -685,7 +685,7 @@ curl http://localhost:8080/api/v1/service-catalog/services/test-api/health
 
 - ✅ Verify user is member of service's GitHub team
 - ✅ Check GitHub team name matches exactly (case-sensitive)
-- ✅ Confirm OAuth2 token has org:read permissions
+- ✅ Confirm Auth token has org:read permissions
 - ✅ Validate team membership via GitHub API
 
 #### **Versioning Errors**

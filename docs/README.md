@@ -15,7 +15,7 @@ Welcome to **DashOPS**, a cloud operations platform designed to simplify infrast
 
 ### **🔌 Plugin Documentation**
 
-- **[OAuth2 Plugin](./plugins/oauth2.md)** - GitHub authentication setup
+- **[Auth Plugin](./plugins/oauth2.md)** - GitHub authentication setup
 - **[Kubernetes Plugin](./plugins/kubernetes.md)** - Multi-cluster management
 - **[AWS Plugin](./plugins/aws.md)** - EC2 and account operations
 
@@ -68,7 +68,7 @@ yarn && yarn dev
 
 ### **What You'll See**
 
-1. **Login Screen** - GitHub OAuth2 authentication
+1. **Login Screen** - GitHub Auth authentication
 2. **Dashboard** - Overview of connected services
 3. **AWS Module** - EC2 instance management
 4. **Kubernetes Module** - Cluster and workload monitoring
@@ -152,12 +152,12 @@ front: app # Frontend build directory
 
 # Enable plugins
 plugins:
-  - 'OAuth2' # Authentication (required)
+  - 'Auth' # Authentication (required)
   - 'Kubernetes' # K8s operations (optional)
   - 'AWS' # AWS operations (optional)
 
 # Plugin-specific configurations
-oauth2: [...] # See OAuth2 plugin docs
+auth: [...] # See Auth plugin docs
 kubernetes: [...] # See Kubernetes plugin docs
 aws: [...] # See AWS plugin docs
 ```
@@ -197,7 +197,7 @@ GET /api/version     # Build version and info
 ### **Authentication Endpoints**
 
 ```
-GET  /api/oauth/redirect     # OAuth2 callback handler
+GET  /api/oauth/redirect     # Auth callback handler
 POST /api/oauth/logout       # Session termination
 GET  /api/user              # Current user information
 ```
@@ -384,7 +384,7 @@ Cost optimization and financial operations:
 
 ### **Current Limitations**
 
-- Basic GitHub OAuth2 only
+- Basic GitHub Auth only
 - Browser localStorage for token storage
 - Limited role-based access control
 - No API rate limiting
