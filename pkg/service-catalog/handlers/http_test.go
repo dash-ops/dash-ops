@@ -128,7 +128,7 @@ func TestHTTPHandler_CreateService(t *testing.T) {
 			expectedStatus: http.StatusCreated,
 			setupMocks: func(repo *MockServiceRepository) {
 				repo.On("Exists", mock.Anything, "test-service").Return(false, nil)
-				repo.On("Create", mock.Anything, mock.AnythingOfType("*scModels.Service")).Return(&scModels.Service{
+				repo.On("Create", mock.Anything, mock.Anything).Return(&scModels.Service{
 					Metadata: scModels.ServiceMetadata{
 						Name: "test-service",
 						Tier: scModels.TierStandard,

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	authModels "github.com/dash-ops/dash-ops/pkg/auth-new/models"
+	authModels "github.com/dash-ops/dash-ops/pkg/auth/models"
 )
 
 func TestSessionManager_CreateSession(t *testing.T) {

@@ -20,6 +20,9 @@ func NewOAuth2Processor() *OAuth2Processor {
 
 // GenerateAuthURL generates OAuth2 authorization URL
 func (op *OAuth2Processor) GenerateAuthURL(config *authModels.AuthConfig, redirectURL string) (string, error) {
+	if config.Method != authModels.MethodOAuth2 {
+		return "", fmt.Errorf("GenerateAuthURL only supports OAuth2 method, got %s", config.Method)
+	}
 	oauthConfig := op.createOAuth2Config(config)
 	return oauthConfig.AuthCodeURL(redirectURL), nil
 }

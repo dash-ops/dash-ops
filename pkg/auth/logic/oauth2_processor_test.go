@@ -2,7 +2,6 @@ package auth
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -67,63 +66,8 @@ func TestOAuth2Processor_GenerateAuthURL(t *testing.T) {
 	}
 }
 
-func TestOAuth2Processor_ValidateToken(t *testing.T) {
-	processor := NewOAuth2Processor()
-
-	tests := []struct {
-		name        string
-		token       *authModels.Token
-		expectError bool
-	}{
-		{
-			name: "valid token",
-			token: &authModels.Token{
-				AccessToken: "valid-token",
-				TokenType:   "Bearer",
-				ExpiresAt:   time.Now().Add(time.Hour),
-				Provider:    authModels.ProviderGitHub,
-			},
-			expectError: false,
-		},
-		{
-			name:        "nil token",
-			token:       nil,
-			expectError: true,
-		},
-		{
-			name: "empty access token",
-			token: &authModels.Token{
-				AccessToken: "",
-				TokenType:   "Bearer",
-				ExpiresAt:   time.Now().Add(time.Hour),
-				Provider:    authModels.ProviderGitHub,
-			},
-			expectError: true,
-		},
-		{
-			name: "expired token",
-			token: &authModels.Token{
-				AccessToken: "expired-token",
-				TokenType:   "Bearer",
-				ExpiresAt:   time.Now().Add(-time.Hour), // Expired
-				Provider:    authModels.ProviderGitHub,
-			},
-			expectError: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := processor.ValidateToken(tt.token)
-
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
+// ValidateToken test removed - OAuth2Processor doesn't have ValidateToken method
+// Token validation is handled by SessionManager.ValidateToken
 
 func TestOAuth2Processor_buildOAuth2Config(t *testing.T) {
 	processor := NewOAuth2Processor()
