@@ -553,13 +553,13 @@ func TestFileProcessor_getContentType_WithXMLFile_ReturnsXMLContentType(t *testi
 	// Arrange
 	processor := NewFileProcessor()
 	filePath := "config.xml"
-	expected := "application/xml"
 
 	// Act
 	result := processor.getContentType(filePath)
 
-	// Assert
-	assert.Equal(t, expected, result)
+	// Accept both possible MIME types for XML (varies by OS)
+	assert.True(t, result == "application/xml" || result == "text/xml; charset=utf-8",
+		"Expected XML content type, got: %s", result)
 }
 
 func TestFileProcessor_getContentType_WithSVGFile_ReturnsSVGContentType(t *testing.T) {
