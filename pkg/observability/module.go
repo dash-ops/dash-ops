@@ -6,8 +6,6 @@ import (
 	"github.com/gorilla/mux"
 
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
-	"github.com/dash-ops/dash-ops/pkg/observability/adapters/external"
-	"github.com/dash-ops/dash-ops/pkg/observability/adapters/storage"
 	"github.com/dash-ops/dash-ops/pkg/observability/controllers"
 	"github.com/dash-ops/dash-ops/pkg/observability/handlers"
 	"github.com/dash-ops/dash-ops/pkg/observability/logic"
@@ -198,109 +196,39 @@ func NewModule(config *ModuleConfig) (*Module, error) {
 	}, nil
 }
 
-// NewMinimalModule creates a minimal module with only required dependencies
-func NewMinimalModule(
-	logRepo ports.LogRepository,
-	metricRepo ports.MetricRepository,
-	traceRepo ports.TraceRepository,
-	alertRepo ports.AlertRepository,
-	dashboardRepo ports.DashboardRepository,
-	serviceRepo ports.ServiceContextRepository,
-) (*Module, error) {
-	config := &ModuleConfig{
-		LogRepo:       logRepo,
-		MetricRepo:    metricRepo,
-		TraceRepo:     traceRepo,
-		AlertRepo:     alertRepo,
-		DashboardRepo: dashboardRepo,
-		ServiceRepo:   serviceRepo,
-		// Optional dependencies are nil
-	}
-
-	return NewModule(config)
-}
-
 // GetHandler returns the HTTP handler
 func (m *Module) GetHandler() *handlers.HTTPHandler {
 	return m.Handler
 }
 
-// GetLogProcessor returns the log processor
-func (m *Module) GetLogProcessor() *logic.LogProcessor {
-	return m.LogProcessor
+// GetLogsController returns the logs controller
+func (m *Module) GetLogsController() *controllers.LogsController {
+	return m.LogsController
 }
 
-// GetMetricProcessor returns the metric processor
-func (m *Module) GetMetricProcessor() *logic.MetricProcessor {
-	return m.MetricProcessor
+// GetMetricsController returns the metrics controller
+func (m *Module) GetMetricsController() *controllers.MetricsController {
+	return m.MetricsController
 }
 
-// GetTraceProcessor returns the trace processor
-func (m *Module) GetTraceProcessor() *logic.TraceProcessor {
-	return m.TraceProcessor
+// GetTracesController returns the traces controller
+func (m *Module) GetTracesController() *controllers.TracesController {
+	return m.TracesController
 }
 
-// GetAlertProcessor returns the alert processor
-func (m *Module) GetAlertProcessor() *logic.AlertProcessor {
-	return m.AlertProcessor
+// GetAlertsController returns the alerts controller
+func (m *Module) GetAlertsController() *controllers.AlertsController {
+	return m.AlertsController
 }
 
-// GetDashboardProcessor returns the dashboard processor
-func (m *Module) GetDashboardProcessor() *logic.DashboardProcessor {
-	return m.DashboardProcessor
+// GetHealthController returns the health controller
+func (m *Module) GetHealthController() *controllers.HealthController {
+	return m.HealthController
 }
 
-// WithLogService adds log service to the module
-func (m *Module) WithLogService(logService ports.LogService) *Module {
-	m.LogService = logService
-	// TODO: Recreate controller with new dependencies
-	return m
-}
-
-// WithMetricService adds metric service to the module
-func (m *Module) WithMetricService(metricService ports.MetricService) *Module {
-	m.MetricService = metricService
-	// TODO: Recreate controller with new dependencies
-	return m
-}
-
-// WithTraceService adds trace service to the module
-func (m *Module) WithTraceService(traceService ports.TraceService) *Module {
-	m.TraceService = traceService
-	// TODO: Recreate controller with new dependencies
-	return m
-}
-
-// WithAlertService adds alert service to the module
-func (m *Module) WithAlertService(alertService ports.AlertService) *Module {
-	m.AlertService = alertService
-	// TODO: Recreate controller with new dependencies
-	return m
-}
-
-// WithDashboardService adds dashboard service to the module
-func (m *Module) WithDashboardService(dashboardService ports.DashboardService) *Module {
-	m.DashboardService = dashboardService
-	// TODO: Recreate controller with new dependencies
-	return m
-}
-
-// WithNotificationService adds notification service to the module
-func (m *Module) WithNotificationService(notificationService ports.NotificationService) *Module {
-	m.NotificationService = notificationService
-	return m
-}
-
-// WithCacheService adds cache service to the module
-func (m *Module) WithCacheService(cacheService ports.CacheService) *Module {
-	m.CacheService = cacheService
-	return m
-}
-
-// WithConfigurationService adds configuration service to the module
-func (m *Module) WithConfigurationService(configService ports.ConfigurationService) *Module {
-	m.ConfigurationService = configService
-	return m
+// GetConfigController returns the config controller
+func (m *Module) GetConfigController() *controllers.ConfigController {
+	return m.ConfigController
 }
 
 // RegisterRoutes registers HTTP routes for the observability module
@@ -309,60 +237,4 @@ func (m *Module) RegisterRoutes(router *mux.Router) {
 		return
 	}
 	m.Handler.RegisterRoutes(router)
-}
-
-// Validate validates the module configuration
-func (m *Module) Validate() error {
-	if m.LogRepo == nil {
-		return fmt.Errorf("log repository is required")
-	}
-	if m.MetricRepo == nil {
-		return fmt.Errorf("metric repository is required")
-	}
-	if m.TraceRepo == nil {
-		return fmt.Errorf("trace repository is required")
-	}
-	if m.AlertRepo == nil {
-		return fmt.Errorf("alert repository is required")
-	}
-	if m.DashboardRepo == nil {
-		return fmt.Errorf("dashboard repository is required")
-	}
-	if m.ServiceRepo == nil {
-		return fmt.Errorf("service context repository is required")
-	}
-	if m.Handler == nil {
-		return fmt.Errorf("handler is not initialized")
-	}
-	return nil
-}
-
-// NewLokiAdapter creates a new Loki adapter
-func NewLokiAdapter(config *external.LokiConfig) (ports.LogRepository, error) {
-	return external.NewLokiAdapter(config)
-}
-
-// NewPrometheusAdapter creates a new Prometheus adapter
-func NewPrometheusAdapter(config *external.PrometheusConfig) (ports.MetricRepository, error) {
-	return external.NewPrometheusAdapter(config)
-}
-
-// NewTempoAdapter creates a new Tempo adapter
-func NewTempoAdapter(config *external.TempoConfig) (ports.TraceRepository, error) {
-	return external.NewTempoAdapter(config)
-}
-
-// NewAlertManagerAdapter creates a new AlertManager adapter
-func NewAlertManagerAdapter(config *external.AlertManagerConfig) (ports.AlertRepository, error) {
-	return external.NewAlertManagerAdapter(config)
-}
-
-// NewDashboardRepositoryAdapter creates a new dashboard repository adapter
-func NewDashboardRepositoryAdapter() ports.DashboardRepository {
-	return storage.NewDashboardRepositoryAdapter()
-}
-
-// NewServiceContextRepositoryAdapter creates a new service context repository adapter
-func NewServiceContextRepositoryAdapter() ports.ServiceContextRepository {
-	return storage.NewServiceContextRepositoryAdapter()
 }
