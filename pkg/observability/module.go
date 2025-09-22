@@ -196,41 +196,6 @@ func NewModule(config *ModuleConfig) (*Module, error) {
 	}, nil
 }
 
-// GetHandler returns the HTTP handler
-func (m *Module) GetHandler() *handlers.HTTPHandler {
-	return m.Handler
-}
-
-// GetLogsController returns the logs controller
-func (m *Module) GetLogsController() *controllers.LogsController {
-	return m.LogsController
-}
-
-// GetMetricsController returns the metrics controller
-func (m *Module) GetMetricsController() *controllers.MetricsController {
-	return m.MetricsController
-}
-
-// GetTracesController returns the traces controller
-func (m *Module) GetTracesController() *controllers.TracesController {
-	return m.TracesController
-}
-
-// GetAlertsController returns the alerts controller
-func (m *Module) GetAlertsController() *controllers.AlertsController {
-	return m.AlertsController
-}
-
-// GetHealthController returns the health controller
-func (m *Module) GetHealthController() *controllers.HealthController {
-	return m.HealthController
-}
-
-// GetConfigController returns the config controller
-func (m *Module) GetConfigController() *controllers.ConfigController {
-	return m.ConfigController
-}
-
 // RegisterRoutes registers HTTP routes for the observability module
 func (m *Module) RegisterRoutes(router *mux.Router) {
 	if m.Handler == nil {
