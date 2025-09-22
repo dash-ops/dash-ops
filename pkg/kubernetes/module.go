@@ -3,7 +3,10 @@ package kubernetes
 import (
 	"fmt"
 
+	"github.com/gorilla/mux"
+
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
+	"github.com/dash-ops/dash-ops/pkg/kubernetes/adapters/config"
 	k8sExternal "github.com/dash-ops/dash-ops/pkg/kubernetes/adapters/external"
 	k8sAdaptersHttp "github.com/dash-ops/dash-ops/pkg/kubernetes/adapters/http"
 	kubernetes "github.com/dash-ops/dash-ops/pkg/kubernetes/controllers"
@@ -11,8 +14,6 @@ import (
 	k8sLogic "github.com/dash-ops/dash-ops/pkg/kubernetes/logic"
 	k8sPorts "github.com/dash-ops/dash-ops/pkg/kubernetes/ports"
 	scPorts "github.com/dash-ops/dash-ops/pkg/service-catalog/ports"
-	"github.com/gorilla/mux"
-	"gopkg.in/yaml.v2"
 )
 
 // Module represents the Kubernetes module with all its components
@@ -47,30 +48,25 @@ type Module struct {
 	ServiceCatalogAdapter scPorts.KubernetesService // Adapter for service-catalog integration
 }
 
-// ModuleConfig represents configuration for the Kubernetes module
-type ModuleConfig struct {
-	// Configuration data
-	Configs []KubernetesConfig `yaml:"configs" json:"configs"`
-}
-
 // NewModule creates and initializes a new Kubernetes module
 func NewModule(fileConfig []byte) (*Module, error) {
 	if fileConfig == nil {
 		return nil, fmt.Errorf("module config cannot be nil")
 	}
 
-	// Parse configuration
-	configs, err := ParseKubernetesConfigFromFileConfig(fileConfig)
+	// Parse configuration using adapter
+	configAdapter := config.NewConfigAdapter()
+	moduleConfig, err := configAdapter.ParseModuleConfig(fileConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse configuration: %w", err)
 	}
 
 	// Convert to external config format
 	var externalConfigs []k8sExternal.KubernetesConfig
-	for _, config := range configs {
+	for _, cfg := range moduleConfig.Configs {
 		externalConfigs = append(externalConfigs, k8sExternal.KubernetesConfig{
-			Kubeconfig: config.Kubeconfig,
-			Context:    config.Context,
+			Kubeconfig: cfg.Kubeconfig,
+			Context:    cfg.Context,
 		})
 	}
 
@@ -163,44 +159,4 @@ func (m *Module) LoadDependencies(modules map[string]interface{}) error {
 // GetServiceCatalogAdapter returns the adapter for service-catalog integration
 func (m *Module) GetServiceCatalogAdapter() scPorts.KubernetesService {
 	return m.ServiceCatalogAdapter
-}
-
-// ParseKubernetesConfigFromFileConfig parses kubernetes config from file bytes
-func ParseKubernetesConfigFromFileConfig(fileConfig []byte) ([]KubernetesConfig, error) {
-	var dashYaml struct {
-		Kubernetes []KubernetesConfig `yaml:"kubernetes"`
-	}
-
-	err := yaml.Unmarshal(fileConfig, &dashYaml)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse kubernetes config: %w", err)
-	}
-
-	if len(dashYaml.Kubernetes) == 0 {
-		return nil, fmt.Errorf("no kubernetes configuration found")
-	}
-
-	// Return all kubernetes configs
-	return dashYaml.Kubernetes, nil
-}
-
-// KubernetesConfig represents kubernetes configuration
-type KubernetesConfig struct {
-	Name       string     `yaml:"name"`
-	Kubeconfig string     `yaml:"kubeconfig"`
-	Context    string     `yaml:"context"`
-	Permission Permission `yaml:"permission"`
-	Listen     string     `yaml:"-"`
-}
-
-// Permission represents kubernetes permissions
-type Permission struct {
-	Deployments DeploymentsPermissions `yaml:"deployments" json:"deployments"`
-}
-
-// DeploymentsPermissions represents deployment permissions
-type DeploymentsPermissions struct {
-	Namespaces []string `yaml:"namespaces" json:"namespaces"`
-	Restart    []string `yaml:"restart" json:"restart"`
-	Scale      []string `yaml:"scale" json:"scale"`
 }
