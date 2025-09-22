@@ -2,23 +2,34 @@ package spa
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
+
+	spaAdapters "github.com/dash-ops/dash-ops/pkg/spa/adapters/http"
+	spaHandlers "github.com/dash-ops/dash-ops/pkg/spa/handlers"
 	spaLogic "github.com/dash-ops/dash-ops/pkg/spa/logic"
 	spaModels "github.com/dash-ops/dash-ops/pkg/spa/models"
 )
 
-// Module represents the SPA module
+// Module represents the SPA module with all its components
 type Module struct {
-	Config        *spaModels.SPAConfig
+	// Core components
+	Handler *spaHandlers.HTTPHandler
+
+	// Logic components
 	FileProcessor *spaLogic.FileProcessor
-	Handler       http.Handler
-	Stats         *spaModels.SPAStats
+
+	// Adapters
+	SPAAdapter *spaAdapters.SPAAdapter
+
+	// Configuration
+	Config    *spaModels.SPAConfig
+	APIRouter *mux.Router
 }
 
 // NewModule creates and initializes a new SPA module
-func NewModule(config *spaModels.SPAConfig) (*Module, error) {
+func NewModule(config *spaModels.SPAConfig, apiRouter *mux.Router) (*Module, error) {
 	if config == nil {
 		return nil, fmt.Errorf("SPA config cannot be nil")
 	}
@@ -40,137 +51,30 @@ func NewModule(config *spaModels.SPAConfig) (*Module, error) {
 		return nil, fmt.Errorf("index file validation failed: %w", err)
 	}
 
-	// Initialize stats
-	stats := &spaModels.SPAStats{
-		StartTime: time.Now(),
-	}
+	// Initialize SPA adapter
+	spaAdapter := spaAdapters.NewSPAAdapter(
+		config,
+		fileProcessor,
+		&spaModels.SPAStats{StartTime: time.Now()},
+		apiRouter,
+	)
 
-	// Create HTTP handler
-	handler := &SPAHandler{
-		config:        config,
-		fileProcessor: fileProcessor,
-		stats:         stats,
-	}
+	// Initialize handler
+	handler := spaHandlers.NewHTTPHandler(spaAdapter)
 
 	return &Module{
-		Config:        config,
-		FileProcessor: fileProcessor,
 		Handler:       handler,
-		Stats:         stats,
+		FileProcessor: fileProcessor,
+		SPAAdapter:    spaAdapter,
+		Config:        config,
+		APIRouter:     apiRouter,
 	}, nil
 }
 
-// SPAHandler implements http.Handler for serving SPA files
-type SPAHandler struct {
-	config        *spaModels.SPAConfig
-	fileProcessor *spaLogic.FileProcessor
-	stats         *spaModels.SPAStats
-}
-
-// ServeHTTP implements http.Handler interface
-func (h *SPAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	startTime := time.Now()
-
-	// Update stats
-	h.stats.TotalRequests++
-	h.stats.LastRequest = startTime
-	h.stats.UpdateUptime()
-
-	// Normalize path
-	requestPath := h.fileProcessor.NormalizePath(r.URL.Path)
-
-	// Resolve file path
-	filePath, isIndexFallback, err := h.fileProcessor.ResolveFilePath(requestPath, h.config.StaticPath, h.config.IndexPath)
-	if err != nil {
-		h.handleError(w, r, http.StatusBadRequest, err.Error(), startTime)
+// RegisterRoutes registers HTTP routes for the SPA module
+func (m *Module) RegisterRoutes(router *mux.Router) {
+	if m.Handler == nil {
 		return
 	}
-
-	// Get file info
-	fileInfo, err := h.fileProcessor.GetFileInfo(filePath)
-	if err != nil {
-		h.handleError(w, r, http.StatusNotFound, "File not found", startTime)
-		return
-	}
-
-	// Set headers
-	h.setHeaders(w, fileInfo, isIndexFallback)
-
-	// Serve file
-	http.ServeFile(w, r, filePath)
-
-	// Update success stats
-	h.stats.SuccessfulRequests++
-	h.stats.BytesServed += fileInfo.Size
-
-	// Calculate average response time
-	duration := time.Since(startTime)
-	if h.stats.TotalRequests > 0 {
-		h.stats.AverageResponseTime = time.Duration(
-			(int64(h.stats.AverageResponseTime) + int64(duration)) / 2,
-		)
-	} else {
-		h.stats.AverageResponseTime = duration
-	}
-}
-
-// setHeaders sets appropriate headers for the response
-func (h *SPAHandler) setHeaders(w http.ResponseWriter, fileInfo *spaModels.FileInfo, isIndexFallback bool) {
-	// Set content type
-	w.Header().Set("Content-Type", fileInfo.ContentType)
-
-	// Set cache control
-	if isIndexFallback || fileInfo.IsHTML() {
-		// Don't cache HTML files to ensure SPA routing works
-		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-		w.Header().Set("Pragma", "no-cache")
-		w.Header().Set("Expires", "0")
-	} else {
-		// Cache static assets
-		w.Header().Set("Cache-Control", h.config.GetCacheControl())
-	}
-
-	// Set ETag for caching
-	if fileInfo.ETag != "" {
-		w.Header().Set("ETag", fileInfo.ETag)
-	}
-
-	// Set security headers
-	securityHeaders := h.config.GetSecurityHeaders()
-	for key, value := range securityHeaders {
-		w.Header().Set(key, value)
-	}
-
-	// Set CORS headers
-	corsHeaders := h.config.GetCORSHeaders()
-	for key, value := range corsHeaders {
-		w.Header().Set(key, value)
-	}
-
-	// Set custom headers
-	for key, value := range h.config.CustomHeaders {
-		w.Header().Set(key, value)
-	}
-}
-
-// handleError handles error responses and updates stats
-func (h *SPAHandler) handleError(w http.ResponseWriter, r *http.Request, statusCode int, message string, startTime time.Time) {
-	h.stats.ErrorRequests++
-
-	// Calculate duration
-	duration := time.Since(startTime)
-
-	// Log request info (in production, this would go to a proper logger)
-	_ = &spaModels.RequestInfo{
-		Method:       r.Method,
-		Path:         r.URL.Path,
-		UserAgent:    r.UserAgent(),
-		RemoteAddr:   r.RemoteAddr,
-		Referer:      r.Referer(),
-		Timestamp:    startTime,
-		ResponseCode: statusCode,
-		Duration:     duration,
-	}
-
-	http.Error(w, message, statusCode)
+	m.Handler.RegisterRoutes(router)
 }

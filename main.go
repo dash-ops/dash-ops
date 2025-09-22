@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -23,30 +22,6 @@ import (
 	spaModels "github.com/dash-ops/dash-ops/pkg/spa/models"
 	"golang.org/x/oauth2"
 )
-
-// responseRecorder captures the status code for middleware
-type responseRecorder struct {
-	http.ResponseWriter
-	statusCode    int
-	headerWritten bool
-}
-
-func (r *responseRecorder) WriteHeader(code int) {
-	if !r.headerWritten {
-		r.statusCode = code
-		r.headerWritten = true
-		r.ResponseWriter.WriteHeader(code)
-	}
-}
-
-func (r *responseRecorder) Write(data []byte) (int, error) {
-	// If Write is called before WriteHeader, Go automatically sets status to 200
-	if !r.headerWritten {
-		r.statusCode = http.StatusOK
-		r.headerWritten = true
-	}
-	return r.ResponseWriter.Write(data)
-}
 
 func main() {
 	// Initialize config module
@@ -227,36 +202,14 @@ func main() {
 		StaticPath: dashConfig.Front,
 		IndexPath:  "index.html",
 	}
-	spaModule, err := spa.NewModule(spaConfig)
+	spaModule, err := spa.NewModule(spaConfig, api)
 	if err != nil {
 		log.Fatalf("Failed to create SPA module: %v", err)
 	}
 	log.Println("SPA module initialized successfully")
 
-	// Create middleware to handle API routes vs SPA routes
-	apiMiddleware := func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// If it's an API route, let it be handled by the API router
-			if strings.HasPrefix(r.URL.Path, "/api/") {
-				// Create a response recorder to check if the route was handled
-				recorder := &responseRecorder{ResponseWriter: w, statusCode: 0}
-				api.ServeHTTP(recorder, r)
-
-				// If no route was matched (status 0), return 404
-				if recorder.statusCode == 0 {
-					w.WriteHeader(http.StatusNotFound)
-					json.NewEncoder(w).Encode(map[string]string{"error": "API endpoint not found"})
-					return
-				}
-				return
-			}
-			// Otherwise, serve the SPA
-			next.ServeHTTP(w, r)
-		})
-	}
-
-	// Use SPA handler with middleware for non-API routes
-	router.PathPrefix("/").Handler(apiMiddleware(spaModule.Handler))
+	// Register SPA routes with API middleware
+	spaModule.RegisterRoutes(router)
 
 	fmt.Println("DashOps server running!!")
 	srv := &http.Server{

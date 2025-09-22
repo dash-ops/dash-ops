@@ -84,10 +84,8 @@ func (fp *FileProcessor) GetFileInfo(filePath string) (*spaModels.FileInfo, erro
 	return &spaModels.FileInfo{
 		Path:        filePath,
 		Size:        fileInfo.Size(),
-		ModTime:     fileInfo.ModTime(),
 		ContentType: contentType,
 		ETag:        etag,
-		Compressed:  false, // Would be set by compression middleware
 	}, nil
 }
 
