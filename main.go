@@ -13,14 +13,12 @@ import (
 	"github.com/dash-ops/dash-ops/pkg/auth"
 	"github.com/dash-ops/dash-ops/pkg/aws"
 	"github.com/dash-ops/dash-ops/pkg/config"
-	"github.com/dash-ops/dash-ops/pkg/github"
 	"github.com/dash-ops/dash-ops/pkg/kubernetes"
 	k8sExternal "github.com/dash-ops/dash-ops/pkg/kubernetes/adapters/external"
 	k8sPorts "github.com/dash-ops/dash-ops/pkg/kubernetes/ports"
 	servicecatalog "github.com/dash-ops/dash-ops/pkg/service-catalog"
 	"github.com/dash-ops/dash-ops/pkg/spa"
 	spaModels "github.com/dash-ops/dash-ops/pkg/spa/models"
-	"golang.org/x/oauth2"
 )
 
 func main() {
@@ -55,31 +53,7 @@ func main() {
 	// Initialize plugins with dependency injection
 	var serviceCatalogModule *servicecatalog.ServiceCatalog
 	if dashConfig.Plugins.Has("Auth") {
-		authConfig, err := auth.ParseAuthConfigFromFileConfig(fileConfig)
-		if err != nil {
-			log.Fatalf("Failed to parse auth config: %v", err)
-		}
-
-		// Create OAuth2 config for GitHub module dependency
-		oauthConfig := &oauth2.Config{
-			ClientID:     authConfig.ClientID,
-			ClientSecret: authConfig.ClientSecret,
-			Scopes:       authConfig.Scopes,
-			RedirectURL:  authConfig.RedirectURL,
-			Endpoint: oauth2.Endpoint{
-				AuthURL:  authConfig.AuthURL,
-				TokenURL: authConfig.TokenURL,
-			},
-		}
-
-		// Initialize GitHub module (dependency)
-		githubModule, err := github.NewModule(oauthConfig)
-		if err != nil {
-			log.Fatalf("Failed to create GitHub module: %v", err)
-		}
-
-		// Initialize auth module with GitHub dependency injection
-		authModule, err := auth.NewModule(authConfig, githubModule)
+		authModule, err := auth.NewModule(fileConfig)
 		if err != nil {
 			log.Fatalf("Failed to create auth module: %v", err)
 		}

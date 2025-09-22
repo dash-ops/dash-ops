@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v2"
 
 	authAdapters "github.com/dash-ops/dash-ops/pkg/auth/adapters/http"
@@ -12,25 +13,28 @@ import (
 	authHandlers "github.com/dash-ops/dash-ops/pkg/auth/handlers"
 	authLogic "github.com/dash-ops/dash-ops/pkg/auth/logic"
 	authModels "github.com/dash-ops/dash-ops/pkg/auth/models"
-	authPorts "github.com/dash-ops/dash-ops/pkg/auth/ports"
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
+	"github.com/dash-ops/dash-ops/pkg/github"
 )
 
 // Module represents the auth module - main entry point for the plugin
 type Module struct {
-	config     *authModels.AuthConfig
-	controller *authControllers.AuthController
-	handler    *authHandlers.HTTPHandler
+	config       *authModels.AuthConfig
+	controller   *authControllers.AuthController
+	handler      *authHandlers.HTTPHandler
+	githubModule *github.Module
 }
 
 // NewModule creates and initializes a new auth module (main factory)
-func NewModule(config *authModels.AuthConfig, githubService authPorts.GitHubService) (*Module, error) {
-	if config == nil {
-		return nil, fmt.Errorf("auth config cannot be nil")
+func NewModule(fileConfig []byte) (*Module, error) {
+	if fileConfig == nil {
+		return nil, fmt.Errorf("module config cannot be nil")
 	}
 
-	if githubService == nil {
-		return nil, fmt.Errorf("github service is required")
+	// Parse configuration
+	config, err := ParseAuthConfigFromFileConfig(fileConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse configuration: %w", err)
 	}
 
 	// Validate configuration
@@ -38,16 +42,34 @@ func NewModule(config *authModels.AuthConfig, githubService authPorts.GitHubServ
 		return nil, fmt.Errorf("invalid auth config: %w", err)
 	}
 
+	// Create OAuth2 config for GitHub module dependency
+	oauthConfig := &oauth2.Config{
+		ClientID:     config.ClientID,
+		ClientSecret: config.ClientSecret,
+		Scopes:       config.Scopes,
+		RedirectURL:  config.RedirectURL,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  config.AuthURL,
+			TokenURL: config.TokenURL,
+		},
+	}
+
+	// Initialize GitHub module (dependency)
+	githubModule, err := github.NewModule(oauthConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create GitHub module: %w", err)
+	}
+
 	// Initialize logic components
 	oauth2Processor := authLogic.NewOAuth2Processor()
 	sessionManager := authLogic.NewSessionManager(24 * time.Hour)
 
-	// Initialize controller with dependencies (using injected GitHub service)
+	// Initialize controller with dependencies (using GitHub module as service)
 	controller := authControllers.NewAuthController(
 		config,
 		oauth2Processor,
 		sessionManager,
-		githubService, // Injected dependency
+		githubModule, // GitHub module implements GitHubService interface
 	)
 
 	// Initialize adapters
@@ -64,9 +86,10 @@ func NewModule(config *authModels.AuthConfig, githubService authPorts.GitHubServ
 	)
 
 	return &Module{
-		config:     config,
-		controller: controller,
-		handler:    handler,
+		config:       config,
+		controller:   controller,
+		handler:      handler,
+		githubModule: githubModule,
 	}, nil
 }
 
