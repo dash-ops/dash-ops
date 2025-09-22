@@ -96,29 +96,9 @@ func (m *Module) RegisterRoutes(router *mux.Router) {
 	m.handler.RegisterRoutes(serviceCatalogRouter)
 }
 
-// GetController returns the service controller (for main.go compatibility)
-func (m *Module) GetController() *scControllers.ServiceController {
-	return m.controller
-}
-
-// NewMinimalModule creates a minimal module with only required dependencies
-func NewMinimalModule(serviceRepo scPorts.ServiceRepository) (*Module, error) {
-	config := &ModuleConfig{
-		ServiceRepo: serviceRepo,
-		// Optional dependencies are nil
-	}
-
-	return NewModule(config)
-}
-
 // GetKubernetesAdapter returns adapter for kubernetes integration (for main.go compatibility)
 func (m *Module) GetKubernetesAdapter() *KubernetesServiceContextAdapter {
 	return NewKubernetesServiceContextAdapter(m.controller)
-}
-
-// GetKubernetesServiceAdapter returns the kubernetes service adapter
-func (m *Module) GetKubernetesServiceAdapter() *scK8sAdapter.KubernetesAdapter {
-	return m.kubernetesAdapter
 }
 
 // UpdateKubernetesService updates the kubernetes service dependency

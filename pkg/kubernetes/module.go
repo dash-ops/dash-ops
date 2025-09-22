@@ -136,97 +136,11 @@ func NewModule(config *ModuleConfig) (*Module, error) {
 	}, nil
 }
 
-// NewMinimalModule creates a minimal module with only required dependencies
-func NewMinimalModule(
-	clusterRepo k8sPorts.ClusterRepository,
-	nodeRepo k8sPorts.NodeRepository,
-	namespaceRepo k8sPorts.NamespaceRepository,
-	deploymentRepo k8sPorts.DeploymentRepository,
-	podRepo k8sPorts.PodRepository,
-) (*Module, error) {
-	config := &ModuleConfig{
-		ClusterRepo:    clusterRepo,
-		NodeRepo:       nodeRepo,
-		NamespaceRepo:  namespaceRepo,
-		DeploymentRepo: deploymentRepo,
-		PodRepo:        podRepo,
-		// Optional dependencies are nil
-	}
-
-	return NewModule(config)
-}
-
-// GetController returns the Kubernetes controller
-func (m *Module) GetController() *kubernetes.KubernetesController {
-	return m.Controller
-}
-
-// GetHandler returns the HTTP handler
-func (m *Module) GetHandler() *handlers.HTTPHandler {
-	return m.Handler
-}
-
 // RegisterRoutes registers HTTP routes for the Kubernetes module
 func (m *Module) RegisterRoutes(router *mux.Router) {
 	// Create kubernetes prefix subrouter (consistent with other modules)
 	k8sRouter := router.PathPrefix("/k8s").Subrouter()
 	m.Handler.RegisterRoutes(k8sRouter)
-}
-
-// GetHealthCalculator returns the health calculator
-func (m *Module) GetHealthCalculator() *k8sLogic.HealthCalculator {
-	return m.HealthCalculator
-}
-
-// WithMetrics adds metrics service to the module
-func (m *Module) WithMetrics(metricsService k8sPorts.MetricsService) *Module {
-	m.MetricsService = metricsService
-	return m
-}
-
-// WithEvents adds event service to the module
-func (m *Module) WithEvents(eventService k8sPorts.EventService) *Module {
-	m.EventService = eventService
-	return m
-}
-
-// WithHealth adds health service to the module
-func (m *Module) WithHealth(healthService k8sPorts.HealthService) *Module {
-	m.HealthService = healthService
-	return m
-}
-
-// Validate validates the module configuration
-func (m *Module) Validate() error {
-	if m.ClusterRepo == nil {
-		return fmt.Errorf("cluster repository is required")
-	}
-
-	if m.NodeRepo == nil {
-		return fmt.Errorf("node repository is required")
-	}
-
-	if m.NamespaceRepo == nil {
-		return fmt.Errorf("namespace repository is required")
-	}
-
-	if m.DeploymentRepo == nil {
-		return fmt.Errorf("deployment repository is required")
-	}
-
-	if m.PodRepo == nil {
-		return fmt.Errorf("pod repository is required")
-	}
-
-	if m.Controller == nil {
-		return fmt.Errorf("controller is not initialized")
-	}
-
-	if m.Handler == nil {
-		return fmt.Errorf("handler is not initialized")
-	}
-
-	return nil
 }
 
 // GetServiceCatalogAdapter returns the adapter for service-catalog integration

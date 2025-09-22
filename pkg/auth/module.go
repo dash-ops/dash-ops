@@ -81,11 +81,6 @@ func (m *Module) RegisterRoutes(apiRouter, internalRouter *mux.Router) {
 	}
 }
 
-// GetConfig returns the current configuration (for compatibility)
-func (m *Module) GetConfig() *authModels.AuthConfig {
-	return m.config
-}
-
 // ParseAuthConfigFromFileConfig parses auth config from YAML bytes (exported for main.go)
 func ParseAuthConfigFromFileConfig(fileConfig []byte) (*authModels.AuthConfig, error) {
 	// Parse YAML similar to the original oauth2.loadConfig

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"time"
 
 	commonsWire "github.com/dash-ops/dash-ops/pkg/commons/wire"
 )
@@ -41,16 +40,6 @@ func (r *ResponseAdapter) WriteError(w http.ResponseWriter, code int, message st
 	r.WriteJSON(w, code, errorResponse)
 }
 
-// WriteErrorWithCode writes an error response with error code and details
-func (r *ResponseAdapter) WriteErrorWithCode(w http.ResponseWriter, httpCode int, errorCode, message, details string) {
-	errorResponse := commonsWire.ErrorResponse{
-		Error:   message,
-		Code:    errorCode,
-		Details: details,
-	}
-	r.WriteJSON(w, httpCode, errorResponse)
-}
-
 // WriteSuccess writes a success response with optional data
 func (r *ResponseAdapter) WriteSuccess(w http.ResponseWriter, message string, data interface{}) {
 	successResponse := commonsWire.SuccessResponse{
@@ -58,17 +47,6 @@ func (r *ResponseAdapter) WriteSuccess(w http.ResponseWriter, message string, da
 		Data:    data,
 	}
 	r.WriteJSON(w, http.StatusOK, successResponse)
-}
-
-// WriteHealth writes a health check response
-func (r *ResponseAdapter) WriteHealth(w http.ResponseWriter, status, version string, services map[string]string) {
-	healthResponse := commonsWire.HealthResponse{
-		Status:    status,
-		Version:   version,
-		Timestamp: time.Now().Format(time.RFC3339),
-		Services:  services,
-	}
-	r.WriteJSON(w, http.StatusOK, healthResponse)
 }
 
 // WriteNoContent writes a 204 No Content response

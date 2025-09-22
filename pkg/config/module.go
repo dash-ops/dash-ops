@@ -58,34 +58,6 @@ func NewModule(configFilePath string) (*Module, error) {
 	}, nil
 }
 
-// NewModuleFromBytes creates a module from configuration bytes
-func NewModuleFromBytes(configData []byte) (*Module, error) {
-	// Initialize logic components
-	processor := configLogic.NewConfigProcessor()
-
-	// Parse configuration
-	config, err := processor.ParseFromBytes(configData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse configuration: %w", err)
-	}
-
-	// Initialize adapters
-	configAdapter := httpAdapter.NewConfigAdapter()
-	responseAdapter := commonsHttp.NewResponseAdapter()
-
-	// Initialize controller
-	controller := configControllers.NewConfigController(processor, config)
-
-	// Initialize handler
-	handler := handlers.NewHTTPHandler(controller, configAdapter, responseAdapter)
-
-	return &Module{
-		config:     config,
-		controller: controller,
-		handler:    handler,
-	}, nil
-}
-
 // RegisterRoutes registers HTTP routes for the config module
 func (m *Module) RegisterRoutes(router *mux.Router) {
 	m.handler.RegisterRoutes(router)
@@ -103,13 +75,6 @@ func (m *Module) GetPlugins() configModels.Plugins {
 
 // GetFileConfigBytes returns raw config file bytes (for dependency injection)
 func (m *Module) GetFileConfigBytes() []byte {
-	return GetFileGlobalConfig() // Use existing function
-}
-
-// Legacy compatibility functions for existing main.go
-
-// GetFileGlobalConfig reads configuration file - legacy compatibility
-func GetFileGlobalConfig() []byte {
 	processor := configLogic.NewConfigProcessor()
 	configPath := processor.GetConfigFilePath()
 

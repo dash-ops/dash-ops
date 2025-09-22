@@ -174,36 +174,3 @@ func (h *SPAHandler) handleError(w http.ResponseWriter, r *http.Request, statusC
 
 	http.Error(w, message, statusCode)
 }
-
-// GetModule returns the module components
-func (m *Module) GetHandler() http.Handler {
-	return m.Handler
-}
-
-// GetStats returns current statistics
-func (m *Module) GetStats() *spaModels.SPAStats {
-	m.Stats.UpdateUptime()
-	return m.Stats
-}
-
-// GetConfig returns the configuration
-func (m *Module) GetConfig() *spaModels.SPAConfig {
-	return m.Config
-}
-
-// Validate validates the module
-func (m *Module) Validate() error {
-	if m.Config == nil {
-		return fmt.Errorf("config is required")
-	}
-
-	if m.FileProcessor == nil {
-		return fmt.Errorf("file processor is required")
-	}
-
-	if m.Handler == nil {
-		return fmt.Errorf("handler is required")
-	}
-
-	return nil
-}

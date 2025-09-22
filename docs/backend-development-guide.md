@@ -581,6 +581,242 @@ func NewAuthController() *AuthController {
 }
 ```
 
+## Architecture Standards
+
+### 🎯 Controller Organization
+
+DashOps follows a **domain-specific controller architecture** that ensures clean separation of concerns and maintainability.
+
+#### Domain-Specific Controllers
+
+Each module uses separate controllers for different domains, following the Single Responsibility Principle:
+
+```go
+// Controllers are organized by domain
+type LogsController struct {
+    logRepo      ports.LogRepository
+    serviceRepo  ports.ServiceContextRepository
+    logService   ports.LogService
+    cacheService ports.CacheService
+    processor    *logic.LogProcessor
+}
+
+type MetricsController struct {
+    metricRepo    ports.MetricRepository
+    serviceRepo   ports.ServiceContextRepository
+    metricService ports.MetricService
+    cacheService  ports.CacheService
+    processor     *logic.MetricProcessor
+}
+
+type TracesController struct {
+    traceRepo    ports.TraceRepository
+    serviceRepo  ports.ServiceContextRepository
+    traceService ports.TraceService
+    cacheService ports.CacheService
+    processor    *logic.TraceProcessor
+}
+```
+
+**Benefits**:
+- Each controller has a single, clear responsibility
+- Easy to test and maintain
+- Independent evolution of domains
+- Better code organization and readability
+
+### 📁 Model Organization
+
+Models are organized by domain context for optimal maintainability and clarity:
+
+```
+models/
+├── common.go           # BaseResponse, BaseMetadata
+├── logs.go            # LogEntry, ProcessedLogEntry, LogsConfig
+├── metrics.go         # MetricData, ProcessedMetric, DerivedMetric, MetricsConfig
+├── traces.go          # TraceSpan, ProcessedTrace, TraceInfo, TracePerformance, TracesConfig
+├── alerts.go          # Alert, ProcessedAlert, AlertRule, AlertEvaluation, AlertsConfig
+├── dashboards.go      # Dashboard, Chart, DashboardTemplate, DashboardData, ChartData
+├── service_context.go # ServiceContext, ServiceWithContext, ServiceHealth
+├── config.go          # ObservabilityConfig, ServiceObservabilityConfig, CacheConfig, UIConfig, CacheStats
+└── notifications.go   # NotificationChannel
+```
+
+**Benefits**:
+- Easy to find related models
+- Reduced file size and complexity
+- Domain-focused development
+- Minimal merge conflicts
+- Clear domain boundaries
+
+### 🔌 Wire Organization
+
+Wire (API DTOs) are organized by domain context with clear request/response separation:
+
+```
+wire/
+├── common.go           # BaseResponse, TimeSeriesData, ErrorResponse, PaginationInfo
+├── logs.go            # LogsRequest, LogsResponse, LogStatsRequest, LogStatisticsResponse
+├── metrics.go         # MetricsRequest, MetricsResponse, PrometheusQueryRequest, MetricStatsRequest
+├── traces.go          # TracesRequest, TracesResponse, TraceDetailRequest, TraceAnalysisRequest
+├── alerts.go          # AlertsRequest, AlertsResponse, CreateAlertRequest, AlertRulesRequest
+├── dashboards.go      # DashboardsRequest, DashboardsResponse, CreateDashboardRequest, DashboardTemplatesRequest
+├── service_context.go # ServiceContextRequest, ServiceContextResponse, ServicesWithContextRequest
+├── config.go          # ConfigurationRequest, ConfigurationResponse, NotificationChannelsRequest
+└── health.go          # HealthRequest, HealthResponse, CacheStatsRequest, CacheStatsResponse
+```
+
+**Naming Convention**:
+- **Requests**: `{Domain}Request` (e.g., `LogsRequest`, `MetricsRequest`)
+- **Responses**: `{Domain}Response` (e.g., `LogsResponse`, `MetricsResponse`)
+- **Data Types**: `{Domain}Data` (e.g., `LogsData`, `MetricsData`)
+- **Statistics**: `{Domain}Statistics` (e.g., `LogStatistics`, `MetricStatistics`)
+
+**Benefits**:
+- Clear separation of concerns
+- Easy to find related wire types
+- Consistent naming across domains
+- Reduced file size and complexity
+- Domain-focused development
+- Minimal merge conflicts
+- Shared common types in `common.go`
+
+### 🏗️ Module Structure
+
+Modules follow a simplified, focused structure that includes only essential components:
+
+```go
+// module.go - Clean and focused structure
+type Module struct {
+    // Core components
+    LogsController    *controllers.LogsController
+    MetricsController *controllers.MetricsController
+    TracesController  *controllers.TracesController
+    AlertsController  *controllers.AlertsController
+    HealthController  *controllers.HealthController
+    ConfigController  *controllers.ConfigController
+    Handler           *handlers.HTTPHandler
+
+    // Logic components
+    LogProcessor       *logic.LogProcessor
+    MetricProcessor    *logic.MetricProcessor
+    TraceProcessor     *logic.TraceProcessor
+    AlertProcessor     *logic.AlertProcessor
+    DashboardProcessor *logic.DashboardProcessor
+
+    // Adapters
+    ResponseAdapter *commonsHttp.ResponseAdapter
+    RequestAdapter  *commonsHttp.RequestAdapter
+
+    // Repositories (interfaces - implementations injected)
+    LogRepo       ports.LogRepository
+    MetricRepo    ports.MetricRepository
+    TraceRepo     ports.TraceRepository
+    AlertRepo     ports.AlertRepository
+    DashboardRepo ports.DashboardRepository
+    ServiceRepo   ports.ServiceContextRepository
+
+    // Services (interfaces - implementations injected)
+    LogService           ports.LogService
+    MetricService        ports.MetricService
+    TraceService         ports.TraceService
+    AlertService         ports.AlertService
+    DashboardService     ports.DashboardService
+    NotificationService  ports.NotificationService
+    CacheService         ports.CacheService
+    ConfigurationService ports.ConfigurationService
+}
+
+// NewModule creates and initializes a new module
+func NewModule(config *ModuleConfig) (*Module, error) {
+    // Validate required dependencies
+    if config.LogRepo == nil {
+        return nil, fmt.Errorf("log repository is required")
+    }
+    // ... other validations
+
+    // Initialize logic components
+    logProcessor := logic.NewLogProcessor()
+    metricProcessor := logic.NewMetricProcessor()
+    traceProcessor := logic.NewTraceProcessor()
+    alertProcessor := logic.NewAlertProcessor()
+    dashboardProcessor := logic.NewDashboardProcessor()
+
+    // Initialize adapters
+    responseAdapter := commonsHttp.NewResponseAdapter()
+    requestAdapter := commonsHttp.NewRequestAdapter()
+
+    // Initialize per-domain controllers
+    logsController := controllers.NewLogsController(
+        config.LogRepo,
+        config.ServiceRepo,
+        config.LogService,
+        config.CacheService,
+        logProcessor,
+    )
+
+    metricsController := controllers.NewMetricsController(
+        config.MetricRepo,
+        config.ServiceRepo,
+        config.MetricService,
+        config.CacheService,
+        metricProcessor,
+    )
+
+    // ... other controllers
+
+    // Initialize handler
+    handler := handlers.NewHTTPHandler(
+        logsController,
+        metricsController,
+        tracesController,
+        alertsController,
+        healthController,
+        configController,
+        responseAdapter,
+        requestAdapter,
+    )
+
+    return &Module{
+        LogsController:       logsController,
+        MetricsController:    metricsController,
+        TracesController:     tracesController,
+        AlertsController:     alertsController,
+        HealthController:     healthController,
+        ConfigController:     configController,
+        Handler:              handler,
+        // ... other fields
+    }, nil
+}
+
+// Essential getters
+func (m *Module) GetHandler() *handlers.HTTPHandler {
+    return m.Handler
+}
+
+func (m *Module) GetLogsController() *controllers.LogsController {
+    return m.LogsController
+}
+
+// ... other getters
+
+// RegisterRoutes registers HTTP routes for the module
+func (m *Module) RegisterRoutes(router *mux.Router) {
+    if m.Handler == nil {
+        return
+    }
+    m.Handler.RegisterRoutes(router)
+}
+```
+
+### 🎯 Architecture Principles
+
+1. **Single Responsibility**: Each component has one clear purpose
+2. **Dependency Injection**: Inject dependencies, don't create them
+3. **Interface Segregation**: Use focused interfaces
+4. **Clean Architecture**: Clear separation of concerns
+5. **Testability**: Easy to test with mocks
+6. **Maintainability**: Easy to understand and modify
+
 ## Module-Specific Guides
 
 ### 📦 Service Catalog Module
@@ -661,6 +897,72 @@ type ServiceContextResolver interface {
 - RDS database management
 - Lambda function management
 ```
+
+### 📊 Observability Module
+
+**Purpose**: Unified observability with logs, metrics, traces, and alerts
+
+```go
+// Architecture: Domain-specific controllers
+type LogsController struct {
+    logRepo      ports.LogRepository
+    serviceRepo  ports.ServiceContextRepository
+    logService   ports.LogService
+    cacheService ports.CacheService
+    processor    *logic.LogProcessor
+}
+
+type MetricsController struct {
+    metricRepo    ports.MetricRepository
+    serviceRepo   ports.ServiceContextRepository
+    metricService ports.MetricService
+    cacheService  ports.CacheService
+    processor     *logic.MetricProcessor
+}
+
+// Model organization by context
+models/
+├── common.go          # BaseResponse, BaseMetadata
+├── logs.go            # LogEntry, ProcessedLogEntry, LogsConfig
+├── metrics.go         # MetricData, ProcessedMetric, MetricsConfig
+├── traces.go          # TraceSpan, ProcessedTrace, TraceInfo, TracesConfig
+├── alerts.go          # Alert, ProcessedAlert, AlertRule, AlertsConfig
+├── dashboards.go      # Dashboard, Chart, DashboardTemplate
+├── service_context.go # ServiceContext, ServiceHealth
+├── config.go          # ObservabilityConfig, CacheConfig
+└── notifications.go   # NotificationChannel
+
+// Wire organization by context
+wire/
+├── common.go          # BaseResponse, TimeSeriesData, ErrorResponse
+├── logs.go            # LogsRequest, LogsResponse, LogStatsRequest
+├── metrics.go         # MetricsRequest, MetricsResponse, PrometheusQueryRequest
+├── traces.go          # TracesRequest, TracesResponse, TraceDetailRequest
+├── alerts.go          # AlertsRequest, AlertsResponse, CreateAlertRequest
+├── dashboards.go      # DashboardsRequest, DashboardsResponse, CreateDashboardRequest
+├── service_context.go # ServiceContextRequest, ServiceContextResponse
+├── config.go          # ConfigurationRequest, ConfigurationResponse
+└── health.go          # HealthRequest, HealthResponse, CacheStatsRequest
+
+// Key features
+- Multi-source log aggregation (Loki integration)
+- Metrics collection and analysis (Prometheus integration)
+- Distributed tracing (Tempo integration)
+- Alert management (Alertmanager integration)
+- Dashboard creation and management
+- Service context awareness
+- Real-time streaming capabilities
+- Caching for performance optimization
+```
+
+**Architecture**:
+- Domain-specific controllers (6 focused controllers)
+- Context-specific model files (9 organized files)
+- Context-specific wire files (9 organized files)
+- Simplified module structure (essential methods only)
+- Clean Architecture principles
+- Single Responsibility Principle
+- Easy testing and maintenance
 
 ## Best Practices
 
@@ -950,9 +1252,84 @@ service := NewServiceBuilder().
 
 ### File Templates
 
+#### Domain-Specific Controller Template
+```go
+package controllers
+
+import (
+    "context"
+    "github.com/dash-ops/dash-ops/pkg/{module}/logic"
+    "github.com/dash-ops/dash-ops/pkg/{module}/ports"
+    "github.com/dash-ops/dash-ops/pkg/{module}/wire"
+)
+
+// {Domain}Controller handles {domain} operations
+type {Domain}Controller struct {
+    {domain}Repo    ports.{Domain}Repository
+    serviceRepo     ports.ServiceContextRepository
+    {domain}Service ports.{Domain}Service
+    cacheService    ports.CacheService
+    processor       *logic.{Domain}Processor
+}
+
+// New{Domain}Controller creates a new {domain} controller
+func New{Domain}Controller(
+    {domain}Repo ports.{Domain}Repository,
+    serviceRepo ports.ServiceContextRepository,
+    {domain}Service ports.{Domain}Service,
+    cacheService ports.CacheService,
+    processor *logic.{Domain}Processor,
+) *{Domain}Controller {
+    return &{Domain}Controller{
+        {domain}Repo:    {domain}Repo,
+        serviceRepo:     serviceRepo,
+        {domain}Service: {domain}Service,
+        cacheService:    cacheService,
+        processor:       processor,
+    }
+}
+
+// Get{Domain} retrieves {domain} data
+func (c *{Domain}Controller) Get{Domain}(ctx context.Context, req *wire.{Domain}Request) (*wire.{Domain}Response, error) {
+    // Implementation
+    return nil, nil
+}
+```
+
+#### Context-Specific Model File Template
+```go
+package models
+
+import (
+    "time"
+)
+
+// {Domain}Entity represents a {domain} entity
+type {Domain}Entity struct {
+    ID        string                 `json:"id"`
+    Name      string                 `json:"name"`
+    Timestamp time.Time              `json:"timestamp"`
+    Metadata  map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// Processed{Domain}Entity represents a processed {domain} entity
+type Processed{Domain}Entity struct {
+    {Domain}Entity
+    ProcessedAt time.Time              `json:"processed_at"`
+    Enrichments map[string]interface{} `json:"enrichments,omitempty"`
+}
+
+// {Domain}Config represents {domain} configuration
+type {Domain}Config struct {
+    Enabled   bool     `json:"enabled"`
+    Retention string   `json:"retention"`
+    Settings  []string `json:"settings"`
+}
+```
+
 #### New Logic File
 ```go
-package {module}
+package logic
 
 // {Name}Processor handles {description}
 type {Name}Processor struct{}

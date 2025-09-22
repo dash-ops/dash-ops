@@ -8,8 +8,8 @@ import (
 
 	authAdapters "github.com/dash-ops/dash-ops/pkg/auth/adapters/http"
 	authControllers "github.com/dash-ops/dash-ops/pkg/auth/controllers"
-	"github.com/dash-ops/dash-ops/pkg/commons"
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
+	commonsModels "github.com/dash-ops/dash-ops/pkg/commons/models"
 	"golang.org/x/oauth2"
 )
 
@@ -100,7 +100,7 @@ func (h *HTTPHandler) redirectHandler(w http.ResponseWriter, r *http.Request) {
 // meHandler handles user profile requests
 func (h *HTTPHandler) meHandler(w http.ResponseWriter, r *http.Request) {
 	// Get token from context
-	token, ok := r.Context().Value(commons.TokenKey).(*oauth2.Token)
+	token, ok := r.Context().Value(commonsModels.TokenKey).(*oauth2.Token)
 	if !ok {
 		h.responseAdapter.WriteError(w, http.StatusUnauthorized, "No token found in context")
 		return
@@ -120,7 +120,7 @@ func (h *HTTPHandler) meHandler(w http.ResponseWriter, r *http.Request) {
 // mePermissionsHandler handles user permissions requests
 func (h *HTTPHandler) mePermissionsHandler(w http.ResponseWriter, r *http.Request) {
 	// Get token from context
-	token, ok := r.Context().Value(commons.TokenKey).(*oauth2.Token)
+	token, ok := r.Context().Value(commonsModels.TokenKey).(*oauth2.Token)
 	if !ok {
 		h.responseAdapter.WriteError(w, http.StatusUnauthorized, "No token found in context")
 		return
@@ -172,7 +172,7 @@ func (h *HTTPHandler) oAuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Add token to context
-		ctx := context.WithValue(r.Context(), commons.TokenKey, token)
+		ctx := context.WithValue(r.Context(), commonsModels.TokenKey, token)
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
@@ -183,7 +183,7 @@ func (h *HTTPHandler) oAuthMiddleware(next http.Handler) http.Handler {
 func (h *HTTPHandler) OrgPermissionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Get token from context
-		token, ok := r.Context().Value(commons.TokenKey).(*oauth2.Token)
+		token, ok := r.Context().Value(commonsModels.TokenKey).(*oauth2.Token)
 		if !ok {
 			h.responseAdapter.WriteError(w, http.StatusUnauthorized, "No token found in context")
 			return
@@ -197,7 +197,7 @@ func (h *HTTPHandler) OrgPermissionMiddleware(next http.Handler) http.Handler {
 		}
 
 		// Add user data to context
-		ctx := context.WithValue(r.Context(), commons.UserDataKey, userData)
+		ctx := context.WithValue(r.Context(), commonsModels.UserDataKey, userData)
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)

@@ -73,14 +73,13 @@ func main() {
 
 	// Register config routes using hexagonal architecture
 	configModule.RegisterRoutes(api)
+	fileConfig := configModule.GetFileConfigBytes()
 
 	internal := api.PathPrefix("/v1").Subrouter()
 
 	// Initialize plugins with dependency injection
 	var serviceCatalogModule *servicecatalog.ServiceCatalog
 	if dashConfig.Plugins.Has("Auth") {
-		// Parse auth config using hexagonal architecture
-		fileConfig := configModule.GetFileConfigBytes()
 		authConfig, err := auth.ParseAuthConfigFromFileConfig(fileConfig)
 		if err != nil {
 			log.Fatalf("Failed to parse auth config: %v", err)
@@ -116,9 +115,6 @@ func main() {
 	}
 
 	if dashConfig.Plugins.Has("ServiceCatalog") {
-		// Initialize Service Catalog module using hexagonal architecture
-		fileConfig := configModule.GetFileConfigBytes()
-
 		// Parse service catalog config
 		scConfig, err := servicecatalog.ParseServiceCatalogConfig(fileConfig)
 		if err != nil {
@@ -148,9 +144,6 @@ func main() {
 	}
 
 	if dashConfig.Plugins.Has("Kubernetes") {
-		// Get file config bytes
-		fileConfig := configModule.GetFileConfigBytes()
-
 		// Parse kubernetes config
 		k8sConfigs, err := kubernetes.ParseKubernetesConfigFromFileConfig(fileConfig)
 		if err != nil {
@@ -218,29 +211,14 @@ func main() {
 	}
 
 	if dashConfig.Plugins.Has("AWS") {
-		// Initialize AWS module using hexagonal architecture
-		fileConfig := configModule.GetFileConfigBytes()
-
-		// Create account repository
-		accountRepo, err := aws.NewAccountRepositoryAdapter(fileConfig)
+		// Create AWS module with minimal dependencies
+		awsModule, err := aws.NewModule(fileConfig)
 		if err != nil {
-			log.Printf("Failed to create AWS account repository: %v", err)
+			log.Printf("Failed to create AWS module: %v", err)
 		} else {
-			// Create AWS client service
-			awsClientService := aws.NewAWSClientServiceAdapter()
-
-			// Create instance repository
-			instanceRepo := aws.NewInstanceRepositoryAdapter(awsClientService, accountRepo)
-
-			// Create AWS module with minimal dependencies
-			awsModule, err := aws.NewMinimalModule(accountRepo, instanceRepo)
-			if err != nil {
-				log.Printf("Failed to create AWS module: %v", err)
-			} else {
-				// Register routes using hexagonal architecture
-				awsModule.RegisterRoutes(internal)
-				log.Println("AWS module initialized successfully")
-			}
+			// Register routes using hexagonal architecture
+			awsModule.RegisterRoutes(internal)
+			log.Println("AWS module initialized successfully")
 		}
 	}
 
