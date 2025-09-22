@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gorilla/handlers"
@@ -51,42 +52,38 @@ func main() {
 	// Phase 1: Initialize all modules
 	modules := make(map[string]interface{})
 
-	if dashConfig.Plugins.Has("Auth") {
-		authModule, err := auth.NewModule(fileConfig)
-		if err != nil {
-			log.Fatalf("Failed to create auth module: %v", err)
-		}
-		modules["auth"] = authModule
-		log.Println("Auth module initialized successfully")
+	// Module factory registry - maps plugin names to their factory functions
+	moduleFactories := map[string]func([]byte) (interface{}, error){
+		"Auth":           func(config []byte) (interface{}, error) { return auth.NewModule(config) },
+		"ServiceCatalog": func(config []byte) (interface{}, error) { return servicecatalog.NewModule(config) },
+		"Kubernetes":     func(config []byte) (interface{}, error) { return kubernetes.NewModule(config) },
+		"AWS":            func(config []byte) (interface{}, error) { return aws.NewModule(config) },
 	}
 
-	if dashConfig.Plugins.Has("ServiceCatalog") {
-		scModule, err := servicecatalog.NewModule(fileConfig)
-		if err != nil {
-			log.Fatalf("Failed to create service catalog module: %v", err)
+	// Initialize modules dynamically based on active plugins
+	modulesLoaded := 0
+	for pluginName, factory := range moduleFactories {
+		if dashConfig.Plugins.Has(pluginName) {
+			module, err := factory(fileConfig)
+			if err != nil {
+				// All modules are optional - DashOps can run without any plugins
+				log.Printf("Failed to create %s module: %v", pluginName, err)
+				continue
+			}
+
+			// Use lowercase with dashes for consistency
+			moduleKey := strings.ToLower(strings.ReplaceAll(pluginName, "Catalog", "-catalog"))
+			modules[moduleKey] = module
+			modulesLoaded++
+			log.Printf("%s module initialized successfully", pluginName)
 		}
-		modules["service-catalog"] = scModule
-		log.Println("Service Catalog module initialized successfully")
 	}
 
-	if dashConfig.Plugins.Has("Kubernetes") {
-		k8sModule, err := kubernetes.NewModule(fileConfig)
-		if err != nil {
-			log.Printf("Failed to create kubernetes module: %v", err)
-		} else {
-			modules["kubernetes"] = k8sModule
-			log.Println("Kubernetes module initialized successfully")
-		}
-	}
-
-	if dashConfig.Plugins.Has("AWS") {
-		awsModule, err := aws.NewModule(fileConfig)
-		if err != nil {
-			log.Printf("Failed to create AWS module: %v", err)
-		} else {
-			modules["aws"] = awsModule
-			log.Println("AWS module initialized successfully")
-		}
+	// Log summary of loaded modules
+	if modulesLoaded == 0 {
+		log.Println("No modules loaded - DashOps running in minimal mode")
+	} else {
+		log.Printf("Successfully loaded %d module(s)", modulesLoaded)
 	}
 
 	// Phase 2: Register routes for all modules
