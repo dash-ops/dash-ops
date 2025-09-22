@@ -90,24 +90,7 @@ func main() {
 	}
 
 	if dashConfig.Plugins.Has("ServiceCatalog") {
-		// Parse service catalog config
-		scConfig, err := servicecatalog.ParseServiceCatalogConfig(fileConfig)
-		if err != nil {
-			log.Fatalf("Failed to parse service catalog config: %v", err)
-		}
-
-		// Create filesystem repository (real implementation)
-		serviceRepo, err := servicecatalog.NewFilesystemRepository(scConfig.Directory)
-		if err != nil {
-			log.Fatalf("Failed to create filesystem repository: %v", err)
-		}
-
-		// Create service catalog module with full dependencies
-		moduleConfig := &servicecatalog.ModuleConfig{
-			ServiceRepo: serviceRepo,
-			// TODO: Add other dependencies (Kubernetes, GitHub, Versioning) when available
-		}
-		scModule, err := servicecatalog.NewModule(moduleConfig)
+		scModule, err := servicecatalog.NewModule(fileConfig)
 		if err != nil {
 			log.Fatalf("Failed to create service catalog module: %v", err)
 		}

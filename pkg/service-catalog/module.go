@@ -1,6 +1,7 @@
 package servicecatalog
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/gorilla/mux"
@@ -27,25 +28,26 @@ type Module struct {
 
 // ModuleConfig represents configuration for the service catalog module
 type ModuleConfig struct {
-	// Repository implementations
-	ServiceRepo    scPorts.ServiceRepository
-	VersioningRepo scPorts.VersioningRepository
-	HealthRepo     scPorts.HealthRepository
-
-	// Service implementations
-	KubernetesService scPorts.KubernetesService
-	GitHubService     scPorts.GitHubService
+	// Configuration data
+	Directory string `yaml:"directory" json:"directory"`
 }
 
 // NewModule creates and initializes a new service catalog module (main factory)
-func NewModule(config *ModuleConfig) (*Module, error) {
-	if config == nil {
+func NewModule(fileConfig []byte) (*Module, error) {
+	if fileConfig == nil {
 		return nil, fmt.Errorf("module config cannot be nil")
 	}
 
-	// Validate required dependencies
-	if config.ServiceRepo == nil {
-		return nil, fmt.Errorf("service repository is required")
+	// Parse configuration
+	config, err := ParseServiceCatalogConfig(fileConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse configuration: %w", err)
+	}
+
+	// Create filesystem repository (real implementation)
+	serviceRepo, err := scStorage.NewFilesystemRepository(config.Directory)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create filesystem repository: %w", err)
 	}
 
 	// Initialize logic components
@@ -57,18 +59,12 @@ func NewModule(config *ModuleConfig) (*Module, error) {
 	responseAdapter := commonsHttp.NewResponseAdapter()
 	requestAdapter := commonsHttp.NewRequestAdapter()
 
-	// Initialize kubernetes adapter if kubernetes service is available
-	var kubernetesAdapter *scK8sAdapter.KubernetesAdapter
-	if config.KubernetesService != nil {
-		kubernetesAdapter = scK8sAdapter.NewKubernetesAdapter(config.KubernetesService)
-	}
-
 	// Initialize controller with injected dependencies
 	controller := scControllers.NewServiceController(
-		config.ServiceRepo,
-		config.VersioningRepo, // Can be nil
-		kubernetesAdapter,     // Use adapter instead of direct service
-		config.GitHubService,  // Can be nil
+		serviceRepo,
+		nil, // VersioningRepo - can be added later
+		nil, // KubernetesAdapter - can be added later
+		nil, // GitHubService - can be added later
 		validator,
 		processor,
 	)
@@ -84,8 +80,10 @@ func NewModule(config *ModuleConfig) (*Module, error) {
 	return &Module{
 		controller:        controller,
 		handler:           handler,
-		kubernetesAdapter: kubernetesAdapter,
-		config:            config,
+		kubernetesAdapter: nil, // Can be added later
+		config: &ModuleConfig{
+			Directory: config.Directory,
+		},
 	}, nil
 }
 
@@ -121,9 +119,9 @@ func NewKubernetesServiceContextAdapter(controller *scControllers.ServiceControl
 }
 
 // ResolveDeploymentService implements kubernetes.ServiceContextResolver interface
-func (k *KubernetesServiceContextAdapter) ResolveDeploymentService(deploymentName, namespace, context string) (*k8sModels.ServiceContext, error) {
+func (k *KubernetesServiceContextAdapter) ResolveDeploymentService(deploymentName, namespace, contextName string) (*k8sModels.ServiceContext, error) {
 	// Use the controller to resolve the service context
-	serviceContext, err := k.controller.ResolveDeploymentService(nil, deploymentName, namespace, context)
+	serviceContext, err := k.controller.ResolveDeploymentService(context.TODO(), deploymentName, namespace, contextName)
 	if err != nil {
 		// Return nil if no service found (not an error)
 		return nil, nil
