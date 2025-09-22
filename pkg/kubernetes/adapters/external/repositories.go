@@ -378,6 +378,11 @@ func NewDeploymentRepository(clusterRepo k8sPorts.ClusterRepository, serviceCont
 	}
 }
 
+// SetServiceContextResolver updates the service context resolver
+func (dr *DeploymentRepositoryImpl) SetServiceContextResolver(resolver k8sPorts.ServiceContextResolver) {
+	dr.serviceContextResolver = resolver
+}
+
 // ListDeployments lists deployments with optional filtering
 func (dr *DeploymentRepositoryImpl) ListDeployments(ctx context.Context, context string, filter *k8sModels.DeploymentFilter) (*k8sModels.DeploymentList, error) {
 	client, err := dr.clusterRepo.GetClient(context)

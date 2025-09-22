@@ -49,41 +49,29 @@ type Module struct {
 
 // ModuleConfig represents configuration for the Kubernetes module
 type ModuleConfig struct {
-	// Repository implementations
-	ClusterRepo    k8sPorts.ClusterRepository
-	NodeRepo       k8sPorts.NodeRepository
-	NamespaceRepo  k8sPorts.NamespaceRepository
-	DeploymentRepo k8sPorts.DeploymentRepository
-	PodRepo        k8sPorts.PodRepository
-
-	// Service implementations
-	ClientService  k8sPorts.KubernetesClientService
-	MetricsService k8sPorts.MetricsService
-	EventService   k8sPorts.EventService
-	HealthService  k8sPorts.HealthService
+	// Configuration data
+	Configs []KubernetesConfig `yaml:"configs" json:"configs"`
 }
 
 // NewModule creates and initializes a new Kubernetes module
-func NewModule(config *ModuleConfig) (*Module, error) {
-	if config == nil {
+func NewModule(fileConfig []byte) (*Module, error) {
+	if fileConfig == nil {
 		return nil, fmt.Errorf("module config cannot be nil")
 	}
 
-	// Validate required dependencies
-	if config.ClusterRepo == nil {
-		return nil, fmt.Errorf("cluster repository is required")
+	// Parse configuration
+	configs, err := ParseKubernetesConfigFromFileConfig(fileConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse configuration: %w", err)
 	}
-	if config.NodeRepo == nil {
-		return nil, fmt.Errorf("node repository is required")
-	}
-	if config.NamespaceRepo == nil {
-		return nil, fmt.Errorf("namespace repository is required")
-	}
-	if config.DeploymentRepo == nil {
-		return nil, fmt.Errorf("deployment repository is required")
-	}
-	if config.PodRepo == nil {
-		return nil, fmt.Errorf("pod repository is required")
+
+	// Convert to external config format
+	var externalConfigs []k8sExternal.KubernetesConfig
+	for _, config := range configs {
+		externalConfigs = append(externalConfigs, k8sExternal.KubernetesConfig{
+			Kubeconfig: config.Kubeconfig,
+			Context:    config.Context,
+		})
 	}
 
 	// Initialize logic components
@@ -94,16 +82,26 @@ func NewModule(config *ModuleConfig) (*Module, error) {
 	responseAdapter := commonsHttp.NewResponseAdapter()
 	requestAdapter := commonsHttp.NewRequestAdapter()
 
+	// Initialize repositories with real configs
+	clusterRepo, err := k8sExternal.NewClusterRepository(externalConfigs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cluster repository: %w", err)
+	}
+	nodeRepo := k8sExternal.NewNodeRepository(clusterRepo)
+	namespaceRepo := k8sExternal.NewNamespaceRepository(clusterRepo)
+	deploymentRepo := k8sExternal.NewDeploymentRepository(clusterRepo, nil) // ServiceContextResolver will be set later
+	podRepo := k8sExternal.NewPodRepository(clusterRepo)
+
 	// Initialize service-catalog adapter
-	serviceCatalogAdapter := k8sExternal.NewServiceCatalogAdapter(config.DeploymentRepo, config.ClusterRepo)
+	serviceCatalogAdapter := k8sExternal.NewServiceCatalogAdapter(deploymentRepo, clusterRepo)
 
 	// Initialize controller
 	controller := kubernetes.NewKubernetesController(
-		config.ClusterRepo,
-		config.NodeRepo,
-		config.NamespaceRepo,
-		config.DeploymentRepo,
-		config.PodRepo,
+		clusterRepo,
+		nodeRepo,
+		namespaceRepo,
+		deploymentRepo,
+		podRepo,
 		healthCalculator,
 	)
 
@@ -122,16 +120,16 @@ func NewModule(config *ModuleConfig) (*Module, error) {
 		K8sAdapter:             k8sAdapter,
 		ResponseAdapter:        responseAdapter,
 		RequestAdapter:         requestAdapter,
-		ClusterRepo:            config.ClusterRepo,
-		NodeRepo:               config.NodeRepo,
-		NamespaceRepo:          config.NamespaceRepo,
-		DeploymentRepo:         config.DeploymentRepo,
-		PodRepo:                config.PodRepo,
-		ClientService:          config.ClientService,
-		MetricsService:         config.MetricsService,
-		EventService:           config.EventService,
-		HealthService:          config.HealthService,
-		ServiceContextResolver: nil, // TODO: Add ServiceContextResolver to ModuleConfig
+		ClusterRepo:            clusterRepo,
+		NodeRepo:               nodeRepo,
+		NamespaceRepo:          namespaceRepo,
+		DeploymentRepo:         deploymentRepo,
+		PodRepo:                podRepo,
+		ClientService:          nil, // Can be added later
+		MetricsService:         nil, // Can be added later
+		EventService:           nil, // Can be added later
+		HealthService:          nil, // Can be added later
+		ServiceContextResolver: nil, // Will be set via LoadDependencies
 		ServiceCatalogAdapter:  serviceCatalogAdapter,
 	}, nil
 }
@@ -141,6 +139,25 @@ func (m *Module) RegisterRoutes(router *mux.Router) {
 	// Create kubernetes prefix subrouter (consistent with other modules)
 	k8sRouter := router.PathPrefix("/k8s").Subrouter()
 	m.Handler.RegisterRoutes(k8sRouter)
+}
+
+// LoadDependencies loads dependencies between modules after all modules are initialized
+func (m *Module) LoadDependencies(modules map[string]interface{}) error {
+	// Load service-catalog dependency if available
+	if scModule, exists := modules["service-catalog"]; exists {
+		if sc, ok := scModule.(interface {
+			GetServiceContextResolver() k8sPorts.ServiceContextResolver
+		}); ok {
+			if resolver := sc.GetServiceContextResolver(); resolver != nil {
+				m.ServiceContextResolver = resolver
+				// Update deployment repository with the resolver
+				if dr, ok := m.DeploymentRepo.(*k8sExternal.DeploymentRepositoryImpl); ok {
+					dr.SetServiceContextResolver(resolver)
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // GetServiceCatalogAdapter returns the adapter for service-catalog integration

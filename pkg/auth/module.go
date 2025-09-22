@@ -93,6 +93,12 @@ func NewModule(fileConfig []byte) (*Module, error) {
 	}, nil
 }
 
+// LoadDependencies loads dependencies between modules after all modules are initialized
+func (m *Module) LoadDependencies(modules map[string]interface{}) error {
+	// Auth module doesn't have cross-module dependencies
+	return nil
+}
+
 // RegisterRoutes registers HTTP routes for the auth module
 func (m *Module) RegisterRoutes(apiRouter, internalRouter *mux.Router) {
 	// Delegate to handler (following hexagonal architecture)

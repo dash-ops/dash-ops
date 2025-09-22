@@ -8,6 +8,7 @@ import (
 
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
 	k8sModels "github.com/dash-ops/dash-ops/pkg/kubernetes/models"
+	k8sPorts "github.com/dash-ops/dash-ops/pkg/kubernetes/ports"
 	scK8sAdapter "github.com/dash-ops/dash-ops/pkg/service-catalog/adapters"
 	scAdapters "github.com/dash-ops/dash-ops/pkg/service-catalog/adapters/http"
 	scStorage "github.com/dash-ops/dash-ops/pkg/service-catalog/adapters/storage"
@@ -179,6 +180,28 @@ func ParseServiceCatalogConfig(fileConfig []byte) (*ParsedConfig, error) {
 	return &ParsedConfig{
 		Directory: directory,
 	}, nil
+}
+
+// LoadDependencies loads dependencies between modules after all modules are initialized
+func (m *Module) LoadDependencies(modules map[string]interface{}) error {
+	// Load kubernetes dependency if available
+	if k8sModule, exists := modules["kubernetes"]; exists {
+		if k8s, ok := k8sModule.(interface {
+			GetServiceCatalogAdapter() scPorts.KubernetesService
+		}); ok {
+			if adapter := k8s.GetServiceCatalogAdapter(); adapter != nil {
+				m.kubernetesAdapter = scK8sAdapter.NewKubernetesAdapter(adapter)
+				m.controller.UpdateKubernetesService(m.kubernetesAdapter)
+			}
+		}
+	}
+	return nil
+}
+
+// GetServiceContextResolver returns the service context resolver for kubernetes integration
+func (m *Module) GetServiceContextResolver() k8sPorts.ServiceContextResolver {
+	// Always return the KubernetesServiceContextAdapter which handles service resolution
+	return NewKubernetesServiceContextAdapter(m.controller)
 }
 
 // NewFilesystemRepository creates a new filesystem repository (exported for main.go)

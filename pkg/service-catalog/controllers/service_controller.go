@@ -308,3 +308,8 @@ func (sc *ServiceController) enrichWithTeamInfo(ctx context.Context, service *sc
 
 	return nil
 }
+
+// GetServiceRepository returns the service repository for external access
+func (c *ServiceController) GetServiceRepository() scPorts.ServiceRepository {
+	return c.serviceRepo
+}

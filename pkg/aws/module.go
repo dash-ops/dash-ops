@@ -95,6 +95,12 @@ func NewModule(fileConfig []byte) (*Module, error) {
 	}, nil
 }
 
+// LoadDependencies loads dependencies between modules after all modules are initialized
+func (m *Module) LoadDependencies(modules map[string]interface{}) error {
+	// AWS module doesn't have cross-module dependencies
+	return nil
+}
+
 // RegisterRoutes registers HTTP routes for the AWS module
 func (m *Module) RegisterRoutes(router *mux.Router) {
 	if m.Handler == nil {

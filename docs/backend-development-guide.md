@@ -512,6 +512,138 @@ go test -run TestServiceProcessor_PrepareForCreation ./pkg/service-catalog/logic
 2. **Define interfaces in the dependent module**
 3. **Inject dependencies through constructors**
 4. **Wire dependencies in main.go or module factory**
+5. **Load cross-module dependencies after all modules are initialized**
+
+### Module Initialization Phases
+
+DashOps follows a **4-phase initialization pattern** to handle complex dependencies:
+
+#### Phase 1: Module Initialization
+All modules are initialized with `NewModule(fileConfig []byte)`:
+
+```go
+// main.go - Phase 1
+modules := make(map[string]interface{})
+
+if dashConfig.Plugins.Has("Auth") {
+    authModule, err := auth.NewModule(fileConfig)
+    if err != nil {
+        log.Fatalf("Failed to create auth module: %v", err)
+    }
+    modules["auth"] = authModule
+}
+
+if dashConfig.Plugins.Has("ServiceCatalog") {
+    scModule, err := servicecatalog.NewModule(fileConfig)
+    if err != nil {
+        log.Fatalf("Failed to create service catalog module: %v", err)
+    }
+    modules["service-catalog"] = scModule
+}
+
+if dashConfig.Plugins.Has("Kubernetes") {
+    k8sModule, err := kubernetes.NewModule(fileConfig)
+    if err != nil {
+        log.Printf("Failed to create kubernetes module: %v", err)
+    } else {
+        modules["kubernetes"] = k8sModule
+    }
+}
+```
+
+#### Phase 2: Route Registration
+All modules register their routes:
+
+```go
+// main.go - Phase 2
+for name, module := range modules {
+    if m, ok := module.(interface{ RegisterRoutes(*mux.Router) }); ok {
+        m.RegisterRoutes(internal)
+    } else if m, ok := module.(interface{ RegisterRoutes(*mux.Router, *mux.Router) }); ok {
+        m.RegisterRoutes(api, internal)
+    }
+    log.Printf("Routes registered for %s module", name)
+}
+```
+
+#### Phase 3: Cross-Module Dependencies
+Load dependencies between modules:
+
+```go
+// main.go - Phase 3
+for name, module := range modules {
+    if m, ok := module.(interface{ LoadDependencies(map[string]interface{}) error }); ok {
+        if err := m.LoadDependencies(modules); err != nil {
+            log.Printf("Warning: Failed to load dependencies for %s module: %v", name, err)
+        } else {
+            log.Printf("Dependencies loaded for %s module", name)
+        }
+    }
+}
+```
+
+#### Phase 4: SPA Initialization
+Initialize SPA module to serve static files:
+
+```go
+// main.go - Phase 4
+spaConfig := &spaModels.SPAConfig{
+    StaticPath: dashConfig.Front,
+    IndexPath:  "index.html",
+}
+spaModule, err := spa.NewModule(spaConfig, api)
+if err != nil {
+    log.Fatalf("Failed to create SPA module: %v", err)
+}
+spaModule.RegisterRoutes(router)
+```
+
+### Cross-Module Dependencies
+
+Modules can have dependencies on other modules. These are loaded in Phase 3 using the `LoadDependencies` method:
+
+#### Example: Service-Catalog ↔ Kubernetes Integration
+
+**Service-Catalog Module**:
+```go
+// pkg/service-catalog/module.go
+func (m *Module) LoadDependencies(modules map[string]interface{}) error {
+    // Load kubernetes dependency if available
+    if k8sModule, exists := modules["kubernetes"]; exists {
+        if k8s, ok := k8sModule.(interface{ GetServiceCatalogAdapter() scPorts.KubernetesService }); ok {
+            if adapter := k8s.GetServiceCatalogAdapter(); adapter != nil {
+                m.kubernetesAdapter = scK8sAdapter.NewKubernetesAdapter(adapter)
+                m.controller.UpdateKubernetesService(m.kubernetesAdapter)
+            }
+        }
+    }
+    return nil
+}
+```
+
+**Kubernetes Module**:
+```go
+// pkg/kubernetes/module.go
+func (m *Module) LoadDependencies(modules map[string]interface{}) error {
+    // Load service-catalog dependency if available
+    if scModule, exists := modules["service-catalog"]; exists {
+        if sc, ok := scModule.(interface{ GetServiceContextResolver() k8sPorts.ServiceContextResolver }); ok {
+            if resolver := sc.GetServiceContextResolver(); resolver != nil {
+                m.ServiceContextResolver = resolver
+            }
+        }
+    }
+    return nil
+}
+```
+
+#### Benefits of This Pattern
+
+1. **No Circular Dependencies**: All modules are initialized before dependencies are loaded
+2. **Graceful Degradation**: Modules can run without their dependencies
+3. **Plugin-Ready**: Easy to add/remove modules without breaking others
+4. **Clear Separation**: Dependencies are explicit and manageable
+5. **Testable**: Each phase can be tested independently
 
 ### ✅ Correct Patterns
 
