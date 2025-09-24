@@ -155,34 +155,33 @@ func (fp *FileProcessor) isPathSafe(requestedPath, staticPath string) bool {
 // getContentType determines content type from file extension
 func (fp *FileProcessor) getContentType(filePath string) string {
 	ext := filepath.Ext(filePath)
+	switch strings.ToLower(ext) {
+	case ".html", ".htm":
+		return "text/html; charset=utf-8"
+	case ".css":
+		return "text/css; charset=utf-8"
+	case ".js", ".mjs":
+		return "text/javascript; charset=utf-8"
+	case ".json":
+		return "application/json"
+	case ".svg":
+		return "image/svg+xml"
+	case ".woff":
+		return "font/woff"
+	case ".woff2":
+		return "font/woff2"
+	case ".ttf":
+		return "font/ttf"
+	case ".eot":
+		return "application/vnd.ms-fontobject"
+	case ".xyz":
+		return "chemical/x-xyz"
+	}
+
 	contentType := mime.TypeByExtension(ext)
 
 	if contentType == "" {
-		// Default content types for common web files
-		switch strings.ToLower(ext) {
-		case ".html", ".htm":
-			return "text/html; charset=utf-8"
-		case ".css":
-			return "text/css; charset=utf-8"
-		case ".js", ".mjs":
-			return "application/javascript; charset=utf-8"
-		case ".json":
-			return "application/json; charset=utf-8"
-		case ".xml":
-			return "application/xml; charset=utf-8"
-		case ".svg":
-			return "image/svg+xml"
-		case ".woff":
-			return "font/woff"
-		case ".woff2":
-			return "font/woff2"
-		case ".ttf":
-			return "font/ttf"
-		case ".eot":
-			return "application/vnd.ms-fontobject"
-		default:
-			return "application/octet-stream"
-		}
+		return "application/octet-stream"
 	}
 
 	return contentType
