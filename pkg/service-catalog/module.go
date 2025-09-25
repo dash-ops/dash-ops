@@ -7,12 +7,12 @@ import (
 
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
 	k8sPorts "github.com/dash-ops/dash-ops/pkg/kubernetes/ports"
-	scAdapters "github.com/dash-ops/dash-ops/pkg/service-catalog/adapters"
 	scConfigAdapter "github.com/dash-ops/dash-ops/pkg/service-catalog/adapters/config"
 	scAdaptersHttp "github.com/dash-ops/dash-ops/pkg/service-catalog/adapters/http"
 	scStorage "github.com/dash-ops/dash-ops/pkg/service-catalog/adapters/storage"
 	scControllers "github.com/dash-ops/dash-ops/pkg/service-catalog/controllers"
 	"github.com/dash-ops/dash-ops/pkg/service-catalog/handlers"
+	scInternal "github.com/dash-ops/dash-ops/pkg/service-catalog/integrations/kubernetes"
 	scLogic "github.com/dash-ops/dash-ops/pkg/service-catalog/logic"
 	scModels "github.com/dash-ops/dash-ops/pkg/service-catalog/models"
 	scPorts "github.com/dash-ops/dash-ops/pkg/service-catalog/ports"
@@ -20,10 +20,9 @@ import (
 
 // Module represents the service catalog module - main entry point for the plugin
 type Module struct {
-	controller        *scControllers.ServiceController
-	handler           *handlers.HTTPHandler
-	kubernetesAdapter *scAdapters.KubernetesAdapter
-	config            *scModels.ModuleConfig
+	controller *scControllers.ServiceController
+	handler    *handlers.HTTPHandler
+	config     *scModels.ModuleConfig
 }
 
 // NewModule creates and initializes a new service catalog module (main factory)
@@ -73,10 +72,9 @@ func NewModule(fileConfig []byte) (*Module, error) {
 	)
 
 	return &Module{
-		controller:        controller,
-		handler:           handler,
-		kubernetesAdapter: nil, // Can be added later
-		config:            moduleConfig,
+		controller: controller,
+		handler:    handler,
+		config:     moduleConfig,
 	}, nil
 }
 
@@ -95,8 +93,8 @@ func (m *Module) LoadDependencies(modules map[string]interface{}) error {
 			GetServiceCatalogAdapter() scPorts.KubernetesService
 		}); ok {
 			if adapter := k8s.GetServiceCatalogAdapter(); adapter != nil {
-				m.kubernetesAdapter = scAdapters.NewKubernetesAdapter(adapter)
-				m.controller.UpdateKubernetesService(m.kubernetesAdapter)
+				// Use the adapter directly from Kubernetes module
+				m.controller.UpdateKubernetesService(adapter)
 			}
 		}
 	}
@@ -105,6 +103,6 @@ func (m *Module) LoadDependencies(modules map[string]interface{}) error {
 
 // GetServiceContextResolver returns the service context resolver for kubernetes integration
 func (m *Module) GetServiceContextResolver() k8sPorts.ServiceContextResolver {
-	// Always return the KubernetesServiceContextAdapter which handles service resolution
-	return scAdapters.NewKubernetesServiceContextAdapter(m.controller)
+	// Use the new integration adapter for service context resolution
+	return scInternal.NewServiceCatalogAdapter(m.controller.GetServiceRepository())
 }

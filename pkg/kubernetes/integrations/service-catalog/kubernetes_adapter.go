@@ -1,52 +1,56 @@
-package adapters
+package servicecatalog
 
 import (
 	"context"
 	"fmt"
 	"time"
 
+	k8sPorts "github.com/dash-ops/dash-ops/pkg/kubernetes/ports"
 	scModels "github.com/dash-ops/dash-ops/pkg/service-catalog/models"
 	scPorts "github.com/dash-ops/dash-ops/pkg/service-catalog/ports"
 )
 
-// KubernetesAdapter adapts Kubernetes service to service-catalog needs
+// KubernetesAdapter implements scPorts.KubernetesService interface
+// This adapter bridges the kubernetes module with the service-catalog module
 type KubernetesAdapter struct {
-	kubernetesService scPorts.KubernetesService
+	client *KubernetesClient
 }
 
-// NewKubernetesAdapter creates a new Kubernetes adapter
-func NewKubernetesAdapter(kubernetesService scPorts.KubernetesService) *KubernetesAdapter {
+// NewKubernetesAdapter creates a new adapter for service-catalog integration
+func NewKubernetesAdapter(deploymentRepo k8sPorts.DeploymentRepository, clusterRepo k8sPorts.ClusterRepository) scPorts.KubernetesService {
 	return &KubernetesAdapter{
-		kubernetesService: kubernetesService,
+		client: NewKubernetesClient(deploymentRepo, clusterRepo),
 	}
 }
 
 // GetDeploymentHealth gets health information for a deployment
-func (a *KubernetesAdapter) GetDeploymentHealth(ctx context.Context, namespace, deploymentName, kubeContext string) (*scModels.DeploymentHealth, error) {
-	// Get deployment health from kubernetes service
-	k8sHealth, err := a.kubernetesService.GetDeploymentHealth(ctx, kubeContext, namespace, deploymentName)
+func (a *KubernetesAdapter) GetDeploymentHealth(ctx context.Context, kubeContext, namespace, deploymentName string) (*scModels.DeploymentHealth, error) {
+	// Get deployment from client
+	deployment, err := a.client.GetDeployment(ctx, kubeContext, namespace, deploymentName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get deployment health: %w", err)
+		return nil, fmt.Errorf("failed to get deployment: %w", err)
 	}
 
 	// Convert to service-catalog format
 	// Determine service status based on health
 	var status scModels.ServiceStatus
-	if k8sHealth.ReadyReplicas == k8sHealth.DesiredReplicas && k8sHealth.DesiredReplicas > 0 {
+	if deployment.Replicas.Ready == deployment.Replicas.Desired && deployment.Replicas.Desired > 0 {
 		status = scModels.StatusHealthy
-	} else if k8sHealth.ReadyReplicas > 0 {
+	} else if deployment.Replicas.Ready > 0 {
 		status = scModels.StatusDegraded
 	} else {
 		status = scModels.StatusCritical
 	}
 
-	return &scModels.DeploymentHealth{
-		Name:            k8sHealth.Name,
-		ReadyReplicas:   int(k8sHealth.ReadyReplicas),
-		DesiredReplicas: int(k8sHealth.DesiredReplicas),
+	health := &scModels.DeploymentHealth{
+		Name:            deployment.Name,
+		ReadyReplicas:   int(deployment.Replicas.Ready),
+		DesiredReplicas: int(deployment.Replicas.Desired),
 		Status:          status,
-		LastUpdated:     k8sHealth.LastUpdated,
-	}, nil
+		LastUpdated:     time.Now(),
+	}
+
+	return health, nil
 }
 
 // GetEnvironmentHealth gets health information for all deployments in an environment
@@ -83,7 +87,7 @@ func (a *KubernetesAdapter) GetEnvironmentHealth(ctx context.Context, service *s
 	overallStatus := scModels.StatusHealthy
 
 	for _, deployment := range envSpec.Resources.Deployments {
-		deploymentHealth, err := a.GetDeploymentHealth(ctx, envSpec.Namespace, deployment.Name, envSpec.Context)
+		deploymentHealth, err := a.GetDeploymentHealth(ctx, envSpec.Context, envSpec.Namespace, deployment.Name)
 		if err != nil {
 			// If we can't get health for a deployment, mark as unknown
 			deploymentHealth = &scModels.DeploymentHealth{
@@ -162,17 +166,16 @@ func (a *KubernetesAdapter) GetServiceHealth(ctx context.Context, service *scMod
 
 // ListNamespaces lists available namespaces in a context
 func (a *KubernetesAdapter) ListNamespaces(ctx context.Context, kubeContext string) ([]string, error) {
-	// This would need to be implemented by the kubernetes service
-	// For now, return empty list
+	// TODO: Implement namespace listing using namespace repository
 	return []string{}, nil
 }
 
 // ListDeployments lists deployments in a namespace
-func (a *KubernetesAdapter) ListDeployments(ctx context.Context, namespace, kubeContext string) ([]string, error) {
-	return a.kubernetesService.ListDeployments(ctx, kubeContext, namespace)
+func (a *KubernetesAdapter) ListDeployments(ctx context.Context, kubeContext, namespace string) ([]string, error) {
+	return a.client.ListDeployments(ctx, kubeContext, namespace)
 }
 
 // ValidateContext validates if a Kubernetes context is accessible
 func (a *KubernetesAdapter) ValidateContext(ctx context.Context, kubeContext string) error {
-	return a.kubernetesService.ValidateContext(ctx, kubeContext)
+	return a.client.ValidateContext(ctx, kubeContext)
 }

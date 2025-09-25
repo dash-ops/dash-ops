@@ -188,52 +188,6 @@ func (sc *ServiceController) ListServices(ctx context.Context, filter *scModels.
 	return serviceList, nil
 }
 
-// ResolveDeploymentService resolves which service a deployment belongs to
-func (sc *ServiceController) ResolveDeploymentService(ctx context.Context, deploymentName, namespace, kubeContext string) (*scModels.ServiceContext, error) {
-	// Get all services
-	serviceList, err := sc.ListServices(ctx, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list services: %w", err)
-	}
-
-	// Iterate through all services to find matching deployment
-	for _, service := range serviceList.Services {
-		if service.Spec.Kubernetes == nil {
-			continue // Skip services without Kubernetes configuration
-		}
-
-		// Check each environment in the service
-		for _, env := range service.Spec.Kubernetes.Environments {
-			// Match context
-			if env.Context != kubeContext {
-				continue
-			}
-
-			// Match namespace
-			if env.Namespace != namespace {
-				continue
-			}
-
-			// Check if this environment has the deployment
-			for _, deployment := range env.Resources.Deployments {
-				if deployment.Name == deploymentName {
-					// Found matching deployment - create service context
-					return &scModels.ServiceContext{
-						Service:     &service,
-						Environment: env.Name,
-						Namespace:   namespace,
-						Context:     kubeContext,
-						Found:       true,
-					}, nil
-				}
-			}
-		}
-	}
-
-	// No matching service found
-	return nil, nil
-}
-
 // UpdateKubernetesService updates the kubernetes service dependency
 func (sc *ServiceController) UpdateKubernetesService(k8sService scPorts.KubernetesService) {
 	sc.k8sService = k8sService

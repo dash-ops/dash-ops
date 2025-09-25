@@ -11,6 +11,7 @@ import (
 	k8sAdaptersHttp "github.com/dash-ops/dash-ops/pkg/kubernetes/adapters/http"
 	kubernetes "github.com/dash-ops/dash-ops/pkg/kubernetes/controllers"
 	"github.com/dash-ops/dash-ops/pkg/kubernetes/handlers"
+	k8sInternal "github.com/dash-ops/dash-ops/pkg/kubernetes/integrations/service-catalog"
 	k8sLogic "github.com/dash-ops/dash-ops/pkg/kubernetes/logic"
 	k8sPorts "github.com/dash-ops/dash-ops/pkg/kubernetes/ports"
 	scPorts "github.com/dash-ops/dash-ops/pkg/service-catalog/ports"
@@ -151,5 +152,5 @@ func (m *Module) LoadDependencies(modules map[string]interface{}) error {
 
 // GetServiceCatalogAdapter returns the adapter for service-catalog integration
 func (m *Module) GetServiceCatalogAdapter() scPorts.KubernetesService {
-	return k8sExternal.NewServiceCatalogAdapter(m.DeploymentRepo, m.ClusterRepo)
+	return k8sInternal.NewKubernetesAdapter(m.DeploymentRepo, m.ClusterRepo)
 }
