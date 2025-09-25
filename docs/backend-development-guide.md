@@ -53,10 +53,9 @@ pkg/{module}/
 │   │   ├── prometheus/# Prometheus API client
 │   │   ├── loki/      # Loki API client
 │   │   └── tempo/     # Tempo API client
-│   └── internal/      # Internal module integrations
-│       ├── service_catalog/  # Service Catalog module integration
-│       ├── kubernetes/       # Kubernetes module integration
-│       └── auth/             # Auth module integration
+│   ├── service_catalog/  # Service Catalog module integration
+│   ├── kubernetes/       # Kubernetes module integration
+│   └── auth/             # Auth module integration
 ├── controllers/       # Business logic orchestration
 ├── handlers/          # HTTP endpoints (entry points)
 ├── logic/             # Pure business logic (100% tested)
@@ -122,11 +121,11 @@ integrations/external/
     └── k8s_adapter.go        # Data transformation for K8s
 ```
 
-#### Internal Integrations (`integrations/internal/`)
+#### Internal Integrations (`integrations/{module}/`)
 For communication between DashOps modules:
 
 ```
-integrations/internal/
+integrations/
 ├── service_catalog/
 │   └── service_catalog_integration.go  # Service Catalog module client
 ├── kubernetes/
@@ -201,7 +200,7 @@ func (a *GitHubAdapter) GetUser(ctx context.Context, token *oauth2.Token) (*gith
 
 #### Internal Integration Example
 ```go
-// integrations/internal/service_catalog/service_catalog_integration.go
+// integrations/service_catalog/service_catalog_integration.go
 package servicecatalog
 
 import (
@@ -1792,7 +1791,7 @@ func (a *{Service}Adapter) transform{Resource}(resource *external.Resource) *mod
 
 #### Internal Integration Template
 ```go
-// integrations/internal/{module}/{module}_integration.go
+// integrations/{module}/{module}_integration.go
 package {module}
 
 import (

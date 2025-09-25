@@ -188,7 +188,7 @@ export default function NodesPage(): JSX.Element {
 
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
-                      {node.roles.map((role, index) => (
+                      {(node.roles || []).map((role, index) => (
                         <Badge
                           key={index}
                           variant="secondary"

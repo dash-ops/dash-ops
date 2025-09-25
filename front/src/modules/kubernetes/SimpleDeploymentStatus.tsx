@@ -10,8 +10,9 @@ export default function SimpleDeploymentStatus({
   conditions,
   replicas,
 }: SimpleDeploymentStatusProps): JSX.Element {
-  const availableCondition = conditions.find((c) => c.type === 'Available');
-  const progressingCondition = conditions.find((c) => c.type === 'Progressing');
+  const safeConditions = conditions || [];
+  const availableCondition = safeConditions.find((c) => c.type === 'Available');
+  const progressingCondition = safeConditions.find((c) => c.type === 'Progressing');
 
   const isAvailable = availableCondition?.status === 'True';
   const isProgressing = progressingCondition?.status === 'True';

@@ -7,10 +7,10 @@ import (
 
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
 	"github.com/dash-ops/dash-ops/pkg/kubernetes/adapters/config"
-	k8sExternal "github.com/dash-ops/dash-ops/pkg/kubernetes/adapters/external"
 	k8sAdaptersHttp "github.com/dash-ops/dash-ops/pkg/kubernetes/adapters/http"
 	kubernetes "github.com/dash-ops/dash-ops/pkg/kubernetes/controllers"
 	"github.com/dash-ops/dash-ops/pkg/kubernetes/handlers"
+	k8sExternalIntegration "github.com/dash-ops/dash-ops/pkg/kubernetes/integrations/external/kubernetes"
 	k8sInternal "github.com/dash-ops/dash-ops/pkg/kubernetes/integrations/service-catalog"
 	k8sLogic "github.com/dash-ops/dash-ops/pkg/kubernetes/logic"
 	k8sPorts "github.com/dash-ops/dash-ops/pkg/kubernetes/ports"
@@ -44,6 +44,9 @@ type Module struct {
 	EventService           k8sPorts.EventService
 	HealthService          k8sPorts.HealthService
 	ServiceContextResolver k8sPorts.ServiceContextResolver
+
+	// External integrations
+	KubernetesAdapter k8sPorts.KubernetesClientService
 }
 
 // NewModule creates and initializes a new Kubernetes module
@@ -59,32 +62,46 @@ func NewModule(fileConfig []byte) (*Module, error) {
 		return nil, fmt.Errorf("failed to parse configuration: %w", err)
 	}
 
-	// Convert to external config format
-	var externalConfigs []k8sExternal.KubernetesConfig
-	for _, cfg := range moduleConfig.Configs {
-		externalConfigs = append(externalConfigs, k8sExternal.KubernetesConfig{
-			Kubeconfig: cfg.Kubeconfig,
-			Context:    cfg.Context,
-		})
-	}
-
 	// Initialize logic components
 	healthCalculator := k8sLogic.NewHealthCalculator()
+
+	// Initialize external integrations
+	var kubernetesAdapter k8sPorts.KubernetesClientService
+	if len(moduleConfig.Configs) > 0 {
+		// Use the first config for now (in a multi-cluster setup, this would be different)
+		config := &k8sExternalIntegration.KubernetesConfig{
+			Kubeconfig: moduleConfig.Configs[0].Kubeconfig,
+			Context:    moduleConfig.Configs[0].Context,
+		}
+		adapter, err := k8sExternalIntegration.NewKubernetesAdapter(config)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create kubernetes adapter: %w", err)
+		}
+		kubernetesAdapter = adapter
+	}
 
 	// Initialize adapters
 	k8sAdapter := k8sAdaptersHttp.NewKubernetesAdapter()
 	responseAdapter := commonsHttp.NewResponseAdapter()
 	requestAdapter := commonsHttp.NewRequestAdapter()
 
-	// Initialize repositories with real configs
-	clusterRepo, err := k8sExternal.NewClusterRepository(externalConfigs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create cluster repository: %w", err)
+	// Use wrapper functions to create repositories from the adapter
+	var clusterRepo k8sPorts.ClusterRepository
+	var nodeRepo k8sPorts.NodeRepository
+	var namespaceRepo k8sPorts.NamespaceRepository
+	var deploymentRepo k8sPorts.DeploymentRepository
+	var podRepo k8sPorts.PodRepository
+
+	if kubernetesAdapter != nil {
+		// Cast to concrete type to access wrapper functions
+		if adapter, ok := kubernetesAdapter.(*k8sExternalIntegration.KubernetesAdapter); ok {
+			clusterRepo = k8sExternalIntegration.NewClusterRepository(adapter)
+			nodeRepo = k8sExternalIntegration.NewNodeRepository(adapter)
+			namespaceRepo = k8sExternalIntegration.NewNamespaceRepository(adapter)
+			deploymentRepo = k8sExternalIntegration.NewDeploymentRepository(adapter)
+			podRepo = k8sExternalIntegration.NewPodRepository(adapter)
+		}
 	}
-	nodeRepo := k8sExternal.NewNodeRepository(clusterRepo)
-	namespaceRepo := k8sExternal.NewNamespaceRepository(clusterRepo)
-	deploymentRepo := k8sExternal.NewDeploymentRepository(clusterRepo, nil)
-	podRepo := k8sExternal.NewPodRepository(clusterRepo)
 
 	// Initialize controller
 	controller := kubernetes.NewKubernetesController(
@@ -121,6 +138,7 @@ func NewModule(fileConfig []byte) (*Module, error) {
 		EventService:           nil, // Can be added later
 		HealthService:          nil, // Can be added later
 		ServiceContextResolver: nil, // Will be set via LoadDependencies
+		KubernetesAdapter:      kubernetesAdapter,
 	}, nil
 }
 
@@ -141,7 +159,9 @@ func (m *Module) LoadDependencies(modules map[string]interface{}) error {
 			if resolver := sc.GetServiceContextResolver(); resolver != nil {
 				m.ServiceContextResolver = resolver
 				// Update deployment repository with the resolver
-				if dr, ok := m.DeploymentRepo.(*k8sExternal.DeploymentRepositoryImpl); ok {
+				if dr, ok := m.DeploymentRepo.(interface {
+					SetServiceContextResolver(k8sPorts.ServiceContextResolver)
+				}); ok {
 					dr.SetServiceContextResolver(resolver)
 				}
 			}

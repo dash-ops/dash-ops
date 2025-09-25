@@ -14,7 +14,7 @@ type KubernetesClient struct {
 	clusterRepo    k8sPorts.ClusterRepository
 }
 
-// NewKubernetesClient creates a new Kubernetes client for Service Catalog
+// NewKubernetesClient creates a new Kubernetes client for Service Catalog integration
 func NewKubernetesClient(deploymentRepo k8sPorts.DeploymentRepository, clusterRepo k8sPorts.ClusterRepository) *KubernetesClient {
 	return &KubernetesClient{
 		deploymentRepo: deploymentRepo,
@@ -22,52 +22,42 @@ func NewKubernetesClient(deploymentRepo k8sPorts.DeploymentRepository, clusterRe
 	}
 }
 
-// GetDeployment gets a deployment from Kubernetes
-func (c *KubernetesClient) GetDeployment(ctx context.Context, kubeContext, namespace, deploymentName string) (*k8sModels.Deployment, error) {
-	return c.deploymentRepo.GetDeployment(ctx, kubeContext, namespace, deploymentName)
+// GetDeploymentHealth gets health information for a deployment
+func (c *KubernetesClient) GetDeploymentHealth(ctx context.Context, kubeContext, namespace, deploymentName string) (*k8sModels.Deployment, error) {
+	deployment, err := c.deploymentRepo.GetDeployment(ctx, kubeContext, namespace, deploymentName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get deployment: %w", err)
+	}
+
+	return deployment, nil
 }
 
 // ListDeployments lists deployments in a namespace
 func (c *KubernetesClient) ListDeployments(ctx context.Context, kubeContext, namespace string) ([]string, error) {
-	// Create filter for namespace
 	filter := &k8sModels.DeploymentFilter{
 		Namespace: namespace,
 	}
-
-	// Get deployments from repository
 	deployments, err := c.deploymentRepo.ListDeployments(ctx, kubeContext, filter)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list deployments: %w", err)
 	}
-
-	// Extract names
 	var names []string
 	for _, deployment := range deployments.Deployments {
 		names = append(names, deployment.Name)
 	}
-
 	return names, nil
-}
-
-// ListClusters lists available clusters
-func (c *KubernetesClient) ListClusters(ctx context.Context) ([]k8sModels.Cluster, error) {
-	return c.clusterRepo.ListClusters(ctx)
 }
 
 // ValidateContext validates if a Kubernetes context is accessible
 func (c *KubernetesClient) ValidateContext(ctx context.Context, kubeContext string) error {
-	// Try to get clusters to validate context
 	clusters, err := c.clusterRepo.ListClusters(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to list clusters: %w", err)
 	}
-
-	// Check if context exists
 	for _, cluster := range clusters {
 		if cluster.Context == kubeContext {
 			return nil
 		}
 	}
-
 	return fmt.Errorf("context %s not found", kubeContext)
 }

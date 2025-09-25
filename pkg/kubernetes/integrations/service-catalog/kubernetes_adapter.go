@@ -25,14 +25,11 @@ func NewKubernetesAdapter(deploymentRepo k8sPorts.DeploymentRepository, clusterR
 
 // GetDeploymentHealth gets health information for a deployment
 func (a *KubernetesAdapter) GetDeploymentHealth(ctx context.Context, kubeContext, namespace, deploymentName string) (*scModels.DeploymentHealth, error) {
-	// Get deployment from client
-	deployment, err := a.client.GetDeployment(ctx, kubeContext, namespace, deploymentName)
+	deployment, err := a.client.GetDeploymentHealth(ctx, kubeContext, namespace, deploymentName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get deployment: %w", err)
+		return nil, fmt.Errorf("failed to get deployment health: %w", err)
 	}
 
-	// Convert to service-catalog format
-	// Determine service status based on health
 	var status scModels.ServiceStatus
 	if deployment.Replicas.Ready == deployment.Replicas.Desired && deployment.Replicas.Desired > 0 {
 		status = scModels.StatusHealthy
@@ -42,15 +39,13 @@ func (a *KubernetesAdapter) GetDeploymentHealth(ctx context.Context, kubeContext
 		status = scModels.StatusCritical
 	}
 
-	health := &scModels.DeploymentHealth{
+	return &scModels.DeploymentHealth{
 		Name:            deployment.Name,
 		ReadyReplicas:   int(deployment.Replicas.Ready),
 		DesiredReplicas: int(deployment.Replicas.Desired),
 		Status:          status,
-		LastUpdated:     time.Now(),
-	}
-
-	return health, nil
+		LastUpdated:     deployment.CreatedAt,
+	}, nil
 }
 
 // GetEnvironmentHealth gets health information for all deployments in an environment
@@ -64,7 +59,6 @@ func (a *KubernetesAdapter) GetEnvironmentHealth(ctx context.Context, service *s
 		}, nil
 	}
 
-	// Find the environment in service spec
 	var envSpec *scModels.KubernetesEnvironment
 	for _, env := range service.Spec.Kubernetes.Environments {
 		if env.Name == environment {
@@ -82,14 +76,12 @@ func (a *KubernetesAdapter) GetEnvironmentHealth(ctx context.Context, service *s
 		}, nil
 	}
 
-	// Get health for each deployment in this environment
 	var deployments []scModels.DeploymentHealth
 	overallStatus := scModels.StatusHealthy
 
 	for _, deployment := range envSpec.Resources.Deployments {
 		deploymentHealth, err := a.GetDeploymentHealth(ctx, envSpec.Context, envSpec.Namespace, deployment.Name)
 		if err != nil {
-			// If we can't get health for a deployment, mark as unknown
 			deploymentHealth = &scModels.DeploymentHealth{
 				Name:            deployment.Name,
 				ReadyReplicas:   0,
@@ -102,7 +94,6 @@ func (a *KubernetesAdapter) GetEnvironmentHealth(ctx context.Context, service *s
 
 		deployments = append(deployments, *deploymentHealth)
 
-		// Update overall status based on deployment status
 		if deploymentHealth.Status == scModels.StatusCritical {
 			overallStatus = scModels.StatusCritical
 		} else if deploymentHealth.Status == scModels.StatusUnknown && overallStatus != scModels.StatusCritical {
@@ -129,14 +120,12 @@ func (a *KubernetesAdapter) GetServiceHealth(ctx context.Context, service *scMod
 		}, nil
 	}
 
-	// Get health for each environment
 	var environments []scModels.EnvironmentHealth
 	overallStatus := scModels.StatusHealthy
 
 	for _, env := range service.Spec.Kubernetes.Environments {
 		envHealth, err := a.GetEnvironmentHealth(ctx, service, env.Name)
 		if err != nil {
-			// If we can't get health for an environment, mark as unknown
 			envHealth = &scModels.EnvironmentHealth{
 				Name:        env.Name,
 				Context:     env.Context,
@@ -148,7 +137,6 @@ func (a *KubernetesAdapter) GetServiceHealth(ctx context.Context, service *scMod
 
 		environments = append(environments, *envHealth)
 
-		// Update overall status based on environment status
 		if envHealth.Status == scModels.StatusCritical {
 			overallStatus = scModels.StatusCritical
 		} else if envHealth.Status == scModels.StatusUnknown && overallStatus != scModels.StatusCritical {

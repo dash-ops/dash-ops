@@ -2,6 +2,7 @@ package kubernetes
 
 import (
 	"context"
+	"fmt"
 
 	scModels "github.com/dash-ops/dash-ops/pkg/service-catalog/models"
 	scPorts "github.com/dash-ops/dash-ops/pkg/service-catalog/ports"
@@ -12,7 +13,7 @@ type ServiceCatalogClient struct {
 	serviceRepo scPorts.ServiceRepository
 }
 
-// NewServiceCatalogClient creates a new Service Catalog client for Kubernetes
+// NewServiceCatalogClient creates a new Service Catalog client for Kubernetes integration
 func NewServiceCatalogClient(serviceRepo scPorts.ServiceRepository) *ServiceCatalogClient {
 	return &ServiceCatalogClient{
 		serviceRepo: serviceRepo,
@@ -31,13 +32,11 @@ func (c *ServiceCatalogClient) ListServices(ctx context.Context) ([]scModels.Ser
 
 // GetServicesByNamespace gets services that have deployments in a specific namespace
 func (c *ServiceCatalogClient) GetServicesByNamespace(ctx context.Context, namespace string) ([]scModels.Service, error) {
-	// Get all services
 	services, err := c.serviceRepo.List(ctx, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to list services: %w", err)
 	}
 
-	// Filter services that have Kubernetes deployments in the specified namespace
 	var filteredServices []scModels.Service
 	for _, service := range services {
 		if service.Spec.Kubernetes != nil {
@@ -49,30 +48,5 @@ func (c *ServiceCatalogClient) GetServicesByNamespace(ctx context.Context, names
 			}
 		}
 	}
-
-	return filteredServices, nil
-}
-
-// GetServicesByContext gets services that have deployments in a specific Kubernetes context
-func (c *ServiceCatalogClient) GetServicesByContext(ctx context.Context, kubeContext string) ([]scModels.Service, error) {
-	// Get all services
-	services, err := c.serviceRepo.List(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	// Filter services that have Kubernetes deployments in the specified context
-	var filteredServices []scModels.Service
-	for _, service := range services {
-		if service.Spec.Kubernetes != nil {
-			for _, env := range service.Spec.Kubernetes.Environments {
-				if env.Context == kubeContext {
-					filteredServices = append(filteredServices, service)
-					break
-				}
-			}
-		}
-	}
-
 	return filteredServices, nil
 }
