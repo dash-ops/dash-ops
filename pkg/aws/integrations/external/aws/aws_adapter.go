@@ -1,4 +1,4 @@
-package external
+package aws
 
 import (
 	"context"
@@ -6,8 +6,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials"
-	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/cloudwatch"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2/ec2iface"
 
@@ -15,35 +14,70 @@ import (
 	awsPorts "github.com/dash-ops/dash-ops/pkg/aws/ports"
 )
 
-// EC2ClientAdapter implements EC2Client interface using AWS SDK
-type EC2ClientAdapter struct {
-	client ec2iface.EC2API
-	region string
+// AWSAdapter implements AWS service interfaces with data transformation
+type AWSAdapter struct {
+	client *AWSClient
 }
 
-// NewEC2ClientAdapter creates a new EC2 client adapter
-func NewEC2ClientAdapter(account *awsModels.AWSAccount) (*EC2ClientAdapter, error) {
+// NewAWSAdapter creates a new AWS adapter
+func NewAWSAdapter() awsPorts.AWSClientService {
+	return &AWSAdapter{
+		client: NewAWSClient(),
+	}
+}
+
+// GetEC2Client gets an EC2 client for a specific account
+func (a *AWSAdapter) GetEC2Client(account *awsModels.AWSAccount) (awsPorts.EC2Client, error) {
+	client, err := a.client.GetEC2Client(account)
+	if err != nil {
+		return nil, err
+	}
+
+	return &EC2ClientAdapter{
+		client: client,
+		region: account.Region,
+	}, nil
+}
+
+// GetCloudWatchClient gets a CloudWatch client for a specific account
+func (a *AWSAdapter) GetCloudWatchClient(account *awsModels.AWSAccount) (awsPorts.CloudWatchClient, error) {
+	client, err := a.client.GetCloudWatchClient(account)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CloudWatchClientAdapter{
+		client: client,
+		region: account.Region,
+	}, nil
+}
+
+// ValidateCredentials validates AWS credentials
+func (a *AWSAdapter) ValidateCredentials(account *awsModels.AWSAccount) error {
+	return a.client.ValidateCredentials(account)
+}
+
+// GetAccountInfo gets basic account information
+func (a *AWSAdapter) GetAccountInfo(account *awsModels.AWSAccount) (*awsPorts.AccountInfo, error) {
 	if account == nil {
 		return nil, fmt.Errorf("account cannot be nil")
 	}
 
-	// Create AWS session
-	awsSession, err := session.NewSession(&aws.Config{
-		Region: aws.String(account.Region),
-		Credentials: credentials.NewStaticCredentials(
-			account.AccessKeyID,
-			account.SecretAccessKey,
-			"",
-		),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create AWS session: %w", err)
-	}
-
-	return &EC2ClientAdapter{
-		client: ec2.New(awsSession),
-		region: account.Region,
+	// For now, return basic info from the account model
+	// In a real implementation, this would call STS GetCallerIdentity
+	return &awsPorts.AccountInfo{
+		AccountID:   "unknown", // Would be retrieved from STS
+		Alias:       account.Name,
+		Region:      account.Region,
+		Status:      "active",
+		LastChecked: time.Now(),
 	}, nil
+}
+
+// EC2ClientAdapter implements EC2Client interface using AWS SDK
+type EC2ClientAdapter struct {
+	client ec2iface.EC2API
+	region string
 }
 
 // DescribeInstances describes EC2 instances
@@ -343,4 +377,106 @@ func (eca *EC2ClientAdapter) getInstanceTypeResources(instanceType string) (awsM
 
 	// Default for unknown types
 	return awsModels.InstanceCPU{VCPUs: 1}, awsModels.InstanceMemory{TotalGB: 1.0}
+}
+
+// CloudWatchClientAdapter implements CloudWatchClient interface using AWS SDK
+type CloudWatchClientAdapter struct {
+	client *cloudwatch.CloudWatch
+	region string
+}
+
+// GetInstanceMetrics gets CloudWatch metrics for an instance
+func (cwca *CloudWatchClientAdapter) GetInstanceMetrics(ctx context.Context, instanceID string, period time.Duration, startTime, endTime time.Time) (*awsModels.InstanceMetrics, error) {
+	// This is a simplified implementation
+	// In production, you would call CloudWatch GetMetricStatistics API
+
+	// For now, return mock data
+	metrics := &awsModels.InstanceMetrics{
+		InstanceID: instanceID,
+		Region:     cwca.region,
+		Period:     period.String(),
+		Metrics: []awsModels.InstanceMetricData{
+			{
+				MetricName: "CPUUtilization",
+				Unit:       "Percent",
+				DataPoints: []awsModels.MetricDataPoint{
+					{
+						Timestamp: time.Now().Add(-1 * time.Hour),
+						Value:     45.5,
+						Unit:      "Percent",
+					},
+					{
+						Timestamp: time.Now(),
+						Value:     52.3,
+						Unit:      "Percent",
+					},
+				},
+			},
+			{
+				MetricName: "NetworkIn",
+				Unit:       "Bytes",
+				DataPoints: []awsModels.MetricDataPoint{
+					{
+						Timestamp: time.Now().Add(-1 * time.Hour),
+						Value:     1024000,
+						Unit:      "Bytes",
+					},
+					{
+						Timestamp: time.Now(),
+						Value:     2048000,
+						Unit:      "Bytes",
+					},
+				},
+			},
+		},
+		LastUpdated: time.Now(),
+	}
+
+	return metrics, nil
+}
+
+// GetMetricStatistics gets metric statistics
+func (cwca *CloudWatchClientAdapter) GetMetricStatistics(ctx context.Context, metricName, namespace string, dimensions map[string]string, period time.Duration, startTime, endTime time.Time) ([]awsModels.MetricDataPoint, error) {
+	// This is a simplified implementation
+	// In production, you would call CloudWatch GetMetricStatistics API
+
+	// For now, return mock data
+	return []awsModels.MetricDataPoint{
+		{
+			Timestamp: startTime,
+			Value:     50.0,
+			Unit:      "Percent",
+		},
+		{
+			Timestamp: endTime,
+			Value:     55.0,
+			Unit:      "Percent",
+		},
+	}, nil
+}
+
+// ListMetrics lists available metrics
+func (cwca *CloudWatchClientAdapter) ListMetrics(ctx context.Context, namespace string) ([]awsPorts.MetricInfo, error) {
+	// This is a simplified implementation
+	// In production, you would call CloudWatch ListMetrics API
+
+	// For now, return mock data
+	return []awsPorts.MetricInfo{
+		{
+			MetricName: "CPUUtilization",
+			Namespace:  namespace,
+			Unit:       "Percent",
+			Dimensions: []awsPorts.MetricDimension{
+				{Name: "InstanceId", Value: "i-1234567890abcdef0"},
+			},
+		},
+		{
+			MetricName: "NetworkIn",
+			Namespace:  namespace,
+			Unit:       "Bytes",
+			Dimensions: []awsPorts.MetricDimension{
+				{Name: "InstanceId", Value: "i-1234567890abcdef0"},
+			},
+		},
+	}, nil
 }

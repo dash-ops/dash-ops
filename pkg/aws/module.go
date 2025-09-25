@@ -5,11 +5,11 @@ import (
 
 	"github.com/gorilla/mux"
 
-	awsAdaptersExternal "github.com/dash-ops/dash-ops/pkg/aws/adapters/external"
 	awsAdaptersHttp "github.com/dash-ops/dash-ops/pkg/aws/adapters/http"
 	awsAdaptersStorage "github.com/dash-ops/dash-ops/pkg/aws/adapters/storage"
 	aws "github.com/dash-ops/dash-ops/pkg/aws/controllers"
 	"github.com/dash-ops/dash-ops/pkg/aws/handlers"
+	awsIntegrations "github.com/dash-ops/dash-ops/pkg/aws/integrations/external/aws"
 	awsLogic "github.com/dash-ops/dash-ops/pkg/aws/logic"
 	awsPorts "github.com/dash-ops/dash-ops/pkg/aws/ports"
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
@@ -53,7 +53,7 @@ func NewModule(fileConfig []byte) (*Module, error) {
 	}
 
 	// Create AWS client service
-	awsClientService := awsAdaptersExternal.NewAWSClientServiceAdapter()
+	awsClientService := awsIntegrations.NewAWSAdapter()
 
 	// Create instance repository
 	instanceRepo := awsAdaptersStorage.NewInstanceRepositoryAdapter(awsClientService, accountRepo)
