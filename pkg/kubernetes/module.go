@@ -43,9 +43,6 @@ type Module struct {
 	EventService           k8sPorts.EventService
 	HealthService          k8sPorts.HealthService
 	ServiceContextResolver k8sPorts.ServiceContextResolver
-
-	// Adapters for external integrations
-	ServiceCatalogAdapter scPorts.KubernetesService // Adapter for service-catalog integration
 }
 
 // NewModule creates and initializes a new Kubernetes module
@@ -85,11 +82,8 @@ func NewModule(fileConfig []byte) (*Module, error) {
 	}
 	nodeRepo := k8sExternal.NewNodeRepository(clusterRepo)
 	namespaceRepo := k8sExternal.NewNamespaceRepository(clusterRepo)
-	deploymentRepo := k8sExternal.NewDeploymentRepository(clusterRepo, nil) // ServiceContextResolver will be set later
+	deploymentRepo := k8sExternal.NewDeploymentRepository(clusterRepo, nil)
 	podRepo := k8sExternal.NewPodRepository(clusterRepo)
-
-	// Initialize service-catalog adapter
-	serviceCatalogAdapter := k8sExternal.NewServiceCatalogAdapter(deploymentRepo, clusterRepo)
 
 	// Initialize controller
 	controller := kubernetes.NewKubernetesController(
@@ -126,7 +120,6 @@ func NewModule(fileConfig []byte) (*Module, error) {
 		EventService:           nil, // Can be added later
 		HealthService:          nil, // Can be added later
 		ServiceContextResolver: nil, // Will be set via LoadDependencies
-		ServiceCatalogAdapter:  serviceCatalogAdapter,
 	}, nil
 }
 
@@ -158,5 +151,5 @@ func (m *Module) LoadDependencies(modules map[string]interface{}) error {
 
 // GetServiceCatalogAdapter returns the adapter for service-catalog integration
 func (m *Module) GetServiceCatalogAdapter() scPorts.KubernetesService {
-	return m.ServiceCatalogAdapter
+	return k8sExternal.NewServiceCatalogAdapter(m.DeploymentRepo, m.ClusterRepo)
 }

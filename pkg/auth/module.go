@@ -11,18 +11,17 @@ import (
 	authAdapters "github.com/dash-ops/dash-ops/pkg/auth/adapters/http"
 	authControllers "github.com/dash-ops/dash-ops/pkg/auth/controllers"
 	authHandlers "github.com/dash-ops/dash-ops/pkg/auth/handlers"
+	"github.com/dash-ops/dash-ops/pkg/auth/integrations/external/github"
 	authLogic "github.com/dash-ops/dash-ops/pkg/auth/logic"
 	authModels "github.com/dash-ops/dash-ops/pkg/auth/models"
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
-	"github.com/dash-ops/dash-ops/pkg/github"
 )
 
 // Module represents the auth module - main entry point for the plugin
 type Module struct {
-	config       *authModels.AuthConfig
-	controller   *authControllers.AuthController
-	handler      *authHandlers.HTTPHandler
-	githubModule *github.Module
+	config     *authModels.AuthConfig
+	controller *authControllers.AuthController
+	handler    *authHandlers.HTTPHandler
 }
 
 // NewModule creates and initializes a new auth module (main factory)
@@ -42,7 +41,7 @@ func NewModule(fileConfig []byte) (*Module, error) {
 		return nil, fmt.Errorf("invalid auth config: %w", err)
 	}
 
-	// Create OAuth2 config for GitHub module dependency
+	// Create OAuth2 config for GitHub integration
 	oauthConfig := &oauth2.Config{
 		ClientID:     config.ClientID,
 		ClientSecret: config.ClientSecret,
@@ -54,22 +53,19 @@ func NewModule(fileConfig []byte) (*Module, error) {
 		},
 	}
 
-	// Initialize GitHub module (dependency)
-	githubModule, err := github.NewModule(oauthConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create GitHub module: %w", err)
-	}
-
 	// Initialize logic components
 	oauth2Processor := authLogic.NewOAuth2Processor()
 	sessionManager := authLogic.NewSessionManager(24 * time.Hour)
 
-	// Initialize controller with dependencies (using GitHub module as service)
+	// Initialize GitHub integration
+	githubAdapter := github.NewGitHubAdapter(oauthConfig)
+
+	// Initialize controller with dependencies
 	controller := authControllers.NewAuthController(
 		config,
 		oauth2Processor,
 		sessionManager,
-		githubModule, // GitHub module implements GitHubService interface
+		githubAdapter, // GitHub adapter implements GitHubService interface
 	)
 
 	// Initialize adapters
@@ -86,10 +82,9 @@ func NewModule(fileConfig []byte) (*Module, error) {
 	)
 
 	return &Module{
-		config:       config,
-		controller:   controller,
-		handler:      handler,
-		githubModule: githubModule,
+		config:     config,
+		controller: controller,
+		handler:    handler,
 	}, nil
 }
 

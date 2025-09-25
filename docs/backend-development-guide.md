@@ -37,14 +37,26 @@ HTTP Request → Handler → Adapter → Controller → Logic → Repository
 
 ## Module Structure
 
-Every module follows this consistent 8-layer pattern:
+Every module follows this consistent 9-layer pattern:
 
 ```
 pkg/{module}/
-├── adapters/           # Data transformation & external integrations
+├── adapters/           # Data transformation ONLY (wire ↔ models)
 │   ├── http/          # HTTP request/response adapters
 │   ├── storage/       # Database/filesystem adapters
-│   └── external/      # Third-party service adapters
+│   └── external/      # Data transformation adapters
+├── integrations/      # External communication & module integration
+│   ├── external/      # External service integrations (APIs, services)
+│   │   ├── github/    # GitHub API client
+│   │   ├── aws/       # AWS API client
+│   │   ├── kubernetes/# Kubernetes API client
+│   │   ├── prometheus/# Prometheus API client
+│   │   ├── loki/      # Loki API client
+│   │   └── tempo/     # Tempo API client
+│   └── internal/      # Internal module integrations
+│       ├── service_catalog/  # Service Catalog module integration
+│       ├── kubernetes/       # Kubernetes module integration
+│       └── auth/             # Auth module integration
 ├── controllers/       # Business logic orchestration
 ├── handlers/          # HTTP endpoints (entry points)
 ├── logic/             # Pure business logic (100% tested)
@@ -62,9 +74,193 @@ pkg/{module}/
 | **controllers** | Orchestration, workflow | Integration tests with mocks |
 | **logic** | Pure business rules | 100% unit test coverage |
 | **models** | Domain entities | Unit tests for methods |
-| **adapters** | Data transformation | Unit tests |
+| **adapters** | Data transformation ONLY | Unit tests |
+| **integrations** | External communication | Unit tests with mocks |
 | **ports** | Interfaces | No tests (interfaces) |
 | **wire** | DTOs | No tests (data structures) |
+
+## Integrations vs Adapters
+
+### 🎯 Clear Separation of Concerns
+
+DashOps follows a **strict separation** between data transformation and external communication:
+
+#### `adapters/` - Data Transformation ONLY
+- **Purpose**: Transform data between different formats (wire ↔ models)
+- **Responsibility**: Pure data conversion, no external communication
+- **Examples**: 
+  - Convert HTTP request to domain model
+  - Convert domain model to HTTP response
+  - Transform database row to entity
+  - Map external API response to internal model
+
+#### `integrations/` - External Communication
+- **Purpose**: Handle communication with external services and modules
+- **Responsibility**: API calls, network communication, service discovery
+- **Examples**:
+  - GitHub API calls
+  - AWS service calls
+  - Kubernetes API calls
+  - Inter-module communication
+
+### 📁 Integration Structure
+
+#### External Integrations (`integrations/external/`)
+For third-party services and APIs:
+
+```
+integrations/external/
+├── github/
+│   ├── github_client.go      # GitHub API client
+│   └── github_adapter.go     # Data transformation for GitHub
+├── aws/
+│   ├── ec2_client.go         # EC2 API client
+│   ├── s3_client.go          # S3 API client
+│   └── aws_adapter.go        # Data transformation for AWS
+└── kubernetes/
+    ├── k8s_client.go         # Kubernetes API client
+    └── k8s_adapter.go        # Data transformation for K8s
+```
+
+#### Internal Integrations (`integrations/internal/`)
+For communication between DashOps modules:
+
+```
+integrations/internal/
+├── service_catalog/
+│   └── service_catalog_integration.go  # Service Catalog module client
+├── kubernetes/
+│   └── kubernetes_integration.go       # Kubernetes module client
+└── auth/
+    └── auth_integration.go             # Auth module client
+```
+
+### 🔄 Data Flow with Integrations
+
+```
+HTTP Request → Handler → Adapter → Controller → Logic → Repository
+                    ↓
+              Integration (External/Internal)
+                    ↓
+              External Service/Module
+```
+
+### ✅ Correct Patterns
+
+#### External Integration Example
+```go
+// integrations/external/github/github_client.go
+package github
+
+import (
+    "context"
+    "github.com/google/go-github/v50/github"
+    "golang.org/x/oauth2"
+)
+
+type GitHubClient struct {
+    client *github.Client
+}
+
+func NewGitHubClient() *GitHubClient {
+    return &GitHubClient{
+        client: github.NewClient(nil),
+    }
+}
+
+func (c *GitHubClient) GetUser(ctx context.Context, token *oauth2.Token) (*github.User, error) {
+    client := c.client.WithAuthToken(token.AccessToken)
+    return client.Users.Get(ctx, "")
+}
+
+// integrations/external/github/github_adapter.go
+package github
+
+import (
+    "context"
+    "github.com/dash-ops/dash-ops/pkg/auth/ports"
+    "github.com/google/go-github/v50/github"
+    "golang.org/x/oauth2"
+)
+
+type GitHubAdapter struct {
+    client *GitHubClient
+}
+
+func NewGitHubAdapter() ports.GitHubService {
+    return &GitHubAdapter{
+        client: NewGitHubClient(),
+    }
+}
+
+// Pure data transformation - no external communication
+func (a *GitHubAdapter) GetUser(ctx context.Context, token *oauth2.Token) (*github.User, error) {
+    return a.client.GetUser(ctx, token)
+}
+```
+
+#### Internal Integration Example
+```go
+// integrations/internal/service_catalog/service_catalog_integration.go
+package servicecatalog
+
+import (
+    "context"
+    "github.com/dash-ops/dash-ops/pkg/service-catalog/ports"
+    "github.com/dash-ops/dash-ops/pkg/service-catalog/models"
+)
+
+type ServiceCatalogIntegration struct {
+    api ports.ExposedAPI
+}
+
+func NewServiceCatalogIntegration(api ports.ExposedAPI) *ServiceCatalogIntegration {
+    return &ServiceCatalogIntegration{
+        api: api,
+    }
+}
+
+func (i *ServiceCatalogIntegration) ResolveServiceContext(ctx context.Context, 
+    deployment, namespace, context string) (*models.ServiceContext, error) {
+    
+    return i.api.GetServiceContext(ctx, deployment, namespace, context)
+}
+```
+
+### ❌ Anti-Patterns to Avoid
+
+```go
+// ❌ WRONG: Adapter doing external communication
+type GitHubAdapter struct {
+    client *github.Client
+}
+
+func (a *GitHubAdapter) GetUser(ctx context.Context, token *oauth2.Token) (*github.User, error) {
+    // This should be in integrations/external/github/
+    client := a.client.WithAuthToken(token.AccessToken)
+    return client.Users.Get(ctx, "")
+}
+
+// ❌ WRONG: Integration doing data transformation
+type ServiceCatalogIntegration struct {
+    // This should be in adapters/
+    transformer *DataTransformer
+}
+
+func (i *ServiceCatalogIntegration) TransformService(service *Service) *ServiceResponse {
+    // This should be in adapters/
+    return i.transformer.Transform(service)
+}
+```
+
+### 🎯 Benefits of This Separation
+
+1. **Single Responsibility**: Each layer has one clear purpose
+2. **Testability**: Easy to mock integrations and test adapters
+3. **Reusability**: Integrations can be used by multiple adapters
+4. **Maintainability**: Changes to external APIs don't affect data transformation
+5. **Clarity**: Easy to understand what each component does
+6. **Flexibility**: Easy to swap implementations (e.g., mock vs real API)
 
 ## Development Workflow
 
@@ -610,14 +806,22 @@ Modules can have dependencies on other modules. These are loaded in Phase 3 usin
 func (m *Module) LoadDependencies(modules map[string]interface{}) error {
     // Load kubernetes dependency if available
     if k8sModule, exists := modules["kubernetes"]; exists {
-        if k8s, ok := k8sModule.(interface{ GetServiceCatalogAdapter() scPorts.KubernetesService }); ok {
-            if adapter := k8s.GetServiceCatalogAdapter(); adapter != nil {
-                m.kubernetesAdapter = scK8sAdapter.NewKubernetesAdapter(adapter)
-                m.controller.UpdateKubernetesService(m.kubernetesAdapter)
+        if k8s, ok := k8sModule.(interface{ GetExposedAPI() k8sPorts.ExposedAPI }); ok {
+            if api := k8s.GetExposedAPI(); api != nil {
+                // Create internal integration
+                k8sIntegration := integrations.NewKubernetesIntegration(api)
+                m.controller.SetKubernetesIntegration(k8sIntegration)
             }
         }
     }
     return nil
+}
+
+// Expose API for other modules
+func (m *Module) GetExposedAPI() ports.ExposedAPI {
+    return &exposedAPI{
+        controller: m.controller,
+    }
 }
 ```
 
@@ -627,13 +831,53 @@ func (m *Module) LoadDependencies(modules map[string]interface{}) error {
 func (m *Module) LoadDependencies(modules map[string]interface{}) error {
     // Load service-catalog dependency if available
     if scModule, exists := modules["service-catalog"]; exists {
-        if sc, ok := scModule.(interface{ GetServiceContextResolver() k8sPorts.ServiceContextResolver }); ok {
-            if resolver := sc.GetServiceContextResolver(); resolver != nil {
-                m.ServiceContextResolver = resolver
+        if sc, ok := scModule.(interface{ GetExposedAPI() scPorts.ExposedAPI }); ok {
+            if api := sc.GetExposedAPI(); api != nil {
+                // Create internal integration
+                scIntegration := integrations.NewServiceCatalogIntegration(api)
+                m.controller.SetServiceCatalogIntegration(scIntegration)
             }
         }
     }
     return nil
+}
+
+// Expose API for other modules
+func (m *Module) GetExposedAPI() ports.ExposedAPI {
+    return &exposedAPI{
+        controller: m.controller,
+    }
+}
+```
+
+### External Service Dependencies
+
+External services are injected through the module factory:
+
+```go
+// pkg/kubernetes/module.go
+func NewModule(config []byte) (*Module, error) {
+    // Create external integrations
+    prometheusClient := prometheus.NewPrometheusClient(config.PrometheusEndpoint)
+    lokiClient := loki.NewLokiClient(config.LokiEndpoint)
+    tempoClient := tempo.NewTempoClient(config.TempoEndpoint)
+    
+    // Create adapters for external integrations
+    prometheusAdapter := adapters.NewPrometheusAdapter(prometheusClient)
+    lokiAdapter := adapters.NewLokiAdapter(lokiClient)
+    tempoAdapter := adapters.NewTempoAdapter(tempoClient)
+    
+    // Inject into controller
+    controller := controllers.NewKubernetesController(
+        prometheusAdapter,
+        lokiAdapter,
+        tempoAdapter,
+        // ... other dependencies
+    )
+    
+    return &Module{
+        controller: controller,
+    }, nil
 }
 ```
 
@@ -1475,6 +1719,105 @@ func New{Name}Processor() *{Name}Processor {
 func (p *{Name}Processor) Process{Operation}(input *Model) (*Model, error) {
     // Implementation
     return input, nil
+}
+```
+
+#### External Integration Template
+```go
+// integrations/external/{service}/{service}_client.go
+package {service}
+
+import (
+    "context"
+    // External service imports
+)
+
+// {Service}Client handles communication with {Service} API
+type {Service}Client struct {
+    client *external.Client
+    config *Config
+}
+
+func New{Service}Client(config *Config) *{Service}Client {
+    return &{Service}Client{
+        client: external.NewClient(config),
+        config: config,
+    }
+}
+
+func (c *{Service}Client) Get{Resource}(ctx context.Context, id string) (*Resource, error) {
+    // API call implementation
+    return c.client.GetResource(ctx, id)
+}
+
+// integrations/external/{service}/{service}_adapter.go
+package {service}
+
+import (
+    "context"
+    "github.com/dash-ops/dash-ops/pkg/{module}/ports"
+)
+
+// {Service}Adapter transforms data between {Service} API and domain
+type {Service}Adapter struct {
+    client *{Service}Client
+}
+
+func New{Service}Adapter(client *{Service}Client) ports.{Service}Service {
+    return &{Service}Adapter{
+        client: client,
+    }
+}
+
+func (a *{Service}Adapter) Get{Resource}(ctx context.Context, id string) (*models.Resource, error) {
+    // Call client
+    resource, err := a.client.Get{Resource}(ctx, id)
+    if err != nil {
+        return nil, err
+    }
+    
+    // Transform data
+    return a.transform{Resource}(resource), nil
+}
+
+func (a *{Service}Adapter) transform{Resource}(resource *external.Resource) *models.Resource {
+    // Pure data transformation
+    return &models.Resource{
+        ID:   resource.ID,
+        Name: resource.Name,
+        // ... other fields
+    }
+}
+```
+
+#### Internal Integration Template
+```go
+// integrations/internal/{module}/{module}_integration.go
+package {module}
+
+import (
+    "context"
+    "github.com/dash-ops/dash-ops/pkg/{module}/ports"
+    "github.com/dash-ops/dash-ops/pkg/{module}/models"
+)
+
+// {Module}Integration handles communication with {module} module
+type {Module}Integration struct {
+    api ports.ExposedAPI
+}
+
+func New{Module}Integration(api ports.ExposedAPI) *{Module}Integration {
+    return &{Module}Integration{
+        api: api,
+    }
+}
+
+func (i *{Module}Integration) Get{Resource}(ctx context.Context, id string) (*models.Resource, error) {
+    return i.api.Get{Resource}(ctx, id)
+}
+
+func (i *{Module}Integration) Create{Resource}(ctx context.Context, resource *models.Resource) (*models.Resource, error) {
+    return i.api.Create{Resource}(ctx, resource)
 }
 ```
 
