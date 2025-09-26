@@ -21,6 +21,7 @@ DashOps backend follows **Hexagonal Architecture** with **Dependency Injection**
 - ✅ **Testability**: Pure business logic with 100% test coverage
 - ✅ **Maintainability**: Clear separation of concerns
 - ✅ **Extensibility**: Easy to add new features or modules
+- ✅ **Modularity**: Domain-specific controllers and repositories for better organization
 
 ### 🎯 Core Principles
 
@@ -64,6 +65,95 @@ pkg/{module}/
 ├── wire/              # API DTOs (request/response)
 └── module.go          # Module factory & initialization
 ```
+
+## Modular Architecture (NEW)
+
+### 🎯 Domain-Specific Organization
+
+For better maintainability and separation of concerns, modules can be organized with domain-specific controllers and repositories:
+
+```
+pkg/{module}/
+├── integrations/external/
+│   └── {service}/
+│       ├── {service}_client.go      # External service client
+│       └── {service}_adapter.go     # Data transformation adapter
+├── repositories/                     # Domain-specific repositories
+│   ├── {domain}_repository.go       # Repository for specific domain
+│   ├── {domain2}_repository.go      # Repository for another domain
+│   └── ...
+├── controllers/                      # Domain-specific controllers
+│   ├── {domain}_controller.go       # Controller for specific domain
+│   ├── {domain2}_controller.go      # Controller for another domain
+│   └── ...
+├── handlers/
+│   └── http.go                       # HTTP handler with dependency injection
+└── module.go                         # Module factory & initialization
+```
+
+### 🔧 Dependency Injection Pattern
+
+```go
+// handlers/http.go
+func NewHTTPHandler(
+    k8sClient *kubernetes.KubernetesClient,
+    responseAdapter *commonsHttp.ResponseAdapter,
+    requestAdapter *commonsHttp.RequestAdapter,
+) *HTTPHandler {
+    // Initialize repositories with client
+    nodesRepo := repositories.NewNodesRepository(k8sClient)
+    deploymentsRepo := repositories.NewDeploymentsRepository(k8sClient)
+    podsRepo := repositories.NewPodsRepository(k8sClient)
+    namespacesRepo := repositories.NewNamespacesRepository(k8sClient)
+    
+    // Initialize controllers with repositories
+    nodesController := controllers.NewNodesController(nodesRepo)
+    deploymentsController := controllers.NewDeploymentsController(deploymentsRepo)
+    podsController := controllers.NewPodsController(podsRepo)
+    namespacesController := controllers.NewNamespacesController(namespacesRepo)
+    
+    return &HTTPHandler{
+        nodesController:       nodesController,
+        deploymentsController: deploymentsController,
+        podsController:        podsController,
+        namespacesController:  namespacesController,
+        responseAdapter:       responseAdapter,
+        requestAdapter:        requestAdapter,
+    }
+}
+```
+
+### 📁 Example: Kubernetes Module Structure
+
+```
+pkg/kubernetes/
+├── integrations/external/
+│   └── kubernetes/
+│       ├── kubernetes_client.go      # K8s API client
+│       └── kubernetes_adapter.go     # Data transformation
+├── repositories/
+│   ├── nodes_repository.go           # Nodes-specific operations
+│   ├── deployments_repository.go     # Deployments-specific operations
+│   ├── pods_repository.go            # Pods-specific operations
+│   └── namespaces_repository.go      # Namespaces-specific operations
+├── controllers/
+│   ├── nodes_controller.go           # Nodes business logic
+│   ├── deployments_controller.go     # Deployments business logic
+│   ├── pods_controller.go            # Pods business logic
+│   └── namespaces_controller.go      # Namespaces business logic
+├── handlers/
+│   └── http.go                       # HTTP routing & dependency injection
+└── module.go                         # Module initialization
+```
+
+### 🎯 Benefits of Modular Architecture
+
+1. **Single Responsibility**: Each controller/repository has one clear purpose
+2. **Easy Testing**: Components can be tested in isolation
+3. **Maintainability**: Changes in one domain don't affect others
+4. **Scalability**: Easy to add new domains or modify existing ones
+5. **Clear Dependencies**: Explicit dependency injection makes relationships clear
+6. **Code Organization**: Related functionality is grouped together
 
 ### Layer Responsibilities
 

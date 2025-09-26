@@ -3,36 +3,64 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
 	k8sAdapters "github.com/dash-ops/dash-ops/pkg/kubernetes/adapters/http"
-	kubernetes "github.com/dash-ops/dash-ops/pkg/kubernetes/controllers"
+	"github.com/dash-ops/dash-ops/pkg/kubernetes/controllers"
+	"github.com/dash-ops/dash-ops/pkg/kubernetes/integrations/external/kubernetes"
 	k8sModels "github.com/dash-ops/dash-ops/pkg/kubernetes/models"
+	k8sPorts "github.com/dash-ops/dash-ops/pkg/kubernetes/ports"
+	"github.com/dash-ops/dash-ops/pkg/kubernetes/repositories"
 	k8sWire "github.com/dash-ops/dash-ops/pkg/kubernetes/wire"
 )
 
 // HTTPHandler handles HTTP requests for Kubernetes module
 type HTTPHandler struct {
-	controller      *kubernetes.KubernetesController
-	k8sAdapter      *k8sAdapters.KubernetesAdapter
-	responseAdapter *commonsHttp.ResponseAdapter
-	requestAdapter  *commonsHttp.RequestAdapter
+	nodesController       *controllers.NodesController
+	deploymentsController *controllers.DeploymentsController
+	podsController        *controllers.PodsController
+	namespacesController  *controllers.NamespacesController
+	k8sClient             *kubernetes.KubernetesClient
+	responseAdapter       *commonsHttp.ResponseAdapter
+	requestAdapter        *commonsHttp.RequestAdapter
 }
 
 // NewHTTPHandler creates a new HTTP handler
 func NewHTTPHandler(
-	controller *kubernetes.KubernetesController,
-	k8sAdapter *k8sAdapters.KubernetesAdapter,
+	k8sClient *kubernetes.KubernetesClient,
 	responseAdapter *commonsHttp.ResponseAdapter,
 	requestAdapter *commonsHttp.RequestAdapter,
 ) *HTTPHandler {
+	// Initialize repositories with the provided client
+	nodesRepo := repositories.NewNodesRepository(k8sClient)
+	deploymentsRepo := repositories.NewDeploymentsRepository(k8sClient)
+	podsRepo := repositories.NewPodsRepository(k8sClient)
+	namespacesRepo := repositories.NewNamespacesRepository(k8sClient)
+
+	// Initialize controllers with repositories
+	nodesController := controllers.NewNodesController(nodesRepo)
+	deploymentsController := controllers.NewDeploymentsController(deploymentsRepo)
+	podsController := controllers.NewPodsController(podsRepo)
+	namespacesController := controllers.NewNamespacesController(namespacesRepo)
+
 	return &HTTPHandler{
-		controller:      controller,
-		k8sAdapter:      k8sAdapter,
-		responseAdapter: responseAdapter,
-		requestAdapter:  requestAdapter,
+		nodesController:       nodesController,
+		deploymentsController: deploymentsController,
+		podsController:        podsController,
+		namespacesController:  namespacesController,
+		k8sClient:             k8sClient,
+		responseAdapter:       responseAdapter,
+		requestAdapter:        requestAdapter,
+	}
+}
+
+// SetServiceContextResolver sets the service context resolver for the deployments controller
+func (h *HTTPHandler) SetServiceContextResolver(resolver k8sPorts.ServiceContextResolver) {
+	if h.deploymentsController != nil {
+		h.deploymentsController.SetServiceContextResolver(resolver)
 	}
 }
 
@@ -78,13 +106,18 @@ func (h *HTTPHandler) getClusterInfoHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	clusterInfo, err := h.controller.GetClusterInfo(r.Context(), context)
-	if err != nil {
-		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to get cluster info: "+err.Error())
-		return
+	// TODO: Implement cluster info aggregation from multiple controllers
+	// For now, return a basic cluster info structure
+	clusterInfo := &k8sModels.ClusterInfo{
+		Cluster: k8sModels.Cluster{
+			Name:    context,
+			Context: context,
+			Status:  k8sModels.ClusterStatusConnected,
+		},
 	}
+	// no error path for the stubbed response above
 
-	response := h.k8sAdapter.ClusterInfoToResponse(clusterInfo)
+	response := k8sAdapters.ClusterInfoToResponse(clusterInfo)
 	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
 }
 
@@ -98,13 +131,13 @@ func (h *HTTPHandler) listNodesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	nodes, err := h.controller.ListNodes(r.Context(), context)
+	nodes, err := h.nodesController.ListNodes(r.Context(), context)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to list nodes: "+err.Error())
 		return
 	}
 
-	response := h.k8sAdapter.NodesToResponse(nodes)
+	response := k8sAdapters.NodesToResponse(nodes)
 	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
 }
 
@@ -124,13 +157,13 @@ func (h *HTTPHandler) getNodeHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	node, err := h.controller.GetNode(r.Context(), context, nodeName)
+	node, err := h.nodesController.GetNode(r.Context(), context, nodeName)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusNotFound, "Node not found: "+err.Error())
 		return
 	}
 
-	response := h.k8sAdapter.NodeToResponse(node)
+	response := k8sAdapters.NodeToResponse(node)
 	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
 }
 
@@ -144,13 +177,13 @@ func (h *HTTPHandler) listNamespacesHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	namespaces, err := h.controller.ListNamespaces(r.Context(), context)
+	namespaces, err := h.namespacesController.ListNamespaces(r.Context(), context)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to list namespaces: "+err.Error())
 		return
 	}
 
-	response := h.k8sAdapter.NamespacesToResponse(namespaces)
+	response := k8sAdapters.NamespacesToResponse(namespaces)
 	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
 }
 
@@ -172,7 +205,7 @@ func (h *HTTPHandler) scaleDeploymentHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err := h.controller.ScaleDeployment(r.Context(), context, namespace, deploymentName, req.Replicas)
+	err := h.deploymentsController.ScaleDeployment(r.Context(), context, namespace, deploymentName, req.Replicas)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to scale deployment: "+err.Error())
 		return
@@ -199,7 +232,7 @@ func (h *HTTPHandler) restartDeploymentHandler(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	err := h.controller.RestartDeployment(r.Context(), context, namespace, deploymentName)
+	err := h.deploymentsController.RestartDeployment(r.Context(), context, namespace, deploymentName)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to restart deployment: "+err.Error())
 		return
@@ -267,13 +300,16 @@ func (h *HTTPHandler) getClusterHealthHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	health, err := h.controller.GetClusterHealth(r.Context(), context)
-	if err != nil {
-		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to get cluster health: "+err.Error())
-		return
+	// TODO: Implement cluster health aggregation from multiple controllers
+	// For now, return a basic health structure
+	health := &k8sModels.ClusterHealth{
+		Context:     context,
+		Status:      k8sModels.HealthStatus("healthy"),
+		LastUpdated: time.Now(),
 	}
+	// no error path for the stubbed response above
 
-	response := h.k8sAdapter.ClusterHealthToResponse(health)
+	response := k8sAdapters.ClusterHealthToResponse(health)
 	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
 }
 
@@ -293,13 +329,13 @@ func (h *HTTPHandler) createNamespaceHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	namespace, err := h.controller.CreateNamespace(r.Context(), context, req.Name)
+	namespace, err := h.namespacesController.CreateNamespace(r.Context(), context, req.Name)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to create namespace: "+err.Error())
 		return
 	}
 
-	response := h.k8sAdapter.NamespaceToResponse(namespace)
+	response := k8sAdapters.NamespaceToResponse(namespace)
 	h.responseAdapter.WriteCreated(w, "/clusters/"+context+"/namespaces/"+namespace.Name, response)
 }
 
@@ -314,13 +350,13 @@ func (h *HTTPHandler) getNamespaceHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	namespace, err := h.controller.GetNamespace(r.Context(), context, name)
+	namespace, err := h.namespacesController.GetNamespace(r.Context(), context, name)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusNotFound, "Namespace not found: "+err.Error())
 		return
 	}
 
-	response := h.k8sAdapter.NamespaceToResponse(namespace)
+	response := k8sAdapters.NamespaceToResponse(namespace)
 	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
 }
 
@@ -335,7 +371,7 @@ func (h *HTTPHandler) deleteNamespaceHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	err := h.controller.DeleteNamespace(r.Context(), context, name)
+	err := h.namespacesController.DeleteNamespace(r.Context(), context, name)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to delete namespace: "+err.Error())
 		return
@@ -361,13 +397,13 @@ func (h *HTTPHandler) listDeploymentsHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	filter := h.parseDeploymentFilter(r)
-	deployments, err := h.controller.ListDeployments(r.Context(), context, filter)
+	deployments, err := h.deploymentsController.ListDeployments(r.Context(), context, filter)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to list deployments: "+err.Error())
 		return
 	}
 
-	response := h.k8sAdapter.DeploymentsToResponse(deployments.Deployments)
+	response := k8sAdapters.DeploymentsToResponse(deployments.Deployments)
 	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
 }
 
@@ -385,13 +421,13 @@ func (h *HTTPHandler) listDeploymentsByNamespaceHandler(w http.ResponseWriter, r
 	filter := h.parseDeploymentFilter(r)
 	filter.Namespace = namespace
 
-	deployments, err := h.controller.ListDeployments(r.Context(), context, filter)
+	deployments, err := h.deploymentsController.ListDeployments(r.Context(), context, filter)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to list deployments: "+err.Error())
 		return
 	}
 
-	response := h.k8sAdapter.DeploymentsToResponse(deployments.Deployments)
+	response := k8sAdapters.DeploymentsToResponse(deployments.Deployments)
 	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
 }
 
@@ -407,13 +443,13 @@ func (h *HTTPHandler) getDeploymentHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	deployment, err := h.controller.GetDeployment(r.Context(), context, namespace, name)
+	deployment, err := h.deploymentsController.GetDeployment(r.Context(), context, namespace, name)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusNotFound, "Deployment not found: "+err.Error())
 		return
 	}
 
-	response := h.k8sAdapter.DeploymentToResponse(deployment)
+	response := k8sAdapters.DeploymentToResponse(deployment)
 	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
 }
 
@@ -428,13 +464,13 @@ func (h *HTTPHandler) listPodsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	filter := h.parsePodFilter(r)
-	pods, err := h.controller.ListPods(r.Context(), context, filter)
+	pods, err := h.podsController.ListPods(r.Context(), context, filter)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to list pods: "+err.Error())
 		return
 	}
 
-	response := h.k8sAdapter.PodsToResponse(pods.Pods)
+	response := k8sAdapters.PodsToResponse(pods.Pods)
 	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
 }
 
@@ -452,13 +488,13 @@ func (h *HTTPHandler) listPodsByNamespaceHandler(w http.ResponseWriter, r *http.
 	filter := h.parsePodFilter(r)
 	filter.Namespace = namespace
 
-	pods, err := h.controller.ListPods(r.Context(), context, filter)
+	pods, err := h.podsController.ListPods(r.Context(), context, filter)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to list pods: "+err.Error())
 		return
 	}
 
-	response := h.k8sAdapter.PodsToResponse(pods.Pods)
+	response := k8sAdapters.PodsToResponse(pods.Pods)
 	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
 }
 
@@ -474,13 +510,13 @@ func (h *HTTPHandler) getPodHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pod, err := h.controller.GetPod(r.Context(), context, namespace, name)
+	pod, err := h.podsController.GetPod(r.Context(), context, namespace, name)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusNotFound, "Pod not found: "+err.Error())
 		return
 	}
 
-	response := h.k8sAdapter.PodToResponse(pod)
+	response := k8sAdapters.PodToResponse(pod)
 	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
 }
 
@@ -496,7 +532,7 @@ func (h *HTTPHandler) deletePodHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := h.controller.DeletePod(r.Context(), context, namespace, name)
+	err := h.podsController.DeletePod(r.Context(), context, namespace, name)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to delete pod: "+err.Error())
 		return
@@ -541,7 +577,7 @@ func (h *HTTPHandler) getPodLogsHandler(w http.ResponseWriter, r *http.Request) 
 		TailLines:     lines,
 	}
 
-	logs, err := h.controller.GetPodLogs(r.Context(), context, logFilter)
+	logs, err := h.podsController.GetPodLogs(r.Context(), context, logFilter)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to get pod logs: "+err.Error())
 		return
@@ -569,12 +605,24 @@ func (h *HTTPHandler) getPodLogsHandler(w http.ResponseWriter, r *http.Request) 
 
 // listClustersHandler handles GET /clusters
 func (h *HTTPHandler) listClustersHandler(w http.ResponseWriter, r *http.Request) {
-	clusters, err := h.controller.ListClusters(r.Context())
+	// Build cluster list from injected client (single configured context for now)
+	version, err := h.k8sClient.GetServerVersion(r.Context())
 	if err != nil {
-		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to list clusters: "+err.Error())
+		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to get server version: "+err.Error())
 		return
 	}
 
-	response := h.k8sAdapter.ClusterListToResponse(clusters)
+	currentContext := h.k8sClient.GetContext()
+
+	clusters := []k8sModels.Cluster{
+		{
+			Name:    currentContext,
+			Context: currentContext,
+			Version: version,
+			Status:  k8sModels.ClusterStatusConnected,
+		},
+	}
+
+	response := k8sAdapters.ClusterListToResponse(clusters)
 	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
 }

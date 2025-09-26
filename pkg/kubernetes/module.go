@@ -7,8 +7,6 @@ import (
 
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
 	"github.com/dash-ops/dash-ops/pkg/kubernetes/adapters/config"
-	k8sAdaptersHttp "github.com/dash-ops/dash-ops/pkg/kubernetes/adapters/http"
-	kubernetes "github.com/dash-ops/dash-ops/pkg/kubernetes/controllers"
 	"github.com/dash-ops/dash-ops/pkg/kubernetes/handlers"
 	k8sExternalIntegration "github.com/dash-ops/dash-ops/pkg/kubernetes/integrations/external/kubernetes"
 	k8sInternal "github.com/dash-ops/dash-ops/pkg/kubernetes/integrations/service-catalog"
@@ -20,33 +18,21 @@ import (
 // Module represents the Kubernetes module with all its components
 type Module struct {
 	// Core components
-	Controller *kubernetes.KubernetesController
-	Handler    *handlers.HTTPHandler
+	Handler *handlers.HTTPHandler
 
 	// Logic components
 	HealthCalculator *k8sLogic.HealthCalculator
 
 	// Adapters
-	K8sAdapter      *k8sAdaptersHttp.KubernetesAdapter
 	ResponseAdapter *commonsHttp.ResponseAdapter
 	RequestAdapter  *commonsHttp.RequestAdapter
 
 	// Repositories (interfaces - implementations injected)
 	ClusterRepo    k8sPorts.ClusterRepository
-	NodeRepo       k8sPorts.NodeRepository
-	NamespaceRepo  k8sPorts.NamespaceRepository
 	DeploymentRepo k8sPorts.DeploymentRepository
-	PodRepo        k8sPorts.PodRepository
 
 	// Services (interfaces - implementations injected)
-	ClientService          k8sPorts.KubernetesClientService
-	MetricsService         k8sPorts.MetricsService
-	EventService           k8sPorts.EventService
-	HealthService          k8sPorts.HealthService
 	ServiceContextResolver k8sPorts.ServiceContextResolver
-
-	// External integrations
-	KubernetesAdapter k8sPorts.KubernetesClientService
 }
 
 // NewModule creates and initializes a new Kubernetes module
@@ -81,64 +67,50 @@ func NewModule(fileConfig []byte) (*Module, error) {
 	}
 
 	// Initialize adapters
-	k8sAdapter := k8sAdaptersHttp.NewKubernetesAdapter()
 	responseAdapter := commonsHttp.NewResponseAdapter()
 	requestAdapter := commonsHttp.NewRequestAdapter()
 
-	// Use wrapper functions to create repositories from the adapter
+	// Use wrapper functions to create repositories required for service-catalog integration
 	var clusterRepo k8sPorts.ClusterRepository
-	var nodeRepo k8sPorts.NodeRepository
-	var namespaceRepo k8sPorts.NamespaceRepository
 	var deploymentRepo k8sPorts.DeploymentRepository
-	var podRepo k8sPorts.PodRepository
 
 	if kubernetesAdapter != nil {
 		// Cast to concrete type to access wrapper functions
 		if adapter, ok := kubernetesAdapter.(*k8sExternalIntegration.KubernetesAdapter); ok {
 			clusterRepo = k8sExternalIntegration.NewClusterRepository(adapter)
-			nodeRepo = k8sExternalIntegration.NewNodeRepository(adapter)
-			namespaceRepo = k8sExternalIntegration.NewNamespaceRepository(adapter)
 			deploymentRepo = k8sExternalIntegration.NewDeploymentRepository(adapter)
-			podRepo = k8sExternalIntegration.NewPodRepository(adapter)
 		}
 	}
 
-	// Initialize controller
-	controller := kubernetes.NewKubernetesController(
-		clusterRepo,
-		nodeRepo,
-		namespaceRepo,
-		deploymentRepo,
-		podRepo,
-		healthCalculator,
-	)
-
-	// Initialize handler
-	handler := handlers.NewHTTPHandler(
-		controller,
-		k8sAdapter,
-		responseAdapter,
-		requestAdapter,
-	)
+	// Initialize handler with the kubernetes client
+	var handler *handlers.HTTPHandler
+	if kubernetesAdapter != nil {
+		// Cast to concrete type to access the client
+		if _, ok := kubernetesAdapter.(*k8sExternalIntegration.KubernetesAdapter); ok {
+			// Create a client from the module config for DI
+			config := &k8sExternalIntegration.KubernetesConfig{
+				Kubeconfig: moduleConfig.Configs[0].Kubeconfig,
+				Context:    moduleConfig.Configs[0].Context,
+			}
+			client, err := k8sExternalIntegration.NewKubernetesClient(config)
+			if err == nil {
+				handler = handlers.NewHTTPHandler(
+					client,
+					responseAdapter,
+					requestAdapter,
+				)
+			}
+		}
+	}
 
 	return &Module{
-		Controller:             controller,
 		Handler:                handler,
 		HealthCalculator:       healthCalculator,
-		K8sAdapter:             k8sAdapter,
 		ResponseAdapter:        responseAdapter,
 		RequestAdapter:         requestAdapter,
 		ClusterRepo:            clusterRepo,
-		NodeRepo:               nodeRepo,
-		NamespaceRepo:          namespaceRepo,
 		DeploymentRepo:         deploymentRepo,
-		PodRepo:                podRepo,
-		ClientService:          nil, // Can be added later
-		MetricsService:         nil, // Can be added later
-		EventService:           nil, // Can be added later
-		HealthService:          nil, // Can be added later
 		ServiceContextResolver: nil, // Will be set via LoadDependencies
-		KubernetesAdapter:      kubernetesAdapter,
 	}, nil
 }
 
@@ -158,11 +130,10 @@ func (m *Module) LoadDependencies(modules map[string]interface{}) error {
 		}); ok {
 			if resolver := sc.GetServiceContextResolver(); resolver != nil {
 				m.ServiceContextResolver = resolver
-				// Update deployment repository with the resolver
-				if dr, ok := m.DeploymentRepo.(interface {
-					SetServiceContextResolver(k8sPorts.ServiceContextResolver)
-				}); ok {
-					dr.SetServiceContextResolver(resolver)
+
+				// Update deployment controller with the resolver
+				if m.Handler != nil {
+					m.Handler.SetServiceContextResolver(resolver)
 				}
 			}
 		}
