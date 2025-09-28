@@ -11,30 +11,43 @@ import (
 	aws "github.com/dash-ops/dash-ops/pkg/aws/controllers"
 	awsModels "github.com/dash-ops/dash-ops/pkg/aws/models"
 	awsPorts "github.com/dash-ops/dash-ops/pkg/aws/ports"
+	awsRepositories "github.com/dash-ops/dash-ops/pkg/aws/repositories"
 	awsWire "github.com/dash-ops/dash-ops/pkg/aws/wire"
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
 )
 
 // HTTPHandler handles HTTP requests for AWS module
 type HTTPHandler struct {
-	controller      *aws.AWSController
-	awsAdapter      *awsAdapters.AWSAdapter
-	responseAdapter *commonsHttp.ResponseAdapter
-	requestAdapter  *commonsHttp.RequestAdapter
+	accountsController  *aws.AccountsController
+	instancesController *aws.InstancesController
+	awsAdapter          *awsAdapters.AWSAdapter
+	responseAdapter     *commonsHttp.ResponseAdapter
+	requestAdapter      *commonsHttp.RequestAdapter
 }
 
-// NewHTTPHandler creates a new HTTP handler
+// NewHTTPHandler creates a new HTTP handler with DI
 func NewHTTPHandler(
-	controller *aws.AWSController,
-	awsAdapter *awsAdapters.AWSAdapter,
+	awsClientService awsPorts.AWSClientService,
+	accounts []awsModels.AWSAccount,
 	responseAdapter *commonsHttp.ResponseAdapter,
 	requestAdapter *commonsHttp.RequestAdapter,
 ) *HTTPHandler {
+	// Create repositories
+	instanceRepo := awsRepositories.NewInstanceRepository(awsClientService)
+
+	// Create controllers
+	accountsController := aws.NewAccountsController(accounts)
+	instancesController := aws.NewInstancesController(instanceRepo, accounts)
+
+	// Create HTTP adapter
+	awsAdapter := awsAdapters.NewAWSAdapter()
+
 	return &HTTPHandler{
-		controller:      controller,
-		awsAdapter:      awsAdapter,
-		responseAdapter: responseAdapter,
-		requestAdapter:  requestAdapter,
+		accountsController:  accountsController,
+		instancesController: instancesController,
+		awsAdapter:          awsAdapter,
+		responseAdapter:     responseAdapter,
+		requestAdapter:      requestAdapter,
 	}
 }
 
@@ -61,7 +74,7 @@ func (h *HTTPHandler) RegisterRoutes(router *mux.Router) {
 
 // listAccountsHandler handles GET /accounts
 func (h *HTTPHandler) listAccountsHandler(w http.ResponseWriter, r *http.Request) {
-	accounts, err := h.controller.ListAccounts(r.Context())
+	accounts, err := h.accountsController.ListAccounts(r.Context())
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to list accounts: "+err.Error())
 		return
@@ -81,7 +94,7 @@ func (h *HTTPHandler) getAccountHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	account, err := h.controller.GetAccount(r.Context(), accountKey)
+	account, err := h.accountsController.GetAccount(r.Context(), accountKey)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusNotFound, "Account not found: "+err.Error())
 		return
@@ -101,7 +114,7 @@ func (h *HTTPHandler) getPermissionsHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	account, err := h.controller.GetAccount(r.Context(), accountKey)
+	account, err := h.accountsController.GetAccount(r.Context(), accountKey)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusNotFound, "Account not found: "+err.Error())
 		return
@@ -138,11 +151,8 @@ func (h *HTTPHandler) listInstancesHandler(w http.ResponseWriter, r *http.Reques
 	// Parse query parameters
 	filter := h.parseInstanceFilter(r)
 
-	// Get user context
-	userContext := h.getUserContext(r)
-
 	// List instances
-	instanceList, err := h.controller.ListInstances(r.Context(), accountKey, region, filter, userContext)
+	instanceList, err := h.instancesController.ListInstances(r.Context(), accountKey, region, filter)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to list instances: "+err.Error())
 		return
@@ -166,11 +176,8 @@ func (h *HTTPHandler) listInstancesByRegionHandler(w http.ResponseWriter, r *htt
 	// Parse query parameters
 	filter := h.parseInstanceFilter(r)
 
-	// Get user context
-	userContext := h.getUserContext(r)
-
 	// List instances
-	instanceList, err := h.controller.ListInstances(r.Context(), accountKey, region, filter, userContext)
+	instanceList, err := h.instancesController.ListInstances(r.Context(), accountKey, region, filter)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to list instances: "+err.Error())
 		return
@@ -197,11 +204,8 @@ func (h *HTTPHandler) startInstanceHandler(w http.ResponseWriter, r *http.Reques
 		region = "us-east-1"
 	}
 
-	// Get user context
-	userContext := h.getUserContext(r)
-
 	// Start instance
-	operation, err := h.controller.StartInstance(r.Context(), accountKey, region, instanceID, userContext)
+	operation, err := h.instancesController.StartInstance(r.Context(), accountKey, region, instanceID)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to start instance: "+err.Error())
 		return
@@ -231,11 +235,8 @@ func (h *HTTPHandler) stopInstanceHandler(w http.ResponseWriter, r *http.Request
 		region = "us-east-1"
 	}
 
-	// Get user context
-	userContext := h.getUserContext(r)
-
 	// Stop instance
-	operation, err := h.controller.StopInstance(r.Context(), accountKey, region, instanceID, userContext)
+	operation, err := h.instancesController.StopInstance(r.Context(), accountKey, region, instanceID)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to stop instance: "+err.Error())
 		return
@@ -266,11 +267,8 @@ func (h *HTTPHandler) batchOperationHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Get user context
-	userContext := h.getUserContext(r)
-
 	// Execute batch operation
-	batchOp, err := h.controller.BatchOperation(r.Context(), accountKey, region, req.Operation, req.InstanceIDs, userContext)
+	batchOp, err := h.instancesController.BatchOperation(r.Context(), accountKey, region, req.Operation, req.InstanceIDs)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to execute batch operation: "+err.Error())
 		return
@@ -291,18 +289,8 @@ func (h *HTTPHandler) getCostSavingsHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Get user context
-	userContext := h.getUserContext(r)
-
-	// Get cost savings
-	savings, err := h.controller.GetCostSavings(r.Context(), accountKey, region, userContext)
-	if err != nil {
-		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to get cost savings: "+err.Error())
-		return
-	}
-
-	response := h.awsAdapter.CostSavingsToResponse(savings)
-	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
+	// TODO: Implement cost savings functionality
+	h.responseAdapter.WriteError(w, http.StatusNotImplemented, "Cost savings functionality not implemented yet")
 }
 
 // parseInstanceFilter parses query parameters into InstanceFilter
@@ -355,11 +343,8 @@ func (h *HTTPHandler) getInstanceHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	// Get user context
-	userContext := h.getUserContext(r)
-
 	// Get instance
-	instance, err := h.controller.GetInstance(r.Context(), accountKey, region, instanceID, userContext)
+	instance, err := h.instancesController.GetInstance(r.Context(), accountKey, region, instanceID)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusNotFound, "Instance not found: "+err.Error())
 		return
@@ -385,18 +370,8 @@ func (h *HTTPHandler) getAccountSummaryHandler(w http.ResponseWriter, r *http.Re
 		region = "us-east-1"
 	}
 
-	// Get user context
-	userContext := h.getUserContext(r)
-
-	// Get account summary
-	summary, err := h.controller.GetAccountSummary(r.Context(), accountKey, region, userContext)
-	if err != nil {
-		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to get account summary: "+err.Error())
-		return
-	}
-
-	response := h.awsAdapter.AccountSummaryToResponse(summary)
-	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
+	// TODO: Implement account summary functionality
+	h.responseAdapter.WriteError(w, http.StatusNotImplemented, "Account summary functionality not implemented yet")
 }
 
 // getInstanceMetricsHandler handles GET /accounts/{account}/regions/{region}/instances/{id}/metrics
@@ -417,44 +392,8 @@ func (h *HTTPHandler) getInstanceMetricsHandler(w http.ResponseWriter, r *http.R
 		period = "1h"
 	}
 
-	// Get user context
-	userContext := h.getUserContext(r)
-
-	// Get instance metrics
-	metrics, err := h.controller.GetInstanceMetrics(r.Context(), accountKey, region, instanceID, period, userContext)
-	if err != nil {
-		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to get instance metrics: "+err.Error())
-		return
-	}
-
-	// Convert to response format
-	response := awsWire.InstanceMetricsResponse{
-		InstanceID:  metrics.InstanceID,
-		Account:     metrics.Account,
-		Region:      metrics.Region,
-		Period:      metrics.Period,
-		LastUpdated: metrics.LastUpdated,
-	}
-
-	// Convert metrics data
-	for _, metric := range metrics.Metrics {
-		var dataPoints []awsWire.MetricDataPointResponse
-		for _, dp := range metric.DataPoints {
-			dataPoints = append(dataPoints, awsWire.MetricDataPointResponse{
-				Timestamp: dp.Timestamp,
-				Value:     dp.Value,
-				Unit:      dp.Unit,
-			})
-		}
-
-		response.Metrics = append(response.Metrics, awsWire.InstanceMetricDataResponse{
-			MetricName: metric.MetricName,
-			Unit:       metric.Unit,
-			DataPoints: dataPoints,
-		})
-	}
-
-	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
+	// TODO: Implement instance metrics functionality
+	h.responseAdapter.WriteError(w, http.StatusNotImplemented, "Instance metrics functionality not implemented yet")
 }
 
 // getInstanceCostEstimateHandler handles GET /accounts/{account}/regions/{region}/instances/{id}/cost
@@ -475,28 +414,8 @@ func (h *HTTPHandler) getInstanceCostEstimateHandler(w http.ResponseWriter, r *h
 		operation = "current"
 	}
 
-	// Get user context
-	userContext := h.getUserContext(r)
-
-	// Get cost estimate
-	estimate, err := h.controller.EstimateOperationCost(r.Context(), accountKey, region, instanceID, operation, userContext)
-	if err != nil {
-		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to get cost estimate: "+err.Error())
-		return
-	}
-
-	response := awsWire.OperationCostEstimateResponse{
-		InstanceID:     estimate.InstanceID,
-		Operation:      estimate.Operation,
-		HourlyCost:     estimate.HourlyCost,
-		MonthlyCost:    estimate.MonthlyCost,
-		CostImpact:     estimate.CostImpact,
-		ImpactType:     estimate.ImpactType,
-		Description:    estimate.Description,
-		LastCalculated: estimate.LastCalculated,
-	}
-
-	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
+	// TODO: Implement cost estimate functionality
+	h.responseAdapter.WriteError(w, http.StatusNotImplemented, "Cost estimate functionality not implemented yet")
 }
 
 // getUserContext extracts user context from request

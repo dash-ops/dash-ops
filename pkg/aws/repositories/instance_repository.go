@@ -1,4 +1,4 @@
-package storage
+package repositories
 
 import (
 	"context"
@@ -9,33 +9,22 @@ import (
 	awsPorts "github.com/dash-ops/dash-ops/pkg/aws/ports"
 )
 
-// InstanceRepositoryAdapter implements InstanceRepository interface using AWS SDK
-type InstanceRepositoryAdapter struct {
+// InstanceRepository implements instance data access using AWS SDK
+type InstanceRepository struct {
 	awsClientService awsPorts.AWSClientService
-	accountRepo      awsPorts.AccountRepository
 }
 
-// NewInstanceRepositoryAdapter creates a new instance repository adapter
-func NewInstanceRepositoryAdapter(
-	awsClientService awsPorts.AWSClientService,
-	accountRepo awsPorts.AccountRepository,
-) *InstanceRepositoryAdapter {
-	return &InstanceRepositoryAdapter{
+// NewInstanceRepository creates a new instance repository
+func NewInstanceRepository(awsClientService awsPorts.AWSClientService) *InstanceRepository {
+	return &InstanceRepository{
 		awsClientService: awsClientService,
-		accountRepo:      accountRepo,
 	}
 }
 
 // GetInstance gets a specific EC2 instance
-func (ira *InstanceRepositoryAdapter) GetInstance(ctx context.Context, accountKey, region, instanceID string) (*awsModels.EC2Instance, error) {
-	// Get account configuration
-	account, err := ira.accountRepo.GetAccount(ctx, accountKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get account: %w", err)
-	}
-
+func (ir *InstanceRepository) GetInstance(ctx context.Context, account *awsModels.AWSAccount, region, instanceID string) (*awsModels.EC2Instance, error) {
 	// Get AWS client
-	awsClient, err := ira.awsClientService.GetEC2Client(account)
+	awsClient, err := ir.awsClientService.GetEC2Client(account)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AWS client: %w", err)
 	}
@@ -54,21 +43,15 @@ func (ira *InstanceRepositoryAdapter) GetInstance(ctx context.Context, accountKe
 }
 
 // ListInstances lists EC2 instances with optional filtering
-func (ira *InstanceRepositoryAdapter) ListInstances(ctx context.Context, accountKey, region string, filter *awsModels.InstanceFilter) (*awsModels.InstanceList, error) {
-	// Get account configuration
-	account, err := ira.accountRepo.GetAccount(ctx, accountKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get account: %w", err)
-	}
-
+func (ir *InstanceRepository) ListInstances(ctx context.Context, account *awsModels.AWSAccount, region string, filter *awsModels.InstanceFilter) (*awsModels.InstanceList, error) {
 	// Get AWS client
-	awsClient, err := ira.awsClientService.GetEC2Client(account)
+	awsClient, err := ir.awsClientService.GetEC2Client(account)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AWS client: %w", err)
 	}
 
 	// Convert filter to AWS filter
-	awsFilter := ira.convertToAWSFilter(filter)
+	awsFilter := ir.convertToAWSFilter(filter)
 
 	// Get instances from AWS
 	instances, err := awsClient.DescribeInstances(ctx, awsFilter)
@@ -100,15 +83,9 @@ func (ira *InstanceRepositoryAdapter) ListInstances(ctx context.Context, account
 }
 
 // StartInstance starts an EC2 instance
-func (ira *InstanceRepositoryAdapter) StartInstance(ctx context.Context, accountKey, region, instanceID string) (*awsModels.InstanceOperation, error) {
-	// Get account configuration
-	account, err := ira.accountRepo.GetAccount(ctx, accountKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get account: %w", err)
-	}
-
+func (ir *InstanceRepository) StartInstance(ctx context.Context, account *awsModels.AWSAccount, region, instanceID string) (*awsModels.InstanceOperation, error) {
 	// Get AWS client
-	awsClient, err := ira.awsClientService.GetEC2Client(account)
+	awsClient, err := ir.awsClientService.GetEC2Client(account)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AWS client: %w", err)
 	}
@@ -127,15 +104,9 @@ func (ira *InstanceRepositoryAdapter) StartInstance(ctx context.Context, account
 }
 
 // StopInstance stops an EC2 instance
-func (ira *InstanceRepositoryAdapter) StopInstance(ctx context.Context, accountKey, region, instanceID string) (*awsModels.InstanceOperation, error) {
-	// Get account configuration
-	account, err := ira.accountRepo.GetAccount(ctx, accountKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get account: %w", err)
-	}
-
+func (ir *InstanceRepository) StopInstance(ctx context.Context, account *awsModels.AWSAccount, region, instanceID string) (*awsModels.InstanceOperation, error) {
 	// Get AWS client
-	awsClient, err := ira.awsClientService.GetEC2Client(account)
+	awsClient, err := ir.awsClientService.GetEC2Client(account)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AWS client: %w", err)
 	}
@@ -154,15 +125,9 @@ func (ira *InstanceRepositoryAdapter) StopInstance(ctx context.Context, accountK
 }
 
 // RestartInstance restarts an EC2 instance
-func (ira *InstanceRepositoryAdapter) RestartInstance(ctx context.Context, accountKey, region, instanceID string) (*awsModels.InstanceOperation, error) {
-	// Get account configuration
-	account, err := ira.accountRepo.GetAccount(ctx, accountKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get account: %w", err)
-	}
-
+func (ir *InstanceRepository) RestartInstance(ctx context.Context, account *awsModels.AWSAccount, region, instanceID string) (*awsModels.InstanceOperation, error) {
 	// Get AWS client
-	awsClient, err := ira.awsClientService.GetEC2Client(account)
+	awsClient, err := ir.awsClientService.GetEC2Client(account)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AWS client: %w", err)
 	}
@@ -181,9 +146,9 @@ func (ira *InstanceRepositoryAdapter) RestartInstance(ctx context.Context, accou
 }
 
 // GetInstanceStatus gets current instance status
-func (ira *InstanceRepositoryAdapter) GetInstanceStatus(ctx context.Context, accountKey, region, instanceID string) (*awsModels.InstanceState, error) {
+func (ir *InstanceRepository) GetInstanceStatus(ctx context.Context, account *awsModels.AWSAccount, region, instanceID string) (*awsModels.InstanceState, error) {
 	// Get instance to get current state
-	instance, err := ira.GetInstance(ctx, accountKey, region, instanceID)
+	instance, err := ir.GetInstance(ctx, account, region, instanceID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get instance: %w", err)
 	}
@@ -192,19 +157,13 @@ func (ira *InstanceRepositoryAdapter) GetInstanceStatus(ctx context.Context, acc
 }
 
 // BatchOperation performs batch operations on multiple instances
-func (ira *InstanceRepositoryAdapter) BatchOperation(ctx context.Context, accountKey, region string, operation string, instanceIDs []string) (*awsModels.BatchOperation, error) {
+func (ir *InstanceRepository) BatchOperation(ctx context.Context, account *awsModels.AWSAccount, region string, operation string, instanceIDs []string) (*awsModels.BatchOperation, error) {
 	if len(instanceIDs) == 0 {
 		return nil, fmt.Errorf("no instance IDs provided")
 	}
 
-	// Get account configuration
-	account, err := ira.accountRepo.GetAccount(ctx, accountKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get account: %w", err)
-	}
-
 	// Get AWS client
-	awsClient, err := ira.awsClientService.GetEC2Client(account)
+	awsClient, err := ir.awsClientService.GetEC2Client(account)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AWS client: %w", err)
 	}
@@ -264,7 +223,7 @@ func (ira *InstanceRepositoryAdapter) BatchOperation(ctx context.Context, accoun
 }
 
 // convertToAWSFilter converts domain filter to AWS filter
-func (ira *InstanceRepositoryAdapter) convertToAWSFilter(filter *awsModels.InstanceFilter) *awsPorts.EC2Filter {
+func (ir *InstanceRepository) convertToAWSFilter(filter *awsModels.InstanceFilter) *awsPorts.EC2Filter {
 	if filter == nil {
 		return nil
 	}

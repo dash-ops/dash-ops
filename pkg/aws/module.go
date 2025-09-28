@@ -5,40 +5,15 @@ import (
 
 	"github.com/gorilla/mux"
 
-	awsAdaptersHttp "github.com/dash-ops/dash-ops/pkg/aws/adapters/http"
-	awsAdaptersStorage "github.com/dash-ops/dash-ops/pkg/aws/adapters/storage"
-	aws "github.com/dash-ops/dash-ops/pkg/aws/controllers"
+	awsAdaptersConfig "github.com/dash-ops/dash-ops/pkg/aws/adapters/config"
 	"github.com/dash-ops/dash-ops/pkg/aws/handlers"
 	awsIntegrations "github.com/dash-ops/dash-ops/pkg/aws/integrations/external/aws"
-	awsLogic "github.com/dash-ops/dash-ops/pkg/aws/logic"
-	awsPorts "github.com/dash-ops/dash-ops/pkg/aws/ports"
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
 )
 
 // Module represents the AWS module with all its components
 type Module struct {
-	// Core components
-	Controller *aws.AWSController
-	Handler    *handlers.HTTPHandler
-
-	// Logic components
-	Processor      *awsLogic.InstanceProcessor
-	CostCalculator *awsLogic.CostCalculator
-
-	// Adapters
-	AWSAdapter      *awsAdaptersHttp.AWSAdapter
-	ResponseAdapter *commonsHttp.ResponseAdapter
-	RequestAdapter  *commonsHttp.RequestAdapter
-
-	// Repositories (interfaces - implementations injected)
-	AccountRepo  awsPorts.AccountRepository
-	InstanceRepo awsPorts.InstanceRepository
-	MetricsRepo  awsPorts.MetricsRepository
-
-	// Services (interfaces - implementations injected)
-	ClientService       awsPorts.AWSClientService
-	NotificationService awsPorts.NotificationService
-	AuditService        awsPorts.AuditService
+	Handler *handlers.HTTPHandler
 }
 
 // NewModule creates and initializes a new AWS module
@@ -47,51 +22,30 @@ func NewModule(fileConfig []byte) (*Module, error) {
 		return nil, fmt.Errorf("module config cannot be nil")
 	}
 
-	accountRepo, err := awsAdaptersStorage.NewAccountRepositoryAdapter(fileConfig)
+	// Parse AWS configuration
+	configAdapter := awsAdaptersConfig.NewConfigAdapter()
+	accounts, err := configAdapter.ParseAWSConfigFromFileConfig(fileConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create account repository: %w", err)
+		return nil, fmt.Errorf("failed to parse AWS configuration: %w", err)
 	}
 
 	// Create AWS client service
 	awsClientService := awsIntegrations.NewAWSAdapter()
 
-	// Create instance repository
-	instanceRepo := awsAdaptersStorage.NewInstanceRepositoryAdapter(awsClientService, accountRepo)
-
-	// Initialize logic components
-	processor := awsLogic.NewInstanceProcessor()
-	costCalculator := awsLogic.NewCostCalculator()
-
 	// Initialize adapters
-	awsAdapter := awsAdaptersHttp.NewAWSAdapter()
 	responseAdapter := commonsHttp.NewResponseAdapter()
 	requestAdapter := commonsHttp.NewRequestAdapter()
 
-	// Initialize controller
-	controller := aws.NewAWSController(
-		accountRepo,
-		instanceRepo,
-		nil, // TODO: Add metrics repository
-		processor,
-		costCalculator,
-	)
-
-	// Initialize handler
+	// Initialize handler with DI
 	handler := handlers.NewHTTPHandler(
-		controller,
-		awsAdapter,
+		awsClientService,
+		accounts,
 		responseAdapter,
 		requestAdapter,
 	)
 
 	return &Module{
-		Controller:      controller,
-		Handler:         handler,
-		Processor:       processor,
-		CostCalculator:  costCalculator,
-		AWSAdapter:      awsAdapter,
-		ResponseAdapter: responseAdapter,
-		RequestAdapter:  requestAdapter,
+		Handler: handler,
 	}, nil
 }
 
