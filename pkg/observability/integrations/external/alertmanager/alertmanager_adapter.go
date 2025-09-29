@@ -1,4 +1,4 @@
-package external
+package alertmanager
 
 import (
 	"context"
@@ -9,55 +9,87 @@ import (
 	"github.com/dash-ops/dash-ops/pkg/observability/wire"
 )
 
-// AlertManagerConfig represents configuration for AlertManager adapter
-type AlertManagerConfig struct {
-	URL     string `json:"url"`
-	Timeout int    `json:"timeout"`
-	// Add other AlertManager-specific configuration
-}
-
 // AlertManagerAdapter implements alert repository using AlertManager
 type AlertManagerAdapter struct {
-	config *AlertManagerConfig
-	// Add AlertManager client here
+	client *AlertManagerClient
 }
 
 // NewAlertManagerAdapter creates a new AlertManager adapter
-func NewAlertManagerAdapter(config *AlertManagerConfig) (ports.AlertRepository, error) {
+func NewAlertManagerAdapter(client *AlertManagerClient) ports.AlertRepository {
 	return &AlertManagerAdapter{
-		config: config,
-	}, nil
+		client: client,
+	}
 }
 
 // GetAlerts implements AlertRepository
 func (a *AlertManagerAdapter) GetAlerts(ctx context.Context, req *wire.AlertsRequest) (*wire.AlertsResponse, error) {
+	// Get alerts from AlertManager
+	active := req.Status == "active"
+	silenced := req.Status == "silenced"
+	inhibited := req.Status == "inhibited"
+
+	data, err := a.client.GetAlerts(ctx, active, silenced, inhibited)
+	if err != nil {
+		return &wire.AlertsResponse{
+			BaseResponse: wire.BaseResponse{
+				Success: false,
+				Error:   err.Error(),
+			},
+		}, nil
+	}
+
+	// Parse response and convert to domain models
+	alerts, err := parseAlertsResponse(data)
+	if err != nil {
+		return &wire.AlertsResponse{
+			BaseResponse: wire.BaseResponse{
+				Success: false,
+				Error:   err.Error(),
+			},
+		}, nil
+	}
+
 	return &wire.AlertsResponse{
 		BaseResponse: wire.BaseResponse{Success: true},
-		Data:         wire.AlertsData{Alerts: nil, Total: 0},
+		Data: wire.AlertsData{
+			Alerts: alerts,
+		},
 	}, nil
 }
 
 // CreateAlert implements AlertRepository
 func (a *AlertManagerAdapter) CreateAlert(ctx context.Context, req *wire.CreateAlertRequest) (*models.Alert, error) {
-	return &models.Alert{ID: "", Name: req.Name, Severity: req.Severity}, nil
+	// TODO: Implement alert creation
+	return &models.Alert{}, nil
 }
 
 // UpdateAlert implements AlertRepository
 func (a *AlertManagerAdapter) UpdateAlert(ctx context.Context, id string, req *wire.CreateAlertRequest) (*models.Alert, error) {
-	return &models.Alert{ID: id, Name: req.Name, Severity: req.Severity}, nil
+	// TODO: Implement alert update
+	return &models.Alert{}, nil
 }
 
 // DeleteAlert implements AlertRepository
 func (a *AlertManagerAdapter) DeleteAlert(ctx context.Context, id string) error {
+	// TODO: Implement alert deletion
 	return nil
 }
 
 // SilenceAlert implements AlertRepository
 func (a *AlertManagerAdapter) SilenceAlert(ctx context.Context, id string, duration time.Duration) error {
+	// TODO: Implement alert silencing
 	return nil
 }
 
 // GetAlertRules implements AlertRepository
 func (a *AlertManagerAdapter) GetAlertRules(ctx context.Context) ([]models.AlertRule, error) {
+	// TODO: Implement alert rules retrieval
 	return []models.AlertRule{}, nil
+}
+
+// parseAlertsResponse parses AlertManager alerts API response into domain models
+func parseAlertsResponse(data []byte) ([]models.Alert, error) {
+	// TODO: Implement actual response parsing
+	// This would parse AlertManager's JSON response format
+	return []models.Alert{}, nil
 }

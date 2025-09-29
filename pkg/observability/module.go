@@ -6,193 +6,69 @@ import (
 	"github.com/gorilla/mux"
 
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
-	"github.com/dash-ops/dash-ops/pkg/observability/controllers"
+	obsAdaptersConfig "github.com/dash-ops/dash-ops/pkg/observability/adapters/config"
 	"github.com/dash-ops/dash-ops/pkg/observability/handlers"
-	"github.com/dash-ops/dash-ops/pkg/observability/logic"
-	"github.com/dash-ops/dash-ops/pkg/observability/ports"
+	obsIntegrationsAlertManager "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/alertmanager"
+	obsIntegrationsLoki "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/loki"
+	obsIntegrationsPrometheus "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/prometheus"
+	obsIntegrationsTempo "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/tempo"
 )
 
 // Module represents the observability module with all its components
 type Module struct {
-	// Core components
-	LogsController    *controllers.LogsController
-	MetricsController *controllers.MetricsController
-	TracesController  *controllers.TracesController
-	AlertsController  *controllers.AlertsController
-	HealthController  *controllers.HealthController
-	ConfigController  *controllers.ConfigController
-	Handler           *handlers.HTTPHandler
-
-	// Logic components
-	LogProcessor       *logic.LogProcessor
-	MetricProcessor    *logic.MetricProcessor
-	TraceProcessor     *logic.TraceProcessor
-	AlertProcessor     *logic.AlertProcessor
-	DashboardProcessor *logic.DashboardProcessor
-
-	// Adapters
-	ResponseAdapter *commonsHttp.ResponseAdapter
-	RequestAdapter  *commonsHttp.RequestAdapter
-
-	// Repositories (interfaces - implementations injected)
-	LogRepo       ports.LogRepository
-	MetricRepo    ports.MetricRepository
-	TraceRepo     ports.TraceRepository
-	AlertRepo     ports.AlertRepository
-	DashboardRepo ports.DashboardRepository
-	ServiceRepo   ports.ServiceContextRepository
-
-	// Services (interfaces - implementations injected)
-	LogService           ports.LogService
-	MetricService        ports.MetricService
-	TraceService         ports.TraceService
-	AlertService         ports.AlertService
-	DashboardService     ports.DashboardService
-	NotificationService  ports.NotificationService
-	CacheService         ports.CacheService
-	ConfigurationService ports.ConfigurationService
-}
-
-// ModuleConfig represents configuration for the observability module
-type ModuleConfig struct {
-	// Repository implementations
-	LogRepo       ports.LogRepository
-	MetricRepo    ports.MetricRepository
-	TraceRepo     ports.TraceRepository
-	AlertRepo     ports.AlertRepository
-	DashboardRepo ports.DashboardRepository
-	ServiceRepo   ports.ServiceContextRepository
-
-	// Service implementations
-	LogService           ports.LogService
-	MetricService        ports.MetricService
-	TraceService         ports.TraceService
-	AlertService         ports.AlertService
-	DashboardService     ports.DashboardService
-	NotificationService  ports.NotificationService
-	CacheService         ports.CacheService
-	ConfigurationService ports.ConfigurationService
+	Handler *handlers.HTTPHandler
 }
 
 // NewModule creates and initializes a new observability module
-func NewModule(config *ModuleConfig) (*Module, error) {
-	if config == nil {
+func NewModule(fileConfig []byte) (*Module, error) {
+	if fileConfig == nil {
 		return nil, fmt.Errorf("module config cannot be nil")
 	}
 
-	// Validate required dependencies
-	if config.LogRepo == nil {
-		return nil, fmt.Errorf("log repository is required")
-	}
-	if config.MetricRepo == nil {
-		return nil, fmt.Errorf("metric repository is required")
-	}
-	if config.TraceRepo == nil {
-		return nil, fmt.Errorf("trace repository is required")
-	}
-	if config.AlertRepo == nil {
-		return nil, fmt.Errorf("alert repository is required")
-	}
-	if config.DashboardRepo == nil {
-		return nil, fmt.Errorf("dashboard repository is required")
-	}
-	if config.ServiceRepo == nil {
-		return nil, fmt.Errorf("service context repository is required")
+	// Parse observability configuration
+	configAdapter := obsAdaptersConfig.NewConfigAdapter()
+	obsConfig, err := configAdapter.ParseObservabilityConfigFromFileConfig(fileConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse observability configuration: %w", err)
 	}
 
-	// Initialize logic components
-	logProcessor := logic.NewLogProcessor()
-	metricProcessor := logic.NewMetricProcessor()
-	traceProcessor := logic.NewTraceProcessor()
-	alertProcessor := logic.NewAlertProcessor()
-	dashboardProcessor := logic.NewDashboardProcessor()
+	// Create external service clients
+	lokiClient := obsIntegrationsLoki.NewLokiClient(&obsIntegrationsLoki.LokiConfig{
+		URL:     obsConfig.Loki.URL,
+		Timeout: obsConfig.Loki.Timeout,
+	})
+
+	prometheusClient := obsIntegrationsPrometheus.NewPrometheusClient(&obsIntegrationsPrometheus.PrometheusConfig{
+		URL:     obsConfig.Prometheus.URL,
+		Timeout: obsConfig.Prometheus.Timeout,
+	})
+
+	tempoClient := obsIntegrationsTempo.NewTempoClient(&obsIntegrationsTempo.TempoConfig{
+		URL:     obsConfig.Tempo.URL,
+		Timeout: obsConfig.Tempo.Timeout,
+	})
+
+	alertManagerClient := obsIntegrationsAlertManager.NewAlertManagerClient(&obsIntegrationsAlertManager.AlertManagerConfig{
+		URL:     obsConfig.AlertManager.URL,
+		Timeout: obsConfig.AlertManager.Timeout,
+	})
 
 	// Initialize adapters
 	responseAdapter := commonsHttp.NewResponseAdapter()
 	requestAdapter := commonsHttp.NewRequestAdapter()
 
-	// Initialize per-domain controllers
-	logsController := controllers.NewLogsController(
-		config.LogRepo,
-		config.ServiceRepo,
-		config.LogService,
-		config.CacheService,
-		logProcessor,
-	)
-
-	metricsController := controllers.NewMetricsController(
-		config.MetricRepo,
-		config.ServiceRepo,
-		config.MetricService,
-		config.CacheService,
-		metricProcessor,
-	)
-
-	tracesController := controllers.NewTracesController(
-		config.TraceRepo,
-		config.ServiceRepo,
-		config.TraceService,
-		config.CacheService,
-		traceProcessor,
-	)
-
-	alertsController := controllers.NewAlertsController(
-		config.AlertRepo,
-		config.AlertService,
-		config.CacheService,
-		alertProcessor,
-	)
-
-	healthController := controllers.NewHealthController(
-		config.CacheService,
-	)
-
-	configController := controllers.NewConfigController(
-		config.ConfigurationService,
-		config.NotificationService,
-	)
-
-	// Initialize handler
+	// Initialize handler with DI
 	handler := handlers.NewHTTPHandler(
-		logsController,
-		metricsController,
-		tracesController,
-		alertsController,
-		healthController,
-		configController,
+		lokiClient,
+		prometheusClient,
+		tempoClient,
+		alertManagerClient,
 		responseAdapter,
 		requestAdapter,
 	)
 
 	return &Module{
-		LogsController:       logsController,
-		MetricsController:    metricsController,
-		TracesController:     tracesController,
-		AlertsController:     alertsController,
-		HealthController:     healthController,
-		ConfigController:     configController,
-		Handler:              handler,
-		LogProcessor:         logProcessor,
-		MetricProcessor:      metricProcessor,
-		TraceProcessor:       traceProcessor,
-		AlertProcessor:       alertProcessor,
-		DashboardProcessor:   dashboardProcessor,
-		ResponseAdapter:      responseAdapter,
-		RequestAdapter:       requestAdapter,
-		LogRepo:              config.LogRepo,
-		MetricRepo:           config.MetricRepo,
-		TraceRepo:            config.TraceRepo,
-		AlertRepo:            config.AlertRepo,
-		DashboardRepo:        config.DashboardRepo,
-		ServiceRepo:          config.ServiceRepo,
-		LogService:           config.LogService,
-		MetricService:        config.MetricService,
-		TraceService:         config.TraceService,
-		AlertService:         config.AlertService,
-		DashboardService:     config.DashboardService,
-		NotificationService:  config.NotificationService,
-		CacheService:         config.CacheService,
-		ConfigurationService: config.ConfigurationService,
+		Handler: handler,
 	}, nil
 }
 
