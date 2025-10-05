@@ -38,12 +38,39 @@ func NewLogsController(
 
 // GetLogs retrieves logs based on the provided criteria
 func (c *LogsController) GetLogs(ctx context.Context, req *wire.LogsRequest) (*wire.LogsResponse, error) {
-	// TODO: Implement log retrieval logic
-	return nil, nil
+	// Call repository (which will call Loki adapter)
+	response, err := c.LogRepo.QueryLogs(ctx, req)
+	if err != nil {
+		return &wire.LogsResponse{
+			BaseResponse: wire.BaseResponse{
+				Success: false,
+				Error:   err.Error(),
+			},
+		}, err
+	}
+
+	// Process logs if processor is available
+	if c.LogProcessor != nil && response.Data.Logs != nil {
+		// Could add enrichment, filtering, or other processing here
+		processedLogs := c.LogProcessor.EnrichLogs(response.Data.Logs)
+		response.Data.Logs = processedLogs
+	}
+
+	return response, nil
 }
 
 // GetLogStatistics retrieves log statistics
 func (c *LogsController) GetLogStatistics(ctx context.Context, req *wire.LogStatsRequest) (*wire.LogStatisticsResponse, error) {
 	// TODO: Implement log statistics logic
 	return nil, nil
+}
+
+// GetLogLabels retrieves available log labels
+func (c *LogsController) GetLogLabels(ctx context.Context) ([]string, error) {
+	return c.LogRepo.GetLogLabels(ctx)
+}
+
+// GetLogLevels retrieves available log levels
+func (c *LogsController) GetLogLevels(ctx context.Context) ([]string, error) {
+	return c.LogRepo.GetLogLevels(ctx)
 }

@@ -2,24 +2,23 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
-	obsIntegrationsAlertManager "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/alertmanager"
-	obsIntegrationsLoki "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/loki"
-	obsIntegrationsPrometheus "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/prometheus"
-	obsIntegrationsTempo "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/tempo"
-	obsRepositories "github.com/dash-ops/dash-ops/pkg/observability/repositories"
+	"github.com/dash-ops/dash-ops/pkg/observability/controllers"
+	"github.com/dash-ops/dash-ops/pkg/observability/wire"
 )
 
 // HTTPHandler handles HTTP requests for the observability module
 type HTTPHandler struct {
-	// Repositories
-	logsRepository    *obsRepositories.LogsRepository
-	metricsRepository *obsRepositories.MetricsRepository
-	tracesRepository  *obsRepositories.TracesRepository
-	alertsRepository  *obsRepositories.AlertsRepository
+	// Controllers
+	logsController    *controllers.LogsController
+	metricsController *controllers.MetricsController
+	tracesController  *controllers.TracesController
+	alertsController  *controllers.AlertsController
 
 	// Adapters
 	responseAdapter *commonsHttp.ResponseAdapter
@@ -28,24 +27,18 @@ type HTTPHandler struct {
 
 // NewHTTPHandler creates a new HTTP handler with DI
 func NewHTTPHandler(
-	lokiClient *obsIntegrationsLoki.LokiClient,
-	prometheusClient *obsIntegrationsPrometheus.PrometheusClient,
-	tempoClient *obsIntegrationsTempo.TempoClient,
-	alertManagerClient *obsIntegrationsAlertManager.AlertManagerClient,
+	logsController *controllers.LogsController,
+	metricsController *controllers.MetricsController,
+	tracesController *controllers.TracesController,
+	alertsController *controllers.AlertsController,
 	responseAdapter *commonsHttp.ResponseAdapter,
 	requestAdapter *commonsHttp.RequestAdapter,
 ) *HTTPHandler {
-	// Create repositories with clients
-	logsRepository := obsRepositories.NewLogsRepository(lokiClient)
-	metricsRepository := obsRepositories.NewMetricsRepository(prometheusClient)
-	tracesRepository := obsRepositories.NewTracesRepository(tempoClient)
-	alertsRepository := obsRepositories.NewAlertsRepository(alertManagerClient)
-
 	return &HTTPHandler{
-		logsRepository:    logsRepository,
-		metricsRepository: metricsRepository,
-		tracesRepository:  tracesRepository,
-		alertsRepository:  alertsRepository,
+		logsController:    logsController,
+		metricsController: metricsController,
+		tracesController:  tracesController,
+		alertsController:  alertsController,
 		responseAdapter:   responseAdapter,
 		requestAdapter:    requestAdapter,
 	}
@@ -81,16 +74,69 @@ func (h *HTTPHandler) RegisterRoutes(router *mux.Router) {
 
 // handleGetLogs handles GET /observability/logs
 func (h *HTTPHandler) handleGetLogs(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement logs query
-	h.responseAdapter.WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"success": true,
-		"data":    []interface{}{},
-	})
+	// Parse query parameters
+	query := r.URL.Query()
+
+	// Build request from query parameters
+	req := &wire.LogsRequest{
+		Service: query.Get("service"),
+		Level:   query.Get("level"),
+		Query:   query.Get("query"),
+		Sort:    query.Get("sort"),
+		Order:   query.Get("order"),
+	}
+
+	// Parse time range
+	if startStr := query.Get("start"); startStr != "" {
+		if startUnix, err := strconv.ParseInt(startStr, 10, 64); err == nil {
+			req.StartTime = time.Unix(startUnix, 0)
+		}
+	}
+	if endStr := query.Get("end"); endStr != "" {
+		if endUnix, err := strconv.ParseInt(endStr, 10, 64); err == nil {
+			req.EndTime = time.Unix(endUnix, 0)
+		}
+	}
+
+	// Set defaults
+	if req.StartTime.IsZero() {
+		req.StartTime = time.Now().Add(-1 * time.Hour)
+	}
+	if req.EndTime.IsZero() {
+		req.EndTime = time.Now()
+	}
+
+	// Parse limit
+	if limitStr := query.Get("limit"); limitStr != "" {
+		if limit, err := strconv.Atoi(limitStr); err == nil {
+			req.Limit = limit
+		}
+	}
+	if req.Limit == 0 {
+		req.Limit = 100
+	}
+
+	// Parse offset
+	if offsetStr := query.Get("offset"); offsetStr != "" {
+		if offset, err := strconv.Atoi(offsetStr); err == nil {
+			req.Offset = offset
+		}
+	}
+
+	// Call controller
+	response, err := h.logsController.GetLogs(r.Context(), req)
+	if err != nil {
+		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to query logs: "+err.Error())
+		return
+	}
+
+	// Return response
+	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
 }
 
 // handleGetLogLabels handles GET /observability/logs/labels
 func (h *HTTPHandler) handleGetLogLabels(w http.ResponseWriter, r *http.Request) {
-	labels, err := h.logsRepository.GetLogLabels(r.Context())
+	labels, err := h.logsController.GetLogLabels(r.Context())
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to get log labels: "+err.Error())
 		return
@@ -104,7 +150,7 @@ func (h *HTTPHandler) handleGetLogLabels(w http.ResponseWriter, r *http.Request)
 
 // handleGetLogLevels handles GET /observability/logs/levels
 func (h *HTTPHandler) handleGetLogLevels(w http.ResponseWriter, r *http.Request) {
-	levels, err := h.logsRepository.GetLogLevels(r.Context())
+	levels, err := h.logsController.GetLogLevels(r.Context())
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to get log levels: "+err.Error())
 		return
@@ -118,32 +164,30 @@ func (h *HTTPHandler) handleGetLogLevels(w http.ResponseWriter, r *http.Request)
 
 // handleGetMetrics handles GET /observability/metrics
 func (h *HTTPHandler) handleGetMetrics(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement metrics query
+	// TODO: Implement metrics query via controller
 	h.responseAdapter.WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"success": true,
+		"message": "Metrics endpoint - to be implemented",
 		"data":    []interface{}{},
 	})
 }
 
 // handleGetMetricNames handles GET /observability/metrics/names
 func (h *HTTPHandler) handleGetMetricNames(w http.ResponseWriter, r *http.Request) {
-	names, err := h.metricsRepository.GetMetricNames(r.Context())
-	if err != nil {
-		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to get metric names: "+err.Error())
-		return
-	}
-
+	// TODO: Implement via controller
 	h.responseAdapter.WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"success": true,
-		"data":    names,
+		"message": "Metric names endpoint - to be implemented",
+		"data":    []string{},
 	})
 }
 
 // handleGetTraces handles GET /observability/traces
 func (h *HTTPHandler) handleGetTraces(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement traces query
+	// TODO: Implement traces query via controller
 	h.responseAdapter.WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"success": true,
+		"message": "Traces endpoint - to be implemented",
 		"data":    []interface{}{},
 	})
 }
@@ -153,9 +197,10 @@ func (h *HTTPHandler) handleGetTraceDetail(w http.ResponseWriter, r *http.Reques
 	vars := mux.Vars(r)
 	traceID := vars["traceId"]
 
-	// TODO: Implement trace detail retrieval
+	// TODO: Implement trace detail retrieval via controller
 	h.responseAdapter.WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"success": true,
+		"message": "Trace detail endpoint - to be implemented",
 		"data": map[string]interface{}{
 			"traceId": traceID,
 		},
@@ -164,32 +209,30 @@ func (h *HTTPHandler) handleGetTraceDetail(w http.ResponseWriter, r *http.Reques
 
 // handleGetTraceServices handles GET /observability/traces/services
 func (h *HTTPHandler) handleGetTraceServices(w http.ResponseWriter, r *http.Request) {
-	services, err := h.tracesRepository.GetServices(r.Context())
-	if err != nil {
-		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to get trace services: "+err.Error())
-		return
-	}
-
+	// TODO: Implement via controller
 	h.responseAdapter.WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"success": true,
-		"data":    services,
+		"message": "Trace services endpoint - to be implemented",
+		"data":    []string{},
 	})
 }
 
 // handleGetAlerts handles GET /observability/alerts
 func (h *HTTPHandler) handleGetAlerts(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement alerts query
+	// TODO: Implement alerts query via controller
 	h.responseAdapter.WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"success": true,
+		"message": "Alerts endpoint - to be implemented",
 		"data":    []interface{}{},
 	})
 }
 
 // handleGetSilences handles GET /observability/alerts/silences
 func (h *HTTPHandler) handleGetSilences(w http.ResponseWriter, r *http.Request) {
-	// TODO: Implement silences retrieval
+	// TODO: Implement silences retrieval via controller
 	h.responseAdapter.WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"success": true,
+		"message": "Silences endpoint - to be implemented",
 		"data":    []interface{}{},
 	})
 }
