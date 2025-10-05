@@ -201,21 +201,23 @@ DashOPS is built as an **Integration Hub** that connects your existing tools wit
 
 ## 📖 Documentation
 
-### **📚 General Documentation**
+### **📚 Complete Documentation Website**
 
-- **[Getting Started Guide](./docs/README.md)** - Detailed setup and configuration
-- **[Plugin Documentation](./docs/plugins/README.md)** - Individual plugin guides
+Visit our comprehensive documentation at **[dash-ops.github.io](https://dash-ops.github.io/)**
 
-### **🔧 Development Documentation**
+- **[Getting Started](https://dash-ops.github.io/#installation)** - Setup and installation
+- **[Configuration](https://dash-ops.github.io/#initial-setup)** - Complete configuration guide
+- **[First Deploy](https://dash-ops.github.io/#first-deploy)** - Deploy your first instance
+- **[Helm Deployment](https://dash-ops.github.io/#helm-deploy)** - Kubernetes deployment with Helm
+- **[Plugin Guides](https://dash-ops.github.io/#plugins-overview)** - Auth, AWS, Kubernetes, Service Catalog
+- **[API Reference](https://dash-ops.github.io/#api-intro)** - Complete API documentation
+- **[Developer Guide](https://dash-ops.github.io/#backend-guide)** - Backend development guide
+- **[Contributing](https://dash-ops.github.io/#contributing)** - How to contribute
 
-- **[Frontend Guide](./front/README.md)** - React/TypeScript development
-- **[API Documentation](./docs/README.md#api)** - Backend Go development
+### **🔧 Quick Links**
 
-### **🔌 Plugin Guides**
-
-- **[OAuth2 Plugin](./docs/plugins/oauth2.md)** - Authentication setup
-- **[Kubernetes Plugin](./docs/plugins/kubernetes.md)** - K8s configuration
-- **[AWS Plugin](./docs/plugins/aws.md)** - AWS integration
+- **[Frontend Development](./front/README.md)** - React/TypeScript guide (local)
+- **[Backend Architecture](./docs/backend-development-guide.md)** - Hexagonal architecture (local)
 
 ## 🛠️ Configuration
 
@@ -491,16 +493,17 @@ See [Plugin Development Guide](./docs/plugins/README.md) for detailed instructio
 
 ### **Project Resources**
 
-- **[Homepage](https://dash-ops.github.io/)** - Project website
-- **[GitHub Repository](https://github.com/dash-ops/dash-ops)** - Source code and issues
+- **[Documentation Website](https://dash-ops.github.io/)** - Complete guides and API reference
+- **[GitHub Organization](https://github.com/dash-ops)** - All DashOps repositories
+- **[Main Repository](https://github.com/dash-ops/dash-ops)** - Source code and issues
+- **[Helm Charts](https://github.com/dash-ops/helm-charts)** - Kubernetes deployment charts
 - **[Docker Hub](https://hub.docker.com/r/dashops/dash-ops)** - Beta container images
-- **[Helm Charts](./helm-charts/)** - Development deployment charts
 
 ### **Community**
 
 - **[Issues](https://github.com/dash-ops/dash-ops/issues)** - Bug reports and feature requests
 - **[Discussions](https://github.com/dash-ops/dash-ops/discussions)** - Community discussions
-- **[Contributing Guide](./CONTRIBUTING.md)** - Detailed contribution guidelines
+- **[Contributing Guide](https://dash-ops.github.io/#contributing)** - How to contribute
 
 ## 🎊 Project Status
 
@@ -539,6 +542,6 @@ This project is licensed under the [MIT License](./LICENSE) - see the license fi
 
 **⚠️ Beta software - Use for testing and evaluation only!** 🧪
 
-For detailed setup instructions, visit the [documentation directory](./docs/README.md).
+For detailed setup instructions, visit **[dash-ops.github.io](https://dash-ops.github.io/)**.
 
 For frontend development, see the [frontend guide](./front/README.md).
