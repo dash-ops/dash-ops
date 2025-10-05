@@ -10,11 +10,8 @@ import (
 
 // LogRepository defines the interface for log data operations
 type LogRepository interface {
-	// QueryLogs retrieves logs based on the provided criteria
-	QueryLogs(ctx context.Context, req *wire.LogsRequest) (*wire.LogsResponse, error)
-
-	// StreamLogs provides real-time log streaming
-	StreamLogs(ctx context.Context, req *wire.LogsRequest) (<-chan models.LogEntry, error)
+	// QueryLogsWithModel retrieves logs using domain models (preferred method)
+	QueryLogsWithModel(ctx context.Context, query *models.LogQuery) ([]models.LogEntry, error)
 
 	// GetLogLabels returns available log labels for filtering
 	GetLogLabels(ctx context.Context) ([]string, error)

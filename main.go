@@ -15,6 +15,7 @@ import (
 	"github.com/dash-ops/dash-ops/pkg/aws"
 	"github.com/dash-ops/dash-ops/pkg/config"
 	"github.com/dash-ops/dash-ops/pkg/kubernetes"
+	"github.com/dash-ops/dash-ops/pkg/observability"
 	servicecatalog "github.com/dash-ops/dash-ops/pkg/service-catalog"
 	"github.com/dash-ops/dash-ops/pkg/spa"
 	spaModels "github.com/dash-ops/dash-ops/pkg/spa/models"
@@ -58,6 +59,7 @@ func main() {
 		"ServiceCatalog": func(config []byte) (interface{}, error) { return servicecatalog.NewModule(config) },
 		"Kubernetes":     func(config []byte) (interface{}, error) { return kubernetes.NewModule(config) },
 		"AWS":            func(config []byte) (interface{}, error) { return aws.NewModule(config) },
+		"Observability":  func(config []byte) (interface{}, error) { return observability.NewModule(config) },
 	}
 
 	// Initialize modules dynamically based on active plugins

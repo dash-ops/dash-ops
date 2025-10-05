@@ -7,11 +7,8 @@ import (
 
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
 	obsAdaptersConfig "github.com/dash-ops/dash-ops/pkg/observability/adapters/config"
-	"github.com/dash-ops/dash-ops/pkg/observability/controllers"
 	"github.com/dash-ops/dash-ops/pkg/observability/handlers"
 	obsIntegrationsLoki "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/loki"
-	"github.com/dash-ops/dash-ops/pkg/observability/logic"
-	"github.com/dash-ops/dash-ops/pkg/observability/ports"
 )
 
 // Module represents the observability module with all its components
@@ -91,60 +88,16 @@ func NewModule(fileConfig []byte) (*Module, error) {
 	// 	}
 	// }
 
-	// Initialize logic processors
-	logProcessor := logic.NewLogProcessor()
-	metricProcessor := logic.NewMetricProcessor()
-	traceProcessor := logic.NewTraceProcessor()
-	alertProcessor := logic.NewAlertProcessor()
-
-	// Initialize adapters (Loki adapter implements LogRepository interface)
-	var lokiAdapter ports.LogRepository
-	if lokiClient != nil {
-		lokiAdapter = obsIntegrationsLoki.NewLokiAdapter(lokiClient)
-	}
-
 	// Initialize HTTP adapters
 	responseAdapter := commonsHttp.NewResponseAdapter()
 	requestAdapter := commonsHttp.NewRequestAdapter()
 
-	// Initialize controllers
-	logsController := controllers.NewLogsController(
-		lokiAdapter,
-		nil, // serviceRepo - will be wired later
-		nil, // logService - will be wired later
-		nil, // cache - will be wired later
-		logProcessor,
-	)
-
-	metricsController := controllers.NewMetricsController(
-		nil, // metricRepo - will be implemented
-		nil, // serviceRepo
-		nil, // metricService
-		nil, // cache
-		metricProcessor,
-	)
-
-	tracesController := controllers.NewTracesController(
-		nil, // traceRepo - will be implemented
-		nil, // serviceRepo
-		nil, // traceService
-		nil, // cache
-		traceProcessor,
-	)
-
-	alertsController := controllers.NewAlertsController(
-		nil, // alertRepo - will be implemented
-		nil, // notificationService
-		nil, // cache
-		alertProcessor,
-	)
-
-	// Initialize handler with controllers
+	// Initialize handler with clients (handler creates controllers internally)
 	handler := handlers.NewHTTPHandler(
-		logsController,
-		metricsController,
-		tracesController,
-		alertsController,
+		lokiClient,
+		nil, // prometheusClient - will be implemented
+		nil, // tempoClient - will be implemented
+		nil, // alertManagerClient - will be implemented
 		responseAdapter,
 		requestAdapter,
 	)

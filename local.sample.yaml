@@ -9,6 +9,7 @@ plugins:
   - 'ServiceCatalog'
   - 'Kubernetes'
   - 'AWS'
+  - 'Observability'
 auth:
   - provider: github
     clientId: ${GITHUB_CLIENT_ID}

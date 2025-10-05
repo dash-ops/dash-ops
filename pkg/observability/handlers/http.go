@@ -8,7 +8,13 @@ import (
 	"github.com/gorilla/mux"
 
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
+	obsAdapters "github.com/dash-ops/dash-ops/pkg/observability/adapters"
 	"github.com/dash-ops/dash-ops/pkg/observability/controllers"
+	obsIntegrationsAlertManager "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/alertmanager"
+	obsIntegrationsLoki "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/loki"
+	obsIntegrationsPrometheus "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/prometheus"
+	obsIntegrationsTempo "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/tempo"
+	"github.com/dash-ops/dash-ops/pkg/observability/logic"
 	"github.com/dash-ops/dash-ops/pkg/observability/wire"
 )
 
@@ -20,25 +26,74 @@ type HTTPHandler struct {
 	tracesController  *controllers.TracesController
 	alertsController  *controllers.AlertsController
 
-	// Adapters
+	// Adapters (wire <-> models)
+	logsAdapter     *obsAdapters.LogsAdapter
 	responseAdapter *commonsHttp.ResponseAdapter
 	requestAdapter  *commonsHttp.RequestAdapter
 }
 
 // NewHTTPHandler creates a new HTTP handler with DI
 func NewHTTPHandler(
-	logsController *controllers.LogsController,
-	metricsController *controllers.MetricsController,
-	tracesController *controllers.TracesController,
-	alertsController *controllers.AlertsController,
+	lokiClient *obsIntegrationsLoki.LokiClient,
+	prometheusClient *obsIntegrationsPrometheus.PrometheusClient,
+	tempoClient *obsIntegrationsTempo.TempoClient,
+	alertManagerClient *obsIntegrationsAlertManager.AlertManagerClient,
 	responseAdapter *commonsHttp.ResponseAdapter,
 	requestAdapter *commonsHttp.RequestAdapter,
 ) *HTTPHandler {
+	// Initialize logic processors
+	logProcessor := logic.NewLogProcessor()
+	metricProcessor := logic.NewMetricProcessor()
+	traceProcessor := logic.NewTraceProcessor()
+	alertProcessor := logic.NewAlertProcessor()
+
+	// Initialize data transformation adapters
+	logsAdapter := obsAdapters.NewLogsAdapter()
+
+	// Initialize repository adapters (integration adapters)
+	var lokiAdapter *obsIntegrationsLoki.LokiAdapter
+	if lokiClient != nil {
+		lokiAdapter = obsIntegrationsLoki.NewLokiAdapter(lokiClient)
+	}
+
+	// Initialize controllers with repositories
+	logsController := controllers.NewLogsController(
+		lokiAdapter,
+		nil, // serviceRepo - will be wired later
+		nil, // logService - will be wired later
+		nil, // cache - will be wired later
+		logProcessor,
+	)
+
+	metricsController := controllers.NewMetricsController(
+		nil, // metricRepo - will be implemented
+		nil, // serviceRepo
+		nil, // metricService
+		nil, // cache
+		metricProcessor,
+	)
+
+	tracesController := controllers.NewTracesController(
+		nil, // traceRepo - will be implemented
+		nil, // serviceRepo
+		nil, // traceService
+		nil, // cache
+		traceProcessor,
+	)
+
+	alertsController := controllers.NewAlertsController(
+		nil, // alertRepo - will be implemented
+		nil, // notificationService
+		nil, // cache
+		alertProcessor,
+	)
+
 	return &HTTPHandler{
 		logsController:    logsController,
 		metricsController: metricsController,
 		tracesController:  tracesController,
 		alertsController:  alertsController,
+		logsAdapter:       logsAdapter,
 		responseAdapter:   responseAdapter,
 		requestAdapter:    requestAdapter,
 	}
@@ -74,64 +129,71 @@ func (h *HTTPHandler) RegisterRoutes(router *mux.Router) {
 
 // handleGetLogs handles GET /observability/logs
 func (h *HTTPHandler) handleGetLogs(w http.ResponseWriter, r *http.Request) {
-	// Parse query parameters
-	query := r.URL.Query()
+	// Parse query parameters to wire.LogsRequest
+	queryParams := r.URL.Query()
 
-	// Build request from query parameters
-	req := &wire.LogsRequest{
-		Service: query.Get("service"),
-		Level:   query.Get("level"),
-		Query:   query.Get("query"),
-		Sort:    query.Get("sort"),
-		Order:   query.Get("order"),
+	wireReq := &wire.LogsRequest{
+		Service: queryParams.Get("service"),
+		Level:   queryParams.Get("level"),
+		Query:   queryParams.Get("query"),
+		Sort:    queryParams.Get("sort"),
+		Order:   queryParams.Get("order"),
 	}
 
 	// Parse time range
-	if startStr := query.Get("start"); startStr != "" {
+	if startStr := queryParams.Get("start"); startStr != "" {
 		if startUnix, err := strconv.ParseInt(startStr, 10, 64); err == nil {
-			req.StartTime = time.Unix(startUnix, 0)
+			wireReq.StartTime = time.Unix(startUnix, 0)
 		}
 	}
-	if endStr := query.Get("end"); endStr != "" {
+	if endStr := queryParams.Get("end"); endStr != "" {
 		if endUnix, err := strconv.ParseInt(endStr, 10, 64); err == nil {
-			req.EndTime = time.Unix(endUnix, 0)
+			wireReq.EndTime = time.Unix(endUnix, 0)
 		}
 	}
 
 	// Set defaults
-	if req.StartTime.IsZero() {
-		req.StartTime = time.Now().Add(-1 * time.Hour)
+	if wireReq.StartTime.IsZero() {
+		wireReq.StartTime = time.Now().Add(-1 * time.Hour)
 	}
-	if req.EndTime.IsZero() {
-		req.EndTime = time.Now()
+	if wireReq.EndTime.IsZero() {
+		wireReq.EndTime = time.Now()
 	}
 
 	// Parse limit
-	if limitStr := query.Get("limit"); limitStr != "" {
+	if limitStr := queryParams.Get("limit"); limitStr != "" {
 		if limit, err := strconv.Atoi(limitStr); err == nil {
-			req.Limit = limit
+			wireReq.Limit = limit
 		}
 	}
-	if req.Limit == 0 {
-		req.Limit = 100
+	if wireReq.Limit == 0 {
+		wireReq.Limit = 100
 	}
 
 	// Parse offset
-	if offsetStr := query.Get("offset"); offsetStr != "" {
+	if offsetStr := queryParams.Get("offset"); offsetStr != "" {
 		if offset, err := strconv.Atoi(offsetStr); err == nil {
-			req.Offset = offset
+			wireReq.Offset = offset
 		}
 	}
 
-	// Call controller
-	response, err := h.logsController.GetLogs(r.Context(), req)
+	// Step 1: Transform wire -> models using adapter
+	modelQuery := h.logsAdapter.WireRequestToModel(wireReq)
+
+	// Step 2: Call controller with models
+	logs, err := h.logsController.QueryLogs(r.Context(), modelQuery)
 	if err != nil {
-		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to query logs: "+err.Error())
+		// Step 3a: Transform error to wire response
+		wireResp := h.logsAdapter.ErrorToWireResponse(err)
+		h.responseAdapter.WriteJSON(w, http.StatusInternalServerError, wireResp)
 		return
 	}
 
-	// Return response
-	h.responseAdapter.WriteJSON(w, http.StatusOK, response)
+	// Step 3b: Transform models -> wire using adapter
+	wireResp := h.logsAdapter.ModelToWireResponse(logs, len(logs), len(logs) >= wireReq.Limit)
+
+	// Step 4: Return wire response
+	h.responseAdapter.WriteJSON(w, http.StatusOK, wireResp)
 }
 
 // handleGetLogLabels handles GET /observability/logs/labels

@@ -4,6 +4,17 @@ import (
 	"time"
 )
 
+// LogQuery represents a domain model for log queries
+type LogQuery struct {
+	Service   string
+	Level     string
+	Query     string
+	StartTime time.Time
+	EndTime   time.Time
+	Limit     int
+	Offset    int
+}
+
 // LogEntry represents a log entry from any log source
 type LogEntry struct {
 	ID        string                 `json:"id"`

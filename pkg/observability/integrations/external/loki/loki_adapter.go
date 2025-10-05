@@ -6,24 +6,69 @@ import (
 	"strconv"
 	"time"
 
+	obsAdapters "github.com/dash-ops/dash-ops/pkg/observability/adapters"
 	"github.com/dash-ops/dash-ops/pkg/observability/models"
-	"github.com/dash-ops/dash-ops/pkg/observability/ports"
 	"github.com/dash-ops/dash-ops/pkg/observability/wire"
 )
 
 // LokiAdapter implements log repository using Loki
 type LokiAdapter struct {
-	client *LokiClient
+	client       *LokiClient
+	queryAdapter *obsAdapters.LokiQueryAdapter
 }
 
 // NewLokiAdapter creates a new Loki adapter
-func NewLokiAdapter(client *LokiClient) ports.LogRepository {
+func NewLokiAdapter(client *LokiClient) *LokiAdapter {
 	return &LokiAdapter{
-		client: client,
+		client:       client,
+		queryAdapter: obsAdapters.NewLokiQueryAdapter(),
 	}
 }
 
-// QueryLogs implements LogRepository
+// QueryLogsWithModel implements ports.LogRepository
+// Flow: models.LogQuery -> wire.LokiQueryParams -> Loki Client -> wire.LokiQueryResponse -> models.LogEntry[]
+func (l *LokiAdapter) QueryLogsWithModel(ctx context.Context, query *models.LogQuery) ([]models.LogEntry, error) {
+	// Step 1: Transform models.LogQuery -> wire.LokiQueryParams (adapter)
+	lokiParams := l.queryAdapter.ModelToLokiParams(query)
+
+	// Step 2: Call Loki client (returns wire.LokiQueryResponse)
+	lokiResp, err := l.client.QueryRange(ctx, lokiParams)
+	if err != nil {
+		return nil, fmt.Errorf("loki query failed: %w", err)
+	}
+
+	// Step 3: Transform wire.LokiQueryResponse -> models.LogEntry[] (adapter)
+	logs := l.transformLokiResponseToModels(lokiResp)
+
+	return logs, nil
+}
+
+// transformLokiResponseToModels transforms Loki API response to domain models using adapter
+func (l *LokiAdapter) transformLokiResponseToModels(resp *wire.LokiQueryResponse) []models.LogEntry {
+	var entries []models.LogEntry
+
+	for _, stream := range resp.Data.Result {
+		for _, value := range stream.Values {
+			if len(value) < 2 {
+				continue
+			}
+
+			// Parse timestamp (nanoseconds)
+			tsNano, err := strconv.ParseInt(value[0], 10, 64)
+			if err != nil {
+				continue
+			}
+
+			// Use adapter to transform
+			entry := l.queryAdapter.LokiStreamToModel(stream, tsNano, value[1])
+			entries = append(entries, entry)
+		}
+	}
+
+	return entries
+}
+
+// QueryLogs implements LogRepository (deprecated, use QueryLogsWithModel)
 func (l *LokiAdapter) QueryLogs(ctx context.Context, req *wire.LogsRequest) (*wire.LogsResponse, error) {
 	// Build Loki query params from request
 	params := wire.LokiQueryParams{
