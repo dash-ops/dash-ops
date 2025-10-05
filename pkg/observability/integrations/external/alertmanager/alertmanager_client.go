@@ -3,33 +3,41 @@ package alertmanager
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/dash-ops/dash-ops/pkg/observability/models"
 )
 
 // AlertManagerConfig represents configuration for AlertManager client
 type AlertManagerConfig struct {
-	URL     string `json:"url"`
-	Timeout int    `json:"timeout"`
+	URL     string             `json:"url"`
+	Timeout string             `json:"timeout"`
+	Auth    *models.AuthConfig `json:"auth,omitempty"`
 }
 
 // AlertManagerClient handles direct communication with AlertManager API
 type AlertManagerClient struct {
-	config     *AlertManagerConfig
+	baseURL    string
 	httpClient *http.Client
+	auth       *models.AuthConfig
 }
 
 // NewAlertManagerClient creates a new AlertManager client
 func NewAlertManagerClient(config *AlertManagerConfig) *AlertManagerClient {
-	timeout := time.Duration(config.Timeout) * time.Second
-	if timeout == 0 {
-		timeout = 30 * time.Second
+	timeout := 30 * time.Second
+	if config.Timeout != "" {
+		if d, err := time.ParseDuration(config.Timeout); err == nil {
+			timeout = d
+		}
 	}
 
 	return &AlertManagerClient{
-		config: config,
+		baseURL: strings.TrimSuffix(config.URL, "/"),
 		httpClient: &http.Client{
 			Timeout: timeout,
 		},
+		auth: config.Auth,
 	}
 }
 

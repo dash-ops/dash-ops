@@ -32,26 +32,64 @@ func NewModule(fileConfig []byte) (*Module, error) {
 		return nil, fmt.Errorf("failed to parse observability configuration: %w", err)
 	}
 
-	// Create external service clients
-	lokiClient := obsIntegrationsLoki.NewLokiClient(&obsIntegrationsLoki.LokiConfig{
-		URL:     obsConfig.Loki.URL,
-		Timeout: obsConfig.Loki.Timeout,
-	})
+	// Check if observability is enabled
+	if !obsConfig.Enabled {
+		return nil, fmt.Errorf("observability module is disabled in configuration")
+	}
 
-	prometheusClient := obsIntegrationsPrometheus.NewPrometheusClient(&obsIntegrationsPrometheus.PrometheusConfig{
-		URL:     obsConfig.Prometheus.URL,
-		Timeout: obsConfig.Prometheus.Timeout,
-	})
+	// Create Loki client from first enabled provider
+	var lokiClient *obsIntegrationsLoki.LokiClient
+	for _, provider := range obsConfig.Logs.Providers {
+		if provider.Type == "loki" && provider.Enabled {
+			lokiClient = obsIntegrationsLoki.NewLokiClient(&obsIntegrationsLoki.LokiConfig{
+				URL:     provider.URL,
+				Timeout: provider.Timeout,
+				Auth:    &provider.Auth,
+			})
+			break
+		}
+	}
 
-	tempoClient := obsIntegrationsTempo.NewTempoClient(&obsIntegrationsTempo.TempoConfig{
-		URL:     obsConfig.Tempo.URL,
-		Timeout: obsConfig.Tempo.Timeout,
-	})
+	// Create Tempo client from first enabled provider
+	var tempoClient *obsIntegrationsTempo.TempoClient
+	for _, provider := range obsConfig.Traces.Providers {
+		if provider.Type == "tempo" && provider.Enabled {
+			tempoClient = obsIntegrationsTempo.NewTempoClient(&obsIntegrationsTempo.TempoConfig{
+				URL:     provider.URL,
+				Timeout: provider.Timeout,
+				Auth:    &provider.Auth,
+			})
+			break
+		}
+	}
 
-	alertManagerClient := obsIntegrationsAlertManager.NewAlertManagerClient(&obsIntegrationsAlertManager.AlertManagerConfig{
-		URL:     obsConfig.AlertManager.URL,
-		Timeout: obsConfig.AlertManager.Timeout,
-	})
+	// Create Prometheus client from first enabled provider
+	var prometheusClient *obsIntegrationsPrometheus.PrometheusClient
+	for _, provider := range obsConfig.Metrics.Providers {
+		if provider.Type == "prometheus" && provider.Enabled {
+			prometheusClient = obsIntegrationsPrometheus.NewPrometheusClient(&obsIntegrationsPrometheus.PrometheusConfig{
+				URL:     provider.URL,
+				Timeout: provider.Timeout,
+				Auth:    &provider.Auth,
+			})
+			break
+		}
+	}
+
+	// Create AlertManager client from first enabled provider (if alerts are enabled)
+	var alertManagerClient *obsIntegrationsAlertManager.AlertManagerClient
+	if obsConfig.Alerts.Enabled {
+		for _, provider := range obsConfig.Alerts.Providers {
+			if provider.Type == "alertmanager" && provider.Enabled {
+				alertManagerClient = obsIntegrationsAlertManager.NewAlertManagerClient(&obsIntegrationsAlertManager.AlertManagerConfig{
+					URL:     provider.URL,
+					Timeout: provider.Timeout,
+					Auth:    &provider.Auth,
+				})
+				break
+			}
+		}
+	}
 
 	// Initialize adapters
 	responseAdapter := commonsHttp.NewResponseAdapter()

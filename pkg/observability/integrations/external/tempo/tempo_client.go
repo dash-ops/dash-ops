@@ -3,33 +3,41 @@ package tempo
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/dash-ops/dash-ops/pkg/observability/models"
 )
 
 // TempoConfig represents configuration for Tempo client
 type TempoConfig struct {
-	URL     string `json:"url"`
-	Timeout int    `json:"timeout"`
+	URL     string             `json:"url"`
+	Timeout string             `json:"timeout"`
+	Auth    *models.AuthConfig `json:"auth,omitempty"`
 }
 
 // TempoClient handles direct communication with Tempo API
 type TempoClient struct {
-	config     *TempoConfig
+	baseURL    string
 	httpClient *http.Client
+	auth       *models.AuthConfig
 }
 
 // NewTempoClient creates a new Tempo client
 func NewTempoClient(config *TempoConfig) *TempoClient {
-	timeout := time.Duration(config.Timeout) * time.Second
-	if timeout == 0 {
-		timeout = 30 * time.Second
+	timeout := 30 * time.Second
+	if config.Timeout != "" {
+		if d, err := time.ParseDuration(config.Timeout); err == nil {
+			timeout = d
+		}
 	}
 
 	return &TempoClient{
-		config: config,
+		baseURL: strings.TrimSuffix(config.URL, "/"),
 		httpClient: &http.Client{
 			Timeout: timeout,
 		},
+		auth: config.Auth,
 	}
 }
 

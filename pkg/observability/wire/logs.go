@@ -68,3 +68,93 @@ type LogStatistics struct {
 	TimeSeries    []TimeSeriesData       `json:"time_series,omitempty"`
 	Metadata      map[string]interface{} `json:"metadata,omitempty"`
 }
+
+// --- Loki-specific DTOs (External API responses) ---
+
+// LokiQueryResponse represents the response from Loki query API
+type LokiQueryResponse struct {
+	Status string         `json:"status"`
+	Data   LokiResultData `json:"data"`
+}
+
+// LokiResultData represents the data field in Loki response
+type LokiResultData struct {
+	ResultType string       `json:"resultType"` // streams or matrix
+	Result     []LokiStream `json:"result"`
+	Stats      *LokiStats   `json:"stats,omitempty"`
+}
+
+// LokiStream represents a log stream with its values
+type LokiStream struct {
+	Stream map[string]string `json:"stream"` // labels
+	Values [][]string        `json:"values"` // [timestamp_ns, log_line]
+}
+
+// LokiStats represents query statistics from Loki
+type LokiStats struct {
+	Summary  LokiStatsSummary  `json:"summary"`
+	Querier  LokiStatsQuerier  `json:"querier"`
+	Ingester LokiStatsIngester `json:"ingester"`
+}
+
+// LokiStatsSummary represents summary statistics
+type LokiStatsSummary struct {
+	BytesProcessedPerSecond int     `json:"bytesProcessedPerSecond"`
+	LinesProcessedPerSecond int     `json:"linesProcessedPerSecond"`
+	TotalBytesProcessed     int     `json:"totalBytesProcessed"`
+	TotalLinesProcessed     int     `json:"totalLinesProcessed"`
+	ExecTime                float64 `json:"execTime"`
+}
+
+// LokiStatsQuerier represents querier statistics
+type LokiStatsQuerier struct {
+	Store LokiStatsStore `json:"store"`
+}
+
+// LokiStatsStore represents store statistics
+type LokiStatsStore struct {
+	TotalChunksRef        int `json:"totalChunksRef"`
+	TotalChunksDownloaded int `json:"totalChunksDownloaded"`
+}
+
+// LokiStatsIngester represents ingester statistics
+type LokiStatsIngester struct {
+	TotalReached       int `json:"totalReached"`
+	TotalChunksMatched int `json:"totalChunksMatched"`
+	TotalLinesSent     int `json:"totalLinesSent"`
+}
+
+// LokiLabelsResponse represents the response from labels API
+type LokiLabelsResponse struct {
+	Status string   `json:"status"`
+	Data   []string `json:"data"`
+}
+
+// LokiLabelValuesResponse represents the response from label values API
+type LokiLabelValuesResponse struct {
+	Status string   `json:"status"`
+	Data   []string `json:"data"`
+}
+
+// LokiSeriesResponse represents the response from series API
+type LokiSeriesResponse struct {
+	Status string              `json:"status"`
+	Data   []map[string]string `json:"data"`
+}
+
+// LokiError represents an error response from Loki
+type LokiError struct {
+	Status    string `json:"status"`
+	ErrorType string `json:"errorType"`
+	Error     string `json:"error"`
+}
+
+// LokiQueryParams represents parameters for a Loki query
+type LokiQueryParams struct {
+	Query     string    `json:"query"`
+	Start     time.Time `json:"start"`
+	End       time.Time `json:"end"`
+	Limit     int       `json:"limit,omitempty"`
+	Direction string    `json:"direction,omitempty"` // forward or backward
+	Step      string    `json:"step,omitempty"`      // for range queries
+}

@@ -3,33 +3,41 @@ package prometheus
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
+
+	"github.com/dash-ops/dash-ops/pkg/observability/models"
 )
 
 // PrometheusConfig represents configuration for Prometheus client
 type PrometheusConfig struct {
-	URL     string `json:"url"`
-	Timeout int    `json:"timeout"`
+	URL     string             `json:"url"`
+	Timeout string             `json:"timeout"`
+	Auth    *models.AuthConfig `json:"auth,omitempty"`
 }
 
 // PrometheusClient handles direct communication with Prometheus API
 type PrometheusClient struct {
-	config     *PrometheusConfig
+	baseURL    string
 	httpClient *http.Client
+	auth       *models.AuthConfig
 }
 
 // NewPrometheusClient creates a new Prometheus client
 func NewPrometheusClient(config *PrometheusConfig) *PrometheusClient {
-	timeout := time.Duration(config.Timeout) * time.Second
-	if timeout == 0 {
-		timeout = 30 * time.Second
+	timeout := 30 * time.Second
+	if config.Timeout != "" {
+		if d, err := time.ParseDuration(config.Timeout); err == nil {
+			timeout = d
+		}
 	}
 
 	return &PrometheusClient{
-		config: config,
+		baseURL: strings.TrimSuffix(config.URL, "/"),
 		httpClient: &http.Client{
 			Timeout: timeout,
 		},
+		auth: config.Auth,
 	}
 }
 
