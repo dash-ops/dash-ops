@@ -8,6 +8,7 @@ import (
 
 // LogsRequest represents a request for log data
 type LogsRequest struct {
+	Provider  string    `json:"provider,omitempty"` // loki-local, splunk-prod, etc.
 	Service   string    `json:"service,omitempty"`
 	Level     string    `json:"level,omitempty"` // error, warn, info, debug
 	Query     string    `json:"query,omitempty"` // Loki query syntax
@@ -33,6 +34,15 @@ type LogsData struct {
 	HasMore    bool              `json:"has_more"`
 	NextOffset int               `json:"next_offset,omitempty"`
 	Filters    LogFilters        `json:"filters,omitempty"`
+	Provider   ProviderInfo      `json:"provider"`
+}
+
+// ProviderInfo contains information about the log provider used
+type ProviderInfo struct {
+	Name        string `json:"name"`
+	Type        string `json:"type"` // loki, splunk, elasticsearch, etc.
+	Description string `json:"description,omitempty"`
+	URL         string `json:"url,omitempty"`
 }
 
 // LogFilters represents filters for log queries

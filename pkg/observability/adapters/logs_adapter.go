@@ -33,9 +33,12 @@ func (a *LogsAdapter) ModelToWireResponse(logs []models.LogEntry, total int, has
 			Success: true,
 		},
 		Data: wire.LogsData{
-			Logs:    logs,
-			Total:   total,
-			HasMore: hasMore,
+			Logs:     logs,
+			Total:    total,
+			HasMore:  hasMore,
+			Provider: wire.ProviderInfo{
+				// Provider info will be filled by the handler
+			},
 		},
 	}
 }

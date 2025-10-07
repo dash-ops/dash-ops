@@ -11,10 +11,11 @@ import (
 	obsAdapters "github.com/dash-ops/dash-ops/pkg/observability/adapters"
 	"github.com/dash-ops/dash-ops/pkg/observability/controllers"
 	obsIntegrationsAlertManager "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/alertmanager"
-	obsIntegrationsLoki "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/loki"
 	obsIntegrationsPrometheus "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/prometheus"
 	obsIntegrationsTempo "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/tempo"
 	"github.com/dash-ops/dash-ops/pkg/observability/logic"
+	"github.com/dash-ops/dash-ops/pkg/observability/ports"
+	"github.com/dash-ops/dash-ops/pkg/observability/repositories"
 	"github.com/dash-ops/dash-ops/pkg/observability/wire"
 )
 
@@ -34,10 +35,10 @@ type HTTPHandler struct {
 
 // NewHTTPHandler creates a new HTTP handler with DI
 func NewHTTPHandler(
-	lokiClient *obsIntegrationsLoki.LokiClient,
-	prometheusClient *obsIntegrationsPrometheus.PrometheusClient,
-	tempoClient *obsIntegrationsTempo.TempoClient,
-	alertManagerClient *obsIntegrationsAlertManager.AlertManagerClient,
+	logsClients map[string]ports.LogsClient,
+	prometheusClients map[string]*obsIntegrationsPrometheus.PrometheusClient,
+	tempoClients map[string]*obsIntegrationsTempo.TempoClient,
+	alertManagerClients map[string]*obsIntegrationsAlertManager.AlertManagerClient,
 	responseAdapter *commonsHttp.ResponseAdapter,
 	requestAdapter *commonsHttp.RequestAdapter,
 ) *HTTPHandler {
@@ -50,15 +51,12 @@ func NewHTTPHandler(
 	// Initialize data transformation adapters
 	logsAdapter := obsAdapters.NewLogsAdapter()
 
-	// Initialize repository adapters (integration adapters)
-	var lokiAdapter *obsIntegrationsLoki.LokiAdapter
-	if lokiClient != nil {
-		lokiAdapter = obsIntegrationsLoki.NewLokiAdapter(lokiClient)
-	}
+	// Initialize LogsRepository with multiple clients
+	logsRepo := repositories.NewLogsRepository(logsClients)
 
 	// Initialize controllers with repositories
 	logsController := controllers.NewLogsController(
-		lokiAdapter,
+		logsRepo,
 		nil, // serviceRepo - will be wired later
 		nil, // logService - will be wired later
 		nil, // cache - will be wired later
@@ -133,11 +131,12 @@ func (h *HTTPHandler) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 
 	wireReq := &wire.LogsRequest{
-		Service: queryParams.Get("service"),
-		Level:   queryParams.Get("level"),
-		Query:   queryParams.Get("query"),
-		Sort:    queryParams.Get("sort"),
-		Order:   queryParams.Get("order"),
+		Provider: queryParams.Get("provider"),
+		Service:  queryParams.Get("service"),
+		Level:    queryParams.Get("level"),
+		Query:    queryParams.Get("query"),
+		Sort:     queryParams.Get("sort"),
+		Order:    queryParams.Get("order"),
 	}
 
 	// Parse time range
@@ -180,8 +179,8 @@ func (h *HTTPHandler) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 	// Step 1: Transform wire -> models using adapter
 	modelQuery := h.logsAdapter.WireRequestToModel(wireReq)
 
-	// Step 2: Call controller with models
-	logs, err := h.logsController.QueryLogs(r.Context(), modelQuery)
+	// Step 2: Call controller with models and provider
+	logs, err := h.logsController.QueryLogs(r.Context(), wireReq.Provider, modelQuery)
 	if err != nil {
 		// Step 3a: Transform error to wire response
 		wireResp := h.logsAdapter.ErrorToWireResponse(err)
@@ -189,8 +188,17 @@ func (h *HTTPHandler) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Step 3b: Transform models -> wire using adapter
+	// Step 3b: Transform models -> wire using adapter with provider info
 	wireResp := h.logsAdapter.ModelToWireResponse(logs, len(logs), len(logs) >= wireReq.Limit)
+
+	// Add provider information to response
+	if wireResp.Data.Provider.Name == "" {
+		wireResp.Data.Provider = wire.ProviderInfo{
+			Name:        wireReq.Provider,
+			Type:        "loki", // TODO: Make this dynamic based on provider
+			Description: "Log aggregation system",
+		}
+	}
 
 	// Step 4: Return wire response
 	h.responseAdapter.WriteJSON(w, http.StatusOK, wireResp)
@@ -198,7 +206,13 @@ func (h *HTTPHandler) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 
 // handleGetLogLabels handles GET /observability/logs/labels
 func (h *HTTPHandler) handleGetLogLabels(w http.ResponseWriter, r *http.Request) {
-	labels, err := h.logsController.GetLogLabels(r.Context())
+	provider := r.URL.Query().Get("provider")
+	if provider == "" {
+		h.responseAdapter.WriteError(w, http.StatusBadRequest, "provider parameter is required")
+		return
+	}
+
+	labels, err := h.logsController.GetLogLabels(r.Context(), provider)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to get log labels: "+err.Error())
 		return
@@ -212,7 +226,13 @@ func (h *HTTPHandler) handleGetLogLabels(w http.ResponseWriter, r *http.Request)
 
 // handleGetLogLevels handles GET /observability/logs/levels
 func (h *HTTPHandler) handleGetLogLevels(w http.ResponseWriter, r *http.Request) {
-	levels, err := h.logsController.GetLogLevels(r.Context())
+	provider := r.URL.Query().Get("provider")
+	if provider == "" {
+		h.responseAdapter.WriteError(w, http.StatusBadRequest, "provider parameter is required")
+		return
+	}
+
+	levels, err := h.logsController.GetLogLevels(r.Context(), provider)
 	if err != nil {
 		h.responseAdapter.WriteError(w, http.StatusInternalServerError, "Failed to get log levels: "+err.Error())
 		return

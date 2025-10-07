@@ -8,47 +8,13 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/dash-ops/dash-ops/pkg/observability/models"
 	"github.com/dash-ops/dash-ops/pkg/observability/wire"
 )
 
-// LokiConfig represents configuration for Loki client
-type LokiConfig struct {
-	URL     string             `json:"url"`
-	Timeout string             `json:"timeout"`
-	Auth    *models.AuthConfig `json:"auth,omitempty"`
-}
-
-// LokiClient handles direct communication with Loki API
-type LokiClient struct {
-	baseURL    string
-	httpClient *http.Client
-	auth       *models.AuthConfig
-}
-
-// NewLokiClient creates a new Loki client
-func NewLokiClient(config *LokiConfig) *LokiClient {
-	timeout := 30 * time.Second
-	if config.Timeout != "" {
-		if d, err := time.ParseDuration(config.Timeout); err == nil {
-			timeout = d
-		}
-	}
-
-	return &LokiClient{
-		baseURL: strings.TrimSuffix(config.URL, "/"),
-		httpClient: &http.Client{
-			Timeout: timeout,
-		},
-		auth: config.Auth,
-	}
-}
-
-// QueryRange queries logs from Loki within a time range
-func (c *LokiClient) QueryRange(ctx context.Context, params wire.LokiQueryParams) (*wire.LokiQueryResponse, error) {
+// queryRange queries logs from Loki within a time range (private method)
+func (c *LokiClient) queryRange(ctx context.Context, params wire.LokiQueryParams) (*wire.LokiQueryResponse, error) {
 	// Build query parameters
 	queryParams := url.Values{}
 	queryParams.Set("query", params.Query)
@@ -87,8 +53,8 @@ func (c *LokiClient) QueryRange(ctx context.Context, params wire.LokiQueryParams
 	return &result, nil
 }
 
-// Query performs an instant query at a single point in time
-func (c *LokiClient) Query(ctx context.Context, query string, ts time.Time, limit int) (*wire.LokiQueryResponse, error) {
+// query performs an instant query at a single point in time (private method)
+func (c *LokiClient) query(ctx context.Context, query string, ts time.Time, limit int) (*wire.LokiQueryResponse, error) {
 	queryParams := url.Values{}
 	queryParams.Set("query", query)
 	queryParams.Set("time", strconv.FormatInt(ts.UnixNano(), 10))
@@ -117,8 +83,8 @@ func (c *LokiClient) Query(ctx context.Context, query string, ts time.Time, limi
 	return &result, nil
 }
 
-// ListLabels retrieves all labels
-func (c *LokiClient) ListLabels(ctx context.Context, start, end time.Time) (*wire.LokiLabelsResponse, error) {
+// listLabels retrieves all labels (private method)
+func (c *LokiClient) listLabels(ctx context.Context, start, end time.Time) (*wire.LokiLabelsResponse, error) {
 	queryParams := url.Values{}
 	if !start.IsZero() {
 		queryParams.Set("start", strconv.FormatInt(start.UnixNano(), 10))
@@ -150,8 +116,8 @@ func (c *LokiClient) ListLabels(ctx context.Context, start, end time.Time) (*wir
 	return &result, nil
 }
 
-// GetLabelValues retrieves all values for a specific label
-func (c *LokiClient) GetLabelValues(ctx context.Context, label string, start, end time.Time) (*wire.LokiLabelValuesResponse, error) {
+// getLabelValues retrieves all values for a specific label (private method)
+func (c *LokiClient) getLabelValues(ctx context.Context, label string, start, end time.Time) (*wire.LokiLabelValuesResponse, error) {
 	queryParams := url.Values{}
 	if !start.IsZero() {
 		queryParams.Set("start", strconv.FormatInt(start.UnixNano(), 10))
@@ -183,8 +149,8 @@ func (c *LokiClient) GetLabelValues(ctx context.Context, label string, start, en
 	return &result, nil
 }
 
-// GetSeries retrieves the list of time series that match a log stream selector
-func (c *LokiClient) GetSeries(ctx context.Context, matchers []string, start, end time.Time) (*wire.LokiSeriesResponse, error) {
+// getSeries retrieves the list of time series that match a log stream selector (private method)
+func (c *LokiClient) getSeries(ctx context.Context, matchers []string, start, end time.Time) (*wire.LokiSeriesResponse, error) {
 	queryParams := url.Values{}
 	for _, match := range matchers {
 		queryParams.Add("match[]", match)
@@ -256,11 +222,4 @@ func (c *LokiClient) handleErrorResponse(resp *http.Response) error {
 	}
 
 	return fmt.Errorf("loki error (%s): %s", lokiErr.ErrorType, lokiErr.Error)
-}
-
-// HealthCheck checks if Loki is healthy
-func (c *LokiClient) HealthCheck(ctx context.Context) error {
-	// Try to list labels as a health check
-	_, err := c.ListLabels(ctx, time.Time{}, time.Time{})
-	return err
 }

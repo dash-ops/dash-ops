@@ -7,12 +7,13 @@ import (
 	"github.com/dash-ops/dash-ops/pkg/observability/logic"
 	"github.com/dash-ops/dash-ops/pkg/observability/models"
 	"github.com/dash-ops/dash-ops/pkg/observability/ports"
+	"github.com/dash-ops/dash-ops/pkg/observability/repositories"
 )
 
 // LogsController handles log-related use cases
 type LogsController struct {
 	// Dependencies
-	LogRepo     ports.LogRepository
+	LogRepo     *repositories.LogsRepository
 	ServiceRepo ports.ServiceContextRepository
 	LogService  ports.LogService
 	Cache       ports.CacheService
@@ -22,7 +23,7 @@ type LogsController struct {
 }
 
 func NewLogsController(
-	logRepo ports.LogRepository,
+	logRepo *repositories.LogsRepository,
 	serviceRepo ports.ServiceContextRepository,
 	logService ports.LogService,
 	cache ports.CacheService,
@@ -38,16 +39,16 @@ func NewLogsController(
 }
 
 // QueryLogs retrieves logs based on the provided query (works with models, not wire)
-func (c *LogsController) QueryLogs(ctx context.Context, query *models.LogQuery) ([]models.LogEntry, error) {
+func (c *LogsController) QueryLogs(ctx context.Context, provider string, query *models.LogQuery) ([]models.LogEntry, error) {
 	// Validate query
 	if err := c.validateQuery(query); err != nil {
 		return nil, fmt.Errorf("invalid query: %w", err)
 	}
 
-	// Query repository (LokiAdapter) - this already returns models.LogEntry
-	logs, err := c.LogRepo.QueryLogsWithModel(ctx, query)
+	// Query repository - this already returns models.LogEntry
+	logs, err := c.LogRepo.QueryLogsWithModel(ctx, provider, query)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query logs: %w", err)
+		return nil, fmt.Errorf("failed to query logs from provider '%s': %w", provider, err)
 	}
 
 	// Process/enrich logs with business logic
@@ -58,14 +59,14 @@ func (c *LogsController) QueryLogs(ctx context.Context, query *models.LogQuery) 
 	return logs, nil
 }
 
-// GetLogLabels retrieves available log labels
-func (c *LogsController) GetLogLabels(ctx context.Context) ([]string, error) {
-	return c.LogRepo.GetLogLabels(ctx)
+// GetLogLabels retrieves available log labels from a specific provider
+func (c *LogsController) GetLogLabels(ctx context.Context, provider string) ([]string, error) {
+	return c.LogRepo.GetLogLabels(ctx, provider)
 }
 
-// GetLogLevels retrieves available log levels
-func (c *LogsController) GetLogLevels(ctx context.Context) ([]string, error) {
-	return c.LogRepo.GetLogLevels(ctx)
+// GetLogLevels retrieves available log levels from a specific provider
+func (c *LogsController) GetLogLevels(ctx context.Context, provider string) ([]string, error) {
+	return c.LogRepo.GetLogLevels(ctx, provider)
 }
 
 // validateQuery validates the log query

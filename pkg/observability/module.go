@@ -9,6 +9,7 @@ import (
 	obsAdaptersConfig "github.com/dash-ops/dash-ops/pkg/observability/adapters/config"
 	"github.com/dash-ops/dash-ops/pkg/observability/handlers"
 	obsIntegrationsLoki "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/loki"
+	"github.com/dash-ops/dash-ops/pkg/observability/ports"
 )
 
 // Module represents the observability module with all its components
@@ -34,16 +35,17 @@ func NewModule(fileConfig []byte) (*Module, error) {
 		return nil, fmt.Errorf("observability module is disabled in configuration")
 	}
 
-	// Create Loki client from first enabled provider
-	var lokiClient *obsIntegrationsLoki.LokiClient
+	// Create multiple log providers
+	logsClients := make(map[string]ports.LogsClient)
 	for _, provider := range obsConfig.Logs.Providers {
 		if provider.Type == "loki" && provider.Enabled {
-			lokiClient = obsIntegrationsLoki.NewLokiClient(&obsIntegrationsLoki.LokiConfig{
+			lokiClient := obsIntegrationsLoki.NewLokiClient(&obsIntegrationsLoki.LokiConfig{
 				URL:     provider.URL,
 				Timeout: provider.Timeout,
 				Auth:    &provider.Auth,
 			})
-			break
+			// LokiClient implements ports.LogsClient interface
+			logsClients[provider.Name] = lokiClient
 		}
 	}
 
@@ -94,10 +96,10 @@ func NewModule(fileConfig []byte) (*Module, error) {
 
 	// Initialize handler with clients (handler creates controllers internally)
 	handler := handlers.NewHTTPHandler(
-		lokiClient,
-		nil, // prometheusClient - will be implemented
-		nil, // tempoClient - will be implemented
-		nil, // alertManagerClient - will be implemented
+		logsClients,
+		nil, // prometheusClients - will be implemented
+		nil, // tempoClients - will be implemented
+		nil, // alertManagerClients - will be implemented
 		responseAdapter,
 		requestAdapter,
 	)
