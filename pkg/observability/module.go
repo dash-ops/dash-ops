@@ -9,6 +9,7 @@ import (
 	obsAdaptersConfig "github.com/dash-ops/dash-ops/pkg/observability/adapters/config"
 	"github.com/dash-ops/dash-ops/pkg/observability/handlers"
 	obsIntegrationsLoki "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/loki"
+	obsIntegrationsTempo "github.com/dash-ops/dash-ops/pkg/observability/integrations/external/tempo"
 	"github.com/dash-ops/dash-ops/pkg/observability/ports"
 )
 
@@ -49,18 +50,19 @@ func NewModule(fileConfig []byte) (*Module, error) {
 		}
 	}
 
-	// TODO: Create Tempo client when implementing traces
-	// var tempoClient *obsIntegrationsTempo.TempoClient
-	// for _, provider := range obsConfig.Traces.Providers {
-	// 	if provider.Type == "tempo" && provider.Enabled {
-	// 		tempoClient = obsIntegrationsTempo.NewTempoClient(&obsIntegrationsTempo.TempoConfig{
-	// 			URL:     provider.URL,
-	// 			Timeout: provider.Timeout,
-	// 			Auth:    &provider.Auth,
-	// 		})
-	// 		break
-	// 	}
-	// }
+	// Create multiple trace providers
+	tracesClients := make(map[string]ports.TracesClient)
+	for _, provider := range obsConfig.Traces.Providers {
+		if provider.Type == "tempo" && provider.Enabled {
+			tempoClient := obsIntegrationsTempo.NewTempoClient(&obsIntegrationsTempo.TempoConfig{
+				URL:     provider.URL,
+				Timeout: provider.Timeout,
+				Auth:    &provider.Auth,
+			})
+			// TempoClient implements ports.TracesClient interface
+			tracesClients[provider.Name] = tempoClient
+		}
+	}
 
 	// TODO: Create Prometheus client when implementing metrics
 	// var prometheusClient *obsIntegrationsPrometheus.PrometheusClient
@@ -97,8 +99,9 @@ func NewModule(fileConfig []byte) (*Module, error) {
 	// Initialize handler with clients (handler creates controllers internally)
 	handler := handlers.NewHTTPHandler(
 		logsClients,
+		tracesClients,
 		nil, // prometheusClients - will be implemented
-		nil, // tempoClients - will be implemented
+		nil, // tempoClients (deprecated parameter) - will be removed
 		nil, // alertManagerClients - will be implemented
 		responseAdapter,
 		requestAdapter,

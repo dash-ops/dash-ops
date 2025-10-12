@@ -43,11 +43,11 @@ type MetricsClient interface {
 
 // TracesClient defines the interface for external trace service clients (Tempo, Jaeger, etc.)
 type TracesClient interface {
-	// QueryTraces searches for traces based on criteria
-	QueryTraces(ctx context.Context, req *wire.TracesRequest) (*wire.TracesResponse, error)
+	// QueryTraces searches for traces based on criteria using standardized models
+	QueryTraces(ctx context.Context, query *models.TraceQuery) ([]models.TraceSummary, error)
 
 	// GetTraceDetail retrieves detailed information for a specific trace
-	GetTraceDetail(ctx context.Context, traceID string) (*wire.TraceDetailResponse, error)
+	GetTraceDetail(ctx context.Context, traceID string) (*models.Trace, error)
 
 	// GetServices returns available services that have traces
 	GetServices(ctx context.Context) ([]string, error)

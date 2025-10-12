@@ -93,10 +93,10 @@ type MetricsOverrideConfig struct {
 // ServiceObservabilityConfig represents observability configuration for a specific service
 type ServiceObservabilityConfig struct {
 	ServiceName string                 `json:"service_name"`
-	Logs        *LogsConfig            `json:"logs,omitempty"`
-	Metrics     *MetricsConfig         `json:"metrics,omitempty"`
-	Traces      *TracesConfig          `json:"traces,omitempty"`
-	Alerts      *AlertsConfig          `json:"alerts,omitempty"`
+	Logs        *LogsProviderConfig    `json:"logs,omitempty"`
+	Metrics     *MetricsProviderConfig `json:"metrics,omitempty"`
+	Traces      *TracesProviderConfig  `json:"traces,omitempty"`
+	Alerts      *AlertsProviderConfig  `json:"alerts,omitempty"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 }
 

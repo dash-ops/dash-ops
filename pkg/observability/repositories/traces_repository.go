@@ -2,47 +2,60 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/dash-ops/dash-ops/pkg/observability/integrations/external/tempo"
+	"github.com/dash-ops/dash-ops/pkg/observability/models"
 	"github.com/dash-ops/dash-ops/pkg/observability/ports"
-	"github.com/dash-ops/dash-ops/pkg/observability/wire"
 )
 
-// TracesRepository implements traces data access using Tempo
+// TracesRepository handles trace operations across multiple providers
 type TracesRepository struct {
-	tempoAdapter ports.TraceRepository
+	clients map[string]ports.TracesClient
 }
 
-// NewTracesRepository creates a new traces repository
-func NewTracesRepository(tempoClient *tempo.TempoClient) *TracesRepository {
-	tempoAdapter := tempo.NewTempoAdapter(tempoClient)
-
+// NewTracesRepository creates a new traces repository with multiple clients
+func NewTracesRepository(clients map[string]ports.TracesClient) *TracesRepository {
 	return &TracesRepository{
-		tempoAdapter: tempoAdapter,
+		clients: clients,
 	}
 }
 
-// QueryTraces queries traces from the repository
-func (r *TracesRepository) QueryTraces(ctx context.Context, req *wire.TracesRequest) (*wire.TracesResponse, error) {
-	return r.tempoAdapter.QueryTraces(ctx, req)
+// QueryTraces retrieves traces from a specific provider using standardized models
+func (r *TracesRepository) QueryTraces(ctx context.Context, provider string, query *models.TraceQuery) ([]models.TraceSummary, error) {
+	client, ok := r.clients[provider]
+	if !ok {
+		return nil, fmt.Errorf("traces provider '%s' not found", provider)
+	}
+
+	return client.QueryTraces(ctx, query)
 }
 
-// GetTraceDetail retrieves a specific trace by ID
-func (r *TracesRepository) GetTraceDetail(ctx context.Context, traceID string) (*wire.TraceDetailResponse, error) {
-	return r.tempoAdapter.GetTraceDetail(ctx, traceID)
+// GetTraceDetail retrieves detailed information for a specific trace from a provider
+func (r *TracesRepository) GetTraceDetail(ctx context.Context, provider string, traceID string) (*models.Trace, error) {
+	client, ok := r.clients[provider]
+	if !ok {
+		return nil, fmt.Errorf("traces provider '%s' not found", provider)
+	}
+
+	return client.GetTraceDetail(ctx, traceID)
 }
 
-// GetServices retrieves available trace services
-func (r *TracesRepository) GetServices(ctx context.Context) ([]string, error) {
-	return r.tempoAdapter.GetServices(ctx)
+// GetServices retrieves available services from a specific provider
+func (r *TracesRepository) GetServices(ctx context.Context, provider string) ([]string, error) {
+	client, ok := r.clients[provider]
+	if !ok {
+		return nil, fmt.Errorf("traces provider '%s' not found", provider)
+	}
+
+	return client.GetServices(ctx)
 }
 
-// GetOperations retrieves operations for a service
-func (r *TracesRepository) GetOperations(ctx context.Context, service string) ([]string, error) {
-	return r.tempoAdapter.GetOperations(ctx, service)
-}
+// HealthCheck checks if a specific provider is healthy
+func (r *TracesRepository) HealthCheck(ctx context.Context, provider string) error {
+	client, ok := r.clients[provider]
+	if !ok {
+		return fmt.Errorf("traces provider '%s' not found", provider)
+	}
 
-// GetTraceStatistics retrieves trace statistics
-func (r *TracesRepository) GetTraceStatistics(ctx context.Context, req *wire.TraceStatsRequest) (*wire.TraceStatistics, error) {
-	return r.tempoAdapter.GetTraceStatistics(ctx, req)
+	return client.HealthCheck(ctx)
 }

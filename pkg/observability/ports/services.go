@@ -41,7 +41,7 @@ type MetricService interface {
 // TraceService defines the interface for trace processing business logic
 type TraceService interface {
 	// ProcessTraces processes and enriches trace data
-	ProcessTraces(ctx context.Context, traces []models.TraceSpan) ([]models.ProcessedTrace, error)
+	ProcessTraces(ctx context.Context, traces []models.TraceSpan) ([]models.TraceSpan, error)
 
 	// AnalyzeTracePerformance analyzes trace performance characteristics
 	AnalyzeTracePerformance(ctx context.Context, traceID string) (*wire.TraceAnalysis, error)
