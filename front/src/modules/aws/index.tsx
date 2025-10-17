@@ -1,6 +1,6 @@
 import { Cloud } from 'lucide-react';
-import InstancePage from './InstancePage';
-import AWSWithAccountSelector from './AWSWithAccountSelector';
+import InstancePage from './components/instances/InstancePage';
+import AWSWithAccountSelector from './components/AWSWithAccountSelector';
 import { Menu, Page, ModuleConfig } from '@/types';
 
 const AwsModule = async (): Promise<ModuleConfig> => {
@@ -40,3 +40,5 @@ const AwsModule = async (): Promise<ModuleConfig> => {
 };
 
 export default AwsModule;
+
+export * from './types';

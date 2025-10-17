@@ -1,4 +1,4 @@
-import http from '../../helpers/http';
+import http from '../../../helpers/http';
 import { AxiosResponse, AxiosRequestConfig } from 'axios';
 import { AWSTypes, AccountFilter } from '@/types';
 
