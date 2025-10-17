@@ -12,8 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Server } from 'lucide-react';
 import { KubernetesTypes } from '@/types';
 import { Page } from '@/types';
-import ContentWithMenu from '../../components/ContentWithMenu';
-import { getClustersCached } from './clustersCache';
+import ContentWithMenu from '../../../components/ContentWithMenu';
+import { getClustersCached } from '../utils/clustersCache';
 
 interface KubernetesWithContextSelectorProps {
   pages: Page[];

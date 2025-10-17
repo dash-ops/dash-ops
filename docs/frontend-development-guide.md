@@ -22,6 +22,8 @@ src/modules/{module-name}/
 ├── adapters/                   # Data transformation functions
 ├── hooks/                      # Custom React hooks
 ├── components/                 # React components
+│   ├── {resource-name}/        # Grouped by resource (e.g., instances/, pods/)
+│   └── shared/                 # Shared/reusable components
 ├── utils/                      # Utility functions
 ├── __tests__/                  # Unit tests
 └── index.tsx                   # Module exports
@@ -53,6 +55,7 @@ export interface InstanceState {
 - Contains functions that make HTTP requests to backend APIs
 - Pure functions that return promises
 - Handle API communication and error responses
+- **Note**: Cache utilities belong in `utils/`, not `resources/`
 
 ```typescript
 // Example: instanceResource.ts
@@ -119,10 +122,12 @@ export const useInstances = (filter: { accountKey: string }) => {
 - Focus on presentation and user interaction
 - Use hooks for state management and side effects
 - Keep components small and focused
+- **Organize by resource**: Group related components in subdirectories (e.g., `instances/`, `pods/`, `deployments/`)
+- **Shared components**: Place reusable components in `shared/` subdirectory
 
 ```typescript
-// Example: InstancePage.tsx
-import { useInstances } from '../hooks/useInstances';
+// Example: InstancePage.tsx (in components/instances/)
+import { useInstances } from '../../hooks/useInstances';
 import { InstanceTag } from './InstanceTag';
 
 export default function InstancePage() {
@@ -132,8 +137,27 @@ export default function InstancePage() {
 }
 ```
 
+### Component Organization Examples
+
+```
+components/
+├── instances/                  # Instance-related components
+│   ├── InstancePage.tsx
+│   ├── InstanceActions.tsx
+│   └── InstanceTag.tsx
+├── pods/                      # Pod-related components
+│   ├── PodPage.tsx
+│   ├── PodLogPage.tsx
+│   └── PodQoSBadge.tsx
+├── shared/                    # Reusable components
+│   ├── ResourceProgressBar.tsx
+│   └── ProgressData.tsx
+└── ModuleWithSelector.tsx     # Main module wrapper
+```
+
 ### `utils/`
 - Pure utility functions for formatting, validation, and calculations
+- Cache utilities and in-memory storage helpers
 - No side effects or external dependencies
 - Easy to test and reuse
 
@@ -146,6 +170,17 @@ export const getInstanceDisplayName = (instance: AWSTypes.Instance): string => {
 export const canStartInstance = (instance: AWSTypes.Instance): boolean => {
   return instance.state.name === 'stopped';
 };
+
+// Example: accountsCache.ts (cache utility)
+let accountsCache: AWSTypes.Account[] | null = null;
+
+export async function getAccountsCached(): Promise<AWSTypes.Account[]> {
+  if (accountsCache) return accountsCache;
+  
+  const { data } = await getAccounts();
+  accountsCache = data;
+  return data;
+}
 ```
 
 ### `__tests__/`

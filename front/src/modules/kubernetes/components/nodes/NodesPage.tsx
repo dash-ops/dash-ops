@@ -11,11 +11,11 @@ import {
 } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { getNodes } from './nodesResource';
-import Refresh from '../../components/Refresh';
-import ResourceProgressBar from './ResourceProgressBar';
+import { getNodes } from '../../resources/nodesResource';
+import Refresh from '../../../../components/Refresh';
+import ResourceProgressBar from '../shared/ResourceProgressBar';
 import SimpleNodeStatus from './SimpleNodeStatus';
-import { formatAge, calculateUsagePercentage } from './helpers';
+import { formatAge, calculateUsagePercentage } from '../../utils/helpers';
 import { KubernetesTypes } from '@/types';
 
 const INITIAL_STATE: KubernetesTypes.NodesState = { data: [], loading: false };

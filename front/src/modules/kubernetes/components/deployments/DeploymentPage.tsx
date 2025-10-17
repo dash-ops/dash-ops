@@ -23,12 +23,12 @@ import {
   getDeployments,
   restartDeployment,
   scaleDeployment,
-} from './deploymentResource';
-import { getNamespacesCached } from './namespacesCache';
-import Refresh from '../../components/Refresh';
+} from '../../resources/deploymentResource';
+import { getNamespacesCached } from '../../utils/namespacesCache';
+import Refresh from '../../../../components/Refresh';
 import ModernDeploymentActions from './ModernDeploymentActions';
 import SimpleDeploymentStatus from './SimpleDeploymentStatus';
-import { formatAge } from './helpers';
+import { formatAge } from '../../utils/helpers';
 import { KubernetesTypes } from '@/types';
 
 const INITIAL_STATE: KubernetesTypes.DeploymentState = {
