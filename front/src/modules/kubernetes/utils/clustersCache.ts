@@ -1,5 +1,5 @@
 import { KubernetesTypes } from '@/types';
-import { getClusters } from './clusterResource';
+import { getClusters } from '../resources/clusterResource';
 
 let clustersCache: KubernetesTypes.Cluster[] | null = null;
 let loadingPromise: Promise<KubernetesTypes.Cluster[]> | null = null;

@@ -1,12 +1,12 @@
-import http from '../../helpers/http';
+import http from '../../../helpers/http';
 import { AxiosResponse, AxiosRequestConfig } from 'axios';
 import { KubernetesTypes, ContextFilter } from '@/types';
 
-export function getNamespaces(
+export function getPermissions(
   filter: ContextFilter,
   config?: AxiosRequestConfig
-): Promise<AxiosResponse<KubernetesTypes.Namespace[]>> {
+): Promise<AxiosResponse<KubernetesTypes.K8sPermission[]>> {
   return http
-    .get(`/v1/k8s/clusters/${filter.context}/namespaces`, config)
+    .get(`/v1/k8s/clusters/${filter.context}/permissions`, config)
     .then((resp) => (resp.data ? resp : { ...resp, data: [] }));
 }

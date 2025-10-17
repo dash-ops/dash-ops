@@ -31,12 +31,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { getPods } from './podsResource';
-import { getNamespacesCached } from './namespacesCache';
-import Refresh from '../../components/Refresh';
+import { getPods } from '../../resources/podsResource';
+import { getNamespacesCached } from '../../utils/namespacesCache';
+import Refresh from '../../../../components/Refresh';
 import PodContainers from './PodContainers';
 import PodQoSBadge from './PodQoSBadge';
-import { formatAge } from './helpers';
+import { formatAge } from '../../utils/helpers';
 import { FileText } from 'lucide-react';
 import { KubernetesTypes, BadgeVariant } from '@/types';
 

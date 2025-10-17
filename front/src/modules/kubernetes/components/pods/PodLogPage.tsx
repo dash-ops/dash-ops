@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, Search, Copy, Maximize2, Minimize2 } from 'lucide-react';
-import { cancelToken } from '../../helpers/http';
-import { getPodLogs } from './podsResource';
-import Refresh from '../../components/Refresh';
+import { cancelToken } from '../../../../helpers/http';
+import { getPodLogs } from '../../resources/podsResource';
+import Refresh from '../../../../components/Refresh';
 import { KubernetesTypes } from '@/types';
 
 interface LogState {

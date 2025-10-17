@@ -3,7 +3,7 @@ import {
   getDeployments,
   restartDeployment,
   scaleDeployment,
-} from '../deploymentResource';
+} from '../resources/deploymentResource';
 
 vi.mock('../../../helpers/http');
 

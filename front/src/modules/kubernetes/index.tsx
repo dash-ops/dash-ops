@@ -1,9 +1,9 @@
 import { Container } from 'lucide-react';
-import NodesPage from './NodesPage';
-import DeploymentPage from './DeploymentPage';
-import PodPage from './PodPage';
-import PodLogPage from './PodLogPage';
-import KubernetesWithContextSelector from './KubernetesWithContextSelector';
+import NodesPage from './components/nodes/NodesPage';
+import DeploymentPage from './components/deployments/DeploymentPage';
+import PodPage from './components/pods/PodPage';
+import PodLogPage from './components/pods/PodLogPage';
+import KubernetesWithContextSelector from './components/KubernetesWithContextSelector';
 import { Menu, Page, ModuleConfig } from '@/types';
 
 const KubernetesModule = async (): Promise<ModuleConfig> => {
@@ -61,3 +61,6 @@ const KubernetesModule = async (): Promise<ModuleConfig> => {
 };
 
 export default KubernetesModule;
+
+// Export types for external use
+export * from './types';

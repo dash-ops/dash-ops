@@ -1,4 +1,4 @@
-import { getNamespaces } from './namespaceResource';
+import { getNamespaces } from '../resources/namespaceResource';
 import { KubernetesTypes } from '@/types';
 
 let namespacesCache: Array<{
