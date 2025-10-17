@@ -12,8 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Cloud } from 'lucide-react';
 import { AWSTypes } from '@/types';
 import { Page } from '@/types';
-import ContentWithMenu from '../../components/ContentWithMenu';
-import { getAccountsCached } from './accountsCache';
+import ContentWithMenu from '../../../components/ContentWithMenu';
+import { getAccountsCached } from '../utils/accountsCache';
 
 interface AWSWithAccountSelectorProps {
   pages: Page[];

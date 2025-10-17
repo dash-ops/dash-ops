@@ -11,20 +11,25 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getInstances, startInstance, stopInstance } from './instanceResource';
-import Refresh from '../../components/Refresh';
+import { getInstances, startInstance, stopInstance } from '../../resources/instanceResource';
+import Refresh from '../../../../components/Refresh';
 import InstanceActions from './InstanceActions';
 import InstanceTag from './InstanceTag';
 import { AWSTypes } from '@/types';
 
-const INITIAL_STATE: AWSTypes.InstanceState = { data: [], loading: false };
+interface ComponentInstanceState {
+  data: AWSTypes.Instance[];
+  loading: boolean;
+}
+
+const INITIAL_STATE: ComponentInstanceState = { data: [], loading: false };
 const LOADING = 'LOADING';
 const SET_DATA = 'SET_DATA';
 
 function reducer(
-  state: AWSTypes.InstanceState,
+  state: ComponentInstanceState,
   action: AWSTypes.InstanceAction
-): AWSTypes.InstanceState {
+): ComponentInstanceState {
   switch (action.type) {
     case LOADING:
       return { ...state, loading: true, data: [] };

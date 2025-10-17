@@ -1,5 +1,5 @@
 import http from '../../../helpers/http';
-import { getInstances, startInstance, stopInstance } from '../instanceResource';
+import { getInstances, startInstance, stopInstance } from '../resources/instanceResource';
 
 vi.mock('../../../helpers/http');
 

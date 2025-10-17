@@ -1,5 +1,5 @@
 import { AWSTypes } from '@/types';
-import { getAccounts } from './accountResource';
+import { getAccounts } from '../resources/accountResource';
 
 let accountsCache: AWSTypes.Account[] | null = null;
 let loadingPromise: Promise<AWSTypes.Account[]> | null = null;

@@ -13,12 +13,16 @@ const instanceStyles: Record<InstanceState, string> = {
 };
 
 function InstanceTag({ state }: AWSTypes.InstanceTagProps): JSX.Element {
+  // Handle both string and object state formats
+  const stateName = typeof state === 'string' ? state : state.name;
+  const stateCode = typeof state === 'string' ? undefined : state.code;
+  
   return (
     <Badge
       variant="outline"
-      className={cn('capitalize', instanceStyles[state as InstanceState])}
+      className={cn('capitalize', instanceStyles[stateName as InstanceState])}
     >
-      {state}
+      {stateName}
     </Badge>
   );
 }
