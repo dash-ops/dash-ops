@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useInstances } from '../hooks/useInstances';
 import * as instanceResource from '../resources/instanceResource';
 import * as instanceAdapter from '../adapters/instanceAdapter';
@@ -33,7 +33,7 @@ describe('useInstances', () => {
         cost_estimate: 0,
       },
     ],
-  };
+  } as any;
 
   const mockTransformedInstance = {
     id: 'i-1',
@@ -51,15 +51,15 @@ describe('useInstances', () => {
     account: 'prod',
     region: 'us-east-1',
     cost_estimate: 0,
-  };
+  } as any;
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should fetch instances on mount', async () => {
-    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse);
-    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance]);
+    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse as any);
+    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance] as any);
 
     const { result } = renderHook(() => useInstances(mockFilter));
 
@@ -100,8 +100,8 @@ describe('useInstances', () => {
   });
 
   it('should refresh instances when refresh is called', async () => {
-    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse);
-    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance]);
+    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse as any);
+    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance] as any);
 
     const { result } = renderHook(() => useInstances(mockFilter));
 
@@ -111,21 +111,23 @@ describe('useInstances', () => {
 
     // Clear previous calls
     vi.clearAllMocks();
-    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse);
-    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance]);
+    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse as any);
+    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance] as any);
 
     // Call refresh
-    await result.current.refresh();
+    await act(async () => {
+      await result.current.refresh();
+    });
 
     expect(instanceResource.getInstances).toHaveBeenCalledWith(mockFilter);
     expect(result.current.instances).toEqual([mockTransformedInstance]);
   });
 
   it('should start instance successfully', async () => {
-    const mockStartResponse = { data: { current_state: 'running' } };
-    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse);
-    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance]);
-    vi.mocked(instanceResource.startInstance).mockResolvedValue(mockStartResponse);
+    const mockStartResponse = { data: { current_state: 'running' } } as any;
+    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse as any);
+    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance] as any);
+    vi.mocked(instanceResource.startInstance).mockResolvedValue(mockStartResponse as any);
 
     const { result } = renderHook(() => useInstances(mockFilter));
 
@@ -135,21 +137,22 @@ describe('useInstances', () => {
 
     // Clear previous calls
     vi.clearAllMocks();
-    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse);
-    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance]);
+    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse as any);
+    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance] as any);
 
-    await result.current.startInstance('i-1');
+    await act(async () => {
+      await result.current.startInstance('i-1');
+    });
 
     expect(instanceResource.startInstance).toHaveBeenCalledWith('prod', 'i-1');
     expect(instanceResource.getInstances).toHaveBeenCalledWith(mockFilter);
   });
 
-
   it('should stop instance successfully', async () => {
-    const mockStopResponse = { data: { current_state: 'stopped' } };
-    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse);
-    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance]);
-    vi.mocked(instanceResource.stopInstance).mockResolvedValue(mockStopResponse);
+    const mockStopResponse = { data: { current_state: 'stopped' } } as any;
+    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse as any);
+    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance] as any);
+    vi.mocked(instanceResource.stopInstance).mockResolvedValue(mockStopResponse as any);
 
     const { result } = renderHook(() => useInstances(mockFilter));
 
@@ -159,20 +162,21 @@ describe('useInstances', () => {
 
     // Clear previous calls
     vi.clearAllMocks();
-    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse);
-    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance]);
+    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse as any);
+    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance] as any);
 
-    await result.current.stopInstance('i-1');
+    await act(async () => {
+      await result.current.stopInstance('i-1');
+    });
 
     expect(instanceResource.stopInstance).toHaveBeenCalledWith('prod', 'i-1');
     expect(instanceResource.getInstances).toHaveBeenCalledWith(mockFilter);
   });
 
-
   it('should refetch instances when filter changes', async () => {
     const newFilter = { accountKey: 'staging' };
-    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse);
-    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance]);
+    vi.mocked(instanceResource.getInstances).mockResolvedValue(mockApiResponse as any);
+    vi.mocked(instanceAdapter.transformInstancesToDomain).mockReturnValue([mockTransformedInstance] as any);
 
     const { result, rerender } = renderHook(
       ({ filter }) => useInstances(filter),
@@ -184,7 +188,9 @@ describe('useInstances', () => {
     });
 
     // Change filter
-    rerender({ filter: newFilter });
+    await act(async () => {
+      rerender({ filter: newFilter });
+    });
 
     expect(instanceResource.getInstances).toHaveBeenCalledWith(newFilter);
   });

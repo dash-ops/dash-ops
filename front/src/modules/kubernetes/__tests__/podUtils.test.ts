@@ -12,10 +12,10 @@ import {
   getPodContainerCount,
   getRunningContainerCount,
 } from '../utils/podUtils';
-import { KubernetesTypes } from '../types';
+import type { Pod } from '../types';
 
 describe('podUtils', () => {
-  const mockPod: KubernetesTypes.Pod = {
+  const mockPod: Pod = {
     id: 'pod-1',
     name: 'test-pod',
     namespace: 'default',

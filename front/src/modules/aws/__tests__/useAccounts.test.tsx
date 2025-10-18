@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { useAccounts } from '../hooks/useAccounts';
 import * as accountResource from '../resources/accountResource';
 
@@ -26,14 +26,14 @@ describe('useAccounts', () => {
         status: 'active',
       },
     ],
-  };
+  } as any;
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should fetch accounts on mount', async () => {
-    vi.mocked(accountResource.getAccounts).mockResolvedValue(mockApiResponse);
+    vi.mocked(accountResource.getAccounts).mockResolvedValue(mockApiResponse as any);
 
     const { result } = renderHook(() => useAccounts());
 
@@ -65,7 +65,7 @@ describe('useAccounts', () => {
   });
 
   it('should refresh accounts when refresh is called', async () => {
-    vi.mocked(accountResource.getAccounts).mockResolvedValue(mockApiResponse);
+    vi.mocked(accountResource.getAccounts).mockResolvedValue(mockApiResponse as any);
 
     const { result } = renderHook(() => useAccounts());
 
@@ -75,10 +75,12 @@ describe('useAccounts', () => {
 
     // Clear previous calls
     vi.clearAllMocks();
-    vi.mocked(accountResource.getAccounts).mockResolvedValue(mockApiResponse);
+    vi.mocked(accountResource.getAccounts).mockResolvedValue(mockApiResponse as any);
 
-    // Call refresh
-    await result.current.refresh();
+    // Call refresh wrapped in act
+    await act(async () => {
+      await result.current.refresh();
+    });
 
     expect(accountResource.getAccounts).toHaveBeenCalledWith();
     expect(result.current.accounts).toEqual(mockApiResponse.data);
@@ -86,7 +88,7 @@ describe('useAccounts', () => {
 
 
   it('should handle empty accounts response', async () => {
-    const emptyResponse = { data: [] };
+    const emptyResponse = { data: [] } as any;
     vi.mocked(accountResource.getAccounts).mockResolvedValue(emptyResponse);
 
     const { result } = renderHook(() => useAccounts());
@@ -100,7 +102,7 @@ describe('useAccounts', () => {
   });
 
   it('should handle undefined accounts in response', async () => {
-    const responseWithUndefinedAccounts = { data: undefined as any };
+    const responseWithUndefinedAccounts = { data: undefined as any } as any;
     vi.mocked(accountResource.getAccounts).mockResolvedValue(responseWithUndefinedAccounts);
 
     const { result } = renderHook(() => useAccounts());
