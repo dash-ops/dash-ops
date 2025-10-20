@@ -1,5 +1,5 @@
 import http from '../../../helpers/http';
-import { getUserData } from '../userResource';
+import { getUserData } from '../resources/userResource';
 
 vi.mock('../../../helpers/http');
 

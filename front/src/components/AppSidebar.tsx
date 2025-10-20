@@ -33,7 +33,7 @@ import {
 import {
   getUserData,
   getUserPermissions,
-} from '../modules/oauth2/userResource';
+} from '../modules/oauth2/resources/userResource';
 import { cleanToken } from '../helpers/oauth';
 import { AuthTypes, Menu } from '@/types';
 
