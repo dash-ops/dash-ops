@@ -1,10 +1,10 @@
 import { render, screen, cleanup, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import * as userResource from '../modules/oauth2/userResource';
+import * as userResource from '../modules/oauth2/resources/userResource';
 import * as oauth from '../helpers/oauth';
 import App from '../App';
 
-vi.mock('../modules/oauth2/userResource');
+vi.mock('../modules/oauth2/resources/userResource');
 vi.mock('../helpers/oauth');
 
 afterEach(cleanup);

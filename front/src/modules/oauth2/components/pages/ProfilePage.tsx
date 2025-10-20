@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { User, Settings, Github, Edit, Key } from 'lucide-react';
-import { getUserData, getUserPermissions } from './userResource';
+import { getUserData, getUserPermissions } from '../../resources/userResource';
 import { AuthTypes } from '@/types';
 
 function ProfilePage(): JSX.Element {
