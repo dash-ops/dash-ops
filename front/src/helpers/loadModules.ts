@@ -25,6 +25,7 @@ export function loadModulesConfig(): Promise<LoadedModulesConfig> {
         kubernetes: 'kubernetes',
         aws: 'aws',
         config: 'config',
+        observability: 'observability',
       };
 
       const moduleNameLower = pluginName.toLowerCase();
