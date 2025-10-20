@@ -6,40 +6,40 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '../../components/ui/dialog';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Badge } from '../../components/ui/badge';
+} from '../../../../components/ui/dialog';
+import { Button } from '../../../../components/ui/button';
+import { Input } from '../../../../components/ui/input';
+import { Label } from '../../../../components/ui/label';
+import { Badge } from '../../../../components/ui/badge';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../components/ui/select';
+} from '../../../../components/ui/select';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from '../../components/ui/card';
+} from '../../../../components/ui/card';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '../../components/ui/tabs';
-import { ScrollArea } from '../../components/ui/scroll-area';
-import { Separator } from '../../components/ui/separator';
+} from '../../../../components/ui/tabs';
+import { ScrollArea } from '../../../../components/ui/scroll-area';
+import { Separator } from '../../../../components/ui/separator';
 import { toast } from 'sonner';
 import { Plus, X, Info, Server, Activity, Settings } from 'lucide-react';
 import {
   createService,
   updateService,
   getService,
-} from './serviceCatalogResource';
-import type { Service, ServiceFormModalProps, ServiceFormData } from './types';
+} from '../../resources/serviceResource';
+import type { Service, ServiceFormModalProps, ServiceFormData } from '../../types';
 
 export function ServiceFormModal({
   open,
