@@ -1,5 +1,5 @@
 import { Layers3 } from 'lucide-react';
-import { ServicesCatalogPage } from './ServicesCatalogPage';
+import { ServicesCatalogPage } from './components/ServicesCatalogPage';
 import { Menu, ModuleConfig } from '@/types';
 
 const ServiceCatalogModule = async (): Promise<ModuleConfig> => {
@@ -31,6 +31,5 @@ const ServiceCatalogModule = async (): Promise<ModuleConfig> => {
 
 export default ServiceCatalogModule;
 
-// Export types and resources for use in other modules
+// Export only public types for external use
 export * from './types';
-export * from './serviceCatalogResource';

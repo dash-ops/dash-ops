@@ -6,18 +6,18 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Badge } from '../../components/ui/badge';
-import { Avatar, AvatarFallback } from '../../components/ui/avatar';
+} from '../../../components/ui/card';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Badge } from '../../../components/ui/badge';
+import { Avatar, AvatarFallback } from '../../../components/ui/avatar';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../components/ui/select';
+} from '../../../components/ui/select';
 import {
   Plus,
   Search,
@@ -32,10 +32,10 @@ import {
   Container,
   RefreshCw,
 } from 'lucide-react';
-import { cn } from '../../lib/utils';
-import type { Service, ServiceHealth, ServiceStats } from './types';
-import { getServices, getServiceHealthBatch } from './serviceCatalogResource';
-import { ServiceFormModal } from './ServiceFormModal';
+import { cn } from '../../../lib/utils';
+import type { Service, ServiceHealth, ServiceStats } from '../types';
+import { getServices, getServiceHealthBatch } from '../resources/serviceResource';
+import { ServiceFormModal } from './forms/ServiceFormModal';
 
 export function ServicesCatalogPage() {
   const [services, setServices] = useState<Service[]>([]);
