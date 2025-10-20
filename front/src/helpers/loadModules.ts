@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import { getPlugins } from '../modules/config/configResource';
+import { getPlugins } from '../modules/config/resources/configResource';
 import {
   Menu,
   Router,

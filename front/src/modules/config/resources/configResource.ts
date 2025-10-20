@@ -1,4 +1,4 @@
-import http from '../../helpers/http';
+import http from '../../../helpers/http';
 import { AxiosResponse } from 'axios';
 
 export function getPlugins(): Promise<AxiosResponse<string[]>> {
