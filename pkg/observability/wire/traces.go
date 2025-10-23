@@ -150,12 +150,12 @@ type TempoSpan struct {
 
 // TempoSearchMetrics represents metrics from Tempo search
 type TempoSearchMetrics struct {
-	InspectedTraces int64 `json:"inspectedTraces,omitempty"`
-	InspectedBytes  int64 `json:"inspectedBytes,omitempty"`
-	InspectedBlocks int64 `json:"inspectedBlocks,omitempty"`
-	TotalBlockBytes int64 `json:"totalBlockBytes,omitempty"`
-	CompletedJobs   int64 `json:"completedJobs,omitempty"`
-	TotalJobs       int64 `json:"totalJobs,omitempty"`
+	InspectedTraces int64  `json:"inspectedTraces,omitempty"`
+	InspectedBytes  string `json:"inspectedBytes,omitempty"` // Tempo returns this as string
+	InspectedBlocks int64  `json:"inspectedBlocks,omitempty"`
+	TotalBlockBytes string `json:"totalBlockBytes,omitempty"` // Tempo returns this as string
+	CompletedJobs   int64  `json:"completedJobs,omitempty"`
+	TotalJobs       int64  `json:"totalJobs,omitempty"`
 }
 
 // TempoTraceByIDResponse represents the response from Tempo's /api/traces/{traceID} endpoint
