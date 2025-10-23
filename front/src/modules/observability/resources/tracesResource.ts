@@ -11,6 +11,7 @@ export const getTraces = async (
     service: filters.service,
     status: filters.status === 'all' ? undefined : filters.status,
     search: filters.search,
+    provider: filters.provider,
     durationMinMs: filters.durationMinMs,
     durationMaxMs: filters.durationMaxMs,
     from: filters.from,
@@ -19,7 +20,11 @@ export const getTraces = async (
     page: filters.page,
   };
 
-  return http.get(`${BASE_URL}/traces`, { params });
+  const response = await http.get(`${BASE_URL}/traces`, { params });
+  return {
+    ...response,
+    data: response.data.data
+  };
 };
 
 export const getTraceSpans = async (

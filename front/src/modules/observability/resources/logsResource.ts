@@ -11,13 +11,18 @@ export const getLogs = async (
     service: filters.service,
     level: filters.level === 'all' ? undefined : filters.level,
     search: filters.search,
+    provider: filters.provider,
     from: filters.from,
     to: filters.to,
     limit: filters.limit,
     page: filters.page,
   };
 
-  return http.get(`${BASE_URL}/logs`, { params });
+  const response = await http.get(`${BASE_URL}/logs`, { params });
+  return {
+    ...response,
+    data: response.data.data
+  };
 };
 
 
