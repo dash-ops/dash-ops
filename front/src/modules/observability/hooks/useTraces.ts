@@ -13,7 +13,7 @@ interface UseTracesState {
 export const useTraces = (initialFilters: TracesQueryFilters) => {
   const [filters, setFilters] = useState<TracesQueryFilters>(initialFilters);
   const [state, setState] = useState<UseTracesState>({
-    data: { items: [], total: 0, page: 1, pageSize: 0 },
+    data: { traces: [], total: 0, page: 1, pageSize: 0 },
     spans: [],
     loading: false,
     error: null,
@@ -23,8 +23,8 @@ export const useTraces = (initialFilters: TracesQueryFilters) => {
     try {
       setState((s) => ({ ...s, loading: true, error: null }));
       const resp = await tracesResource.getTraces(filters);
-      const items = (resp.data.items || []).map(tracesAdapter.transformTraceInfoToDomain);
-      setState({ data: { ...resp.data, items }, spans: [], loading: false, error: null });
+      const traces = (resp.data.traces || []).map(tracesAdapter.transformTraceInfoToDomain);
+      setState({ data: { ...resp.data, traces }, spans: [], loading: false, error: null });
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Failed to fetch traces';
       setState((s) => ({ ...s, loading: false, error: message }));
