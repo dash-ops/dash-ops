@@ -7,13 +7,14 @@ export const transformTraceInfoToDomain = (apiTrace: any): TraceInfo => {
 
   return {
     traceId: apiTrace.traceId ?? apiTrace.trace_id ?? '',
-    rootOperation: apiTrace.rootOperation ?? apiTrace.operation ?? spans[0]?.operationName ?? 'unknown',
+    rootOperation: apiTrace.rootOperation ?? apiTrace.root_operation ?? apiTrace.operation ?? spans[0]?.operationName ?? 'unknown',
     totalDuration: apiTrace.totalDuration ?? apiTrace.duration ?? 0,
     spanCount: apiTrace.spanCount ?? spans.length ?? 0,
     serviceCount: apiTrace.serviceCount ?? services.size ?? 0,
     status: mapStatus(apiTrace.status ?? (hasErrors ? 'error' : 'ok')),
     timestamp: apiTrace.timestamp ?? Date.now(),
-    errors: apiTrace.errors ?? spans.filter((s) => mapStatus(s.status) === 'error').length ?? 0,
+    errors: apiTrace.errors ?? apiTrace.error_count ?? spans.filter((s) => mapStatus(s.status) === 'error').length ?? 0,
+    name: apiTrace.name ?? apiTrace.rootOperation ?? apiTrace.root_operation ?? 'unknown',
     created_at: apiTrace.created_at,
     updated_at: apiTrace.updated_at,
   } as TraceInfo;
@@ -31,6 +32,7 @@ export const transformTraceSpanToDomain = (apiSpan: any): TraceSpan => {
     tags: apiSpan.tags ?? {},
     parentId: apiSpan.parentId ?? apiSpan.parent_id,
     depth: apiSpan.depth,
+    name: apiSpan.name ?? apiSpan.operationName ?? apiSpan.operation ?? 'unknown',
     created_at: apiSpan.created_at,
     updated_at: apiSpan.updated_at,
   } as TraceSpan;
