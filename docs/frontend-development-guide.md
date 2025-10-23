@@ -204,16 +204,77 @@ describe('instanceAdapter', () => {
 });
 ```
 
-### `index.tsx`
-- Main module export file
-- Export only what external consumers need
-- Maintain proper encapsulation
+### `index.tsx` (Module entry)
+- Define and export the module's `ModuleConfig` (menus, routers) via a default export.
+- Keep exports limited to public `types` and the default module loader.
+- Components and hooks remain internal unless explicitly needed outside the module.
 
 ```typescript
-// Example: AWS module index.tsx
+// modules/{module}/index.tsx
+import type { ModuleConfig, Menu } from '@/types';
+import PageA from './components/a/PageA';
+import PageB from './components/b/PageB';
+
+const Module = async (): Promise<ModuleConfig> => {
+  const menu: Menu = {
+    group: 'My Module',
+    items: [
+      { key: 'a', label: 'A', path: '/module/a' },
+      { key: 'b', label: 'B', path: '/module/b' },
+    ],
+  };
+
+  const routers = [
+    { key: 'module-a', path: '/module/a', element: PageA },
+    { key: 'module-b', path: '/module/b', element: PageB },
+  ];
+
+  return { menus: [menu], routers };
+};
+
+export default Module;
 export * from './types';
-// Export only necessary components and hooks
-export { default as InstancePage } from './components/instances/InstancePage';
+```
+
+### Module loading (`helpers/loadModules.ts`)
+- Modules are discovered from the Config plugin (`/config/plugins`) and dynamically imported.
+- The loader tries `index.tsx` first, then `index.ts`.
+- A mapping normalizes plugin names to folder names (e.g., `servicecatalog` -> `service-catalog`).
+
+```typescript
+// helpers/loadModules.ts (excerpt)
+import { getPlugins } from '../modules/config/resources/configResource';
+import type { ModuleConfig, LoadedModulesConfig } from '@/types';
+
+export function loadModulesConfig(): Promise<LoadedModulesConfig> {
+  return getPlugins().then(({ data }) => {
+    const valid = data.filter((p) => p && p.trim() !== '');
+
+    const pluginToFolderMap: Record<string, string> = {
+      servicecatalog: 'service-catalog',
+      auth: 'oauth2',
+      kubernetes: 'kubernetes',
+      aws: 'aws',
+      config: 'config',
+      observability: 'observability',
+    };
+
+    const imports = valid.map((name) => {
+      const folder = pluginToFolderMap[name.toLowerCase()] || name.toLowerCase();
+      const tryImport = (ext: string): Promise<ModuleConfig> =>
+        import(`../modules/${folder}/index.${ext}`).then((m) =>
+          typeof m.default === 'function' ? m.default() : (m.default as ModuleConfig)
+        );
+      return tryImport('tsx').catch(() => tryImport('ts'));
+    });
+
+    return Promise.all(imports).then((configs) => ({
+      auth: configs.find((c) => c.auth)?.auth ?? { active: false },
+      menus: configs.flatMap((c) => c.menus ?? []),
+      routers: configs.flatMap((c) => c.routers ?? []),
+    }));
+  });
+}
 ```
 
 ## Testing Strategy
