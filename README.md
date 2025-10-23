@@ -112,9 +112,18 @@ DashOPS is built as an **Integration Hub** that connects your existing tools wit
 
 ## 🎯 Features
 
-### **🆕 Latest Updates (v0.3.0-beta)**
+### **🆕 Latest Updates (v0.4.0-beta)**
 
-**New Service Catalog Plugin:**
+**New Observability Module:**
+
+- ✅ **ObservabilityPage** - Unified interface with global header and tab navigation
+- ✅ **Logs Integration** - Loki integration with histogram visualization, advanced filters, and expandable rows
+- ✅ **Traces Integration** - Tempo integration with trace listing, span details, and timeline view
+- ✅ **Provider Selector** - Support for multiple observability backends (Loki, Tempo, Prometheus)
+- ✅ **Service Context Integration** - Automatic filtering based on selected services
+- ✅ **Backend APIs** - Complete observability API endpoints (/api/v1/observability/*)
+
+**Enhanced Service Catalog Plugin:**
 
 - ✅ **Service Registry** - Complete CRUD for service definitions with modern tabbed UI
 - ✅ **Kubernetes Health Integration** - Real-time service health from K8s deployments
@@ -128,12 +137,6 @@ DashOPS is built as an **Integration Hub** that connects your existing tools wit
 - ✅ **Color Themes** - 9 pre-built color palettes (Neutral, Red, Rose, Orange, Green, Blue, Yellow, Violet, Slate)
 - ✅ **Persistence** - Theme preferences saved to localStorage
 - ✅ **Responsive Logo** - Logo adapts to selected theme and mode
-
-**Plugin UI Improvements:**
-
-- ✅ **Kubernetes** - Single sidebar menu, optimized caching, modern pod/deployment interfaces
-- ✅ **AWS** - Unified account selector, performance optimizations
-- ✅ **All Plugins** - Consistent visual design, improved loading states
 
 ### **Core Features**
 
@@ -166,20 +169,23 @@ DashOPS is built as an **Integration Hub** that connects your existing tools wit
 - **Session Management** - Secure token handling
 - **Audit Logging** - Track all operations
 
-### **📊 Dashboard & Monitoring**
+### **📊 Observability & Monitoring**
 
-- **Unified Dashboard** - Cross-platform overview
-- **Real-time Metrics** - Live system status
-- **Resource Utilization** - Performance insights
+- **Logs Management** - Loki integration with histogram visualization and advanced filtering
+- **Distributed Tracing** - Tempo integration with trace search and span analysis
+- **Metrics Integration** - Prometheus integration (backend complete, frontend in development)
+- **Service-aware Monitoring** - Automatic filtering based on service context
+- **Provider Support** - Multiple observability backends with unified interface
 
 ### **🔮 Planned Features (Integration Roadmap)**
 
-#### **Phase 2 - Observability Hub (Q2 2025)**
+#### **Phase 2 - Observability Hub** ✅ **CONCLUÍDA v0.1**
 
-- **📊 Grafana Integration** - Embedded dashboards with service filtering
-- **📈 Prometheus Integration** - Metrics aggregation with AI insights
-- **🔍 Loki Integration** - Log search with service context
-- **🤖 AI Assistant V1** - Troubleshooting automation
+- ✅ **🔍 Loki Integration** - Log search with service context, histogram, and advanced filtering
+- ✅ **📊 Tempo Integration** - Trace search and timeline visualization with spans
+- ✅ **📈 Prometheus Integration** - Metrics aggregation (backend complete, frontend in development)
+- 🔄 **📊 Grafana Integration** - Embedded dashboards with service filtering (next version)
+- 🔄 **🤖 AI Assistant V1** - Troubleshooting automation (in development)
 
 #### **Phase 3 - Pipeline Hub (Q3 2025)**
 
@@ -519,8 +525,8 @@ See [Plugin Development Guide](./docs/plugins/README.md) for detailed instructio
 | **Docker Images**      | ✅ Available   | Multi-arch Support - Testing only      |
 | **Helm Charts**        | 🔄 Alpha       | K8s Deployment - Development only      |
 | **Documentation**      | 🔄 In Progress | Comprehensive Guides                   |
-| **Service Catalog**    | 📋 Planned     | Q3 2025- Service lifecycle management  |
-| **Observability**      | 📋 Planned     | Q4 2025 - Monitoring integrations      |
+| **Service Catalog**    | ✅ Available   | Complete service lifecycle management   |
+| **Observability**      | ✅ Beta        | Logs & Traces integration - v0.1        |
 | **FinOps Integration** | 📋 Planned     | Q1 2026 - Cost management              |
 
 ### **Production Readiness**
