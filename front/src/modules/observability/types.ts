@@ -17,6 +17,7 @@ export interface LogsQueryFilters {
   service?: string;
   level?: LogEntry['level'] | 'all';
   search?: string;
+  provider?: string;
   from?: string; // ISO
   to?: string;   // ISO
   limit?: number;
@@ -58,6 +59,7 @@ export interface TracesQueryFilters {
   service?: string;
   status?: 'ok' | 'error' | 'all';
   search?: string; // by traceId, operation, tags
+  provider?: string;
   durationMinMs?: number;
   durationMaxMs?: number;
   from?: string; // ISO
@@ -67,9 +69,9 @@ export interface TracesQueryFilters {
 }
 
 export interface TracesResponse {
-  items: TraceInfo[];
+  traces: TraceInfo[];
   total: number;
-  page: number;
-  pageSize: number;
+  page?: number;
+  pageSize?: number;
 }
 
