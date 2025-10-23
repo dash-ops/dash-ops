@@ -9,21 +9,24 @@ export default function TracesPage(): JSX.Element {
   const [search, setSearch] = useState('');
   const [service, setService] = useState('all');
   const [status, setStatus] = useState<'all' | 'ok' | 'error'>('all');
+  const [provider, setProvider] = useState('tempo-local');
 
   const initialFilters: TracesQueryFilters = useMemo(
-    () => ({ status: 'all', limit: 50, page: 1 }),
+    () => ({ status: 'all', limit: 50, page: 1, provider: 'tempo-local' }),
     []
   );
 
   const { data, spans, loading, error, updateFilters, statuses, fetchTraceSpans } = useTraces(initialFilters);
 
   const onApplyFilters = () => {
-    updateFilters({
-      service: service === 'all' ? undefined : service,
+    const partial: Partial<TracesQueryFilters> = {
       status,
-      search: search || undefined,
+      provider,
       page: 1,
-    });
+    };
+    if (service !== 'all') partial.service = service;
+    if (search) partial.search = search;
+    updateFilters(partial);
   };
 
   return (
@@ -44,6 +47,13 @@ export default function TracesPage(): JSX.Element {
               value={service}
               onChange={(e) => setService(e.target.value)}
             />
+            <select
+              className="border rounded px-2"
+              value={provider}
+              onChange={(e) => setProvider(e.target.value)}
+            >
+              <option value="tempo-local">Tempo Local</option>
+            </select>
             <select
               className="border rounded px-2"
               value={status}
@@ -68,7 +78,7 @@ export default function TracesPage(): JSX.Element {
             <div className="border rounded p-2">
               <div className="font-medium mb-2">Trace List</div>
               <div className="space-y-2">
-                {data.items.map((trace) => (
+                {data.traces?.map((trace) => (
                   <div
                     key={trace.traceId}
                     className="p-2 border rounded cursor-pointer hover:bg-muted/50"
@@ -76,19 +86,19 @@ export default function TracesPage(): JSX.Element {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <Badge variant={trace.status === 'error' ? 'destructive' : 'secondary'}>
-                          {trace.status.toUpperCase()}
+                        <Badge variant={trace.errors > 0 ? 'destructive' : 'secondary'}>
+                          {trace.errors > 0 ? 'ERROR' : 'OK'}
                         </Badge>
                         <span className="font-mono text-xs">{trace.traceId}</span>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {Math.round(trace.totalDuration)} ms
+                        {Math.round(trace.totalDuration / 1000000)} ms
                       </div>
                     </div>
                     <div className="text-sm text-muted-foreground">{trace.rootOperation}</div>
                   </div>
                 ))}
-                {!loading && data.items.length === 0 && (
+                {!loading && (!data.traces || data.traces.length === 0) && (
                   <div className="text-center py-6 text-muted-foreground">No traces</div>
                 )}
               </div>
