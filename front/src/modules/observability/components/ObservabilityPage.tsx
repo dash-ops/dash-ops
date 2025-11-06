@@ -1,22 +1,20 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  Calendar, 
-  RefreshCw, 
-  Play, 
-  Pause, 
   FileText, 
   GitBranch 
 } from 'lucide-react';
+import TimeRangePicker, { type TimeRange } from '@/components/TimeRangePicker';
 import LogsPage from './logs/LogsPage';
 import TracesPage from './traces/TracesPage';
 
 export default function ObservabilityPage(): JSX.Element {
-  const [selectedService, setSelectedService] = useState<string>('all');
-  const [timeRange, setTimeRange] = useState<string>('1h');
-  const [isAutoRefresh, setIsAutoRefresh] = useState(true);
+  const [timeRange, setTimeRange] = useState<TimeRange>({ 
+    value: '1h', 
+    label: 'Last hour',
+    from: new Date(Date.now() - 60 * 60 * 1000),
+    to: new Date(),
+  });
   const [activeTab, setActiveTab] = useState<string>('logs');
 
   return (
@@ -44,52 +42,8 @@ export default function ObservabilityPage(): JSX.Element {
         </div>
 
         {/* Global Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Select value={selectedService} onValueChange={setSelectedService}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select Service" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Services</SelectItem>
-              {/* TODO: Add dynamic services from API */}
-            </SelectContent>
-          </Select>
-
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5m">Last 5 minutes</SelectItem>
-              <SelectItem value="15m">Last 15 minutes</SelectItem>
-              <SelectItem value="1h">Last hour</SelectItem>
-              <SelectItem value="6h">Last 6 hours</SelectItem>
-              <SelectItem value="24h">Last 24 hours</SelectItem>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <div className="flex items-center gap-2">
-            <Button
-              variant={isAutoRefresh ? "default" : "outline"}
-              size="sm"
-              onClick={() => setIsAutoRefresh(!isAutoRefresh)}
-              className="gap-2"
-            >
-              {isAutoRefresh ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              {isAutoRefresh ? 'Live' : 'Paused'}
-            </Button>
-            <Button variant="outline" size="sm" className="gap-2">
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Calendar className="h-4 w-4" />
-              Custom Range
-            </Button>
-          </div>
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-end">
+          <TimeRangePicker value={timeRange} onChange={setTimeRange} />
         </div>
       </div>
 
