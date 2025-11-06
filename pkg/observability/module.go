@@ -119,3 +119,21 @@ func (m *Module) RegisterRoutes(router *mux.Router) {
 	}
 	m.Handler.RegisterRoutes(router)
 }
+
+// LoadDependencies loads dependencies between modules after all modules are initialized
+func (m *Module) LoadDependencies(modules map[string]interface{}) error {
+	// Load service-catalog dependency if available
+	if scModule, exists := modules["service-catalog"]; exists {
+		if sc, ok := scModule.(interface {
+			GetObservabilityAdapter() ports.ServiceContextRepository
+		}); ok {
+			if adapter := sc.GetObservabilityAdapter(); adapter != nil {
+				// Inject adapter into handler
+				if m.Handler != nil {
+					m.Handler.SetServiceContextRepository(adapter)
+				}
+			}
+		}
+	}
+	return nil
+}

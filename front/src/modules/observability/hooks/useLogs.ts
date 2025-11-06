@@ -9,7 +9,7 @@ interface UseLogsState {
   error: string | null;
 }
 
-export const useLogs = (initialFilters: LogsQueryFilters) => {
+export const useLogs = (initialFilters: LogsQueryFilters, autoFetch = false) => {
   const [filters, setFilters] = useState<LogsQueryFilters>(initialFilters);
   const [state, setState] = useState<UseLogsState>({
     data: { items: [], total: 0, page: 1, pageSize: 0 },
@@ -17,10 +17,11 @@ export const useLogs = (initialFilters: LogsQueryFilters) => {
     error: null,
   });
 
-  const fetchLogs = useCallback(async () => {
+  const fetchLogs = useCallback(async (customFilters?: LogsQueryFilters) => {
     try {
       setState((s) => ({ ...s, loading: true, error: null }));
-      const resp = await logsResource.getLogs(filters);
+      const filtersToUse = customFilters || filters;
+      const resp = await logsResource.getLogs(filtersToUse);
       const domain = logsAdapter.transformLogsResponseToDomain(resp.data);
       setState({ data: domain, loading: false, error: null });
     } catch (e: unknown) {
@@ -38,8 +39,10 @@ export const useLogs = (initialFilters: LogsQueryFilters) => {
   }, []);
 
   useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+    if (autoFetch) {
+      fetchLogs();
+    }
+  }, [fetchLogs, autoFetch]);
 
   const getLevels = useCallback((): Array<LogEntry['level'] | 'all'> => {
     return ['all', 'error', 'warn', 'info', 'debug'];

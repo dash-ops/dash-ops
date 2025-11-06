@@ -2,12 +2,15 @@ package tempo
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/dash-ops/dash-ops/pkg/observability/wire"
 )
@@ -48,10 +51,54 @@ func (c *TempoClient) search(ctx context.Context, params *wire.TempoQueryParams)
 	return &response, nil
 }
 
+// convertTraceIDToHex converts a base64 traceID to hexadecimal format (required by Tempo)
+func convertTraceIDToHex(traceID string) (string, error) {
+	// Remove URL encoding if present (e.g., %3D%3D -> ==)
+	decoded, err := url.QueryUnescape(traceID)
+	if err != nil {
+		decoded = traceID
+	}
+
+	// Check if already in hex format (only contains hex characters)
+	// If it contains non-hex characters, assume it's base64
+	if isHexString(decoded) {
+		return decoded, nil
+	}
+
+	// Decode from base64
+	bytes, err := base64.StdEncoding.DecodeString(strings.TrimRight(decoded, "="))
+	if err != nil {
+		// If decoding fails, try with padding
+		bytes, err = base64.StdEncoding.DecodeString(decoded)
+		if err != nil {
+			return "", fmt.Errorf("failed to decode traceID from base64: %w", err)
+		}
+	}
+
+	// Convert to hex
+	return hex.EncodeToString(bytes), nil
+}
+
+// isHexString checks if a string contains only hexadecimal characters
+func isHexString(s string) bool {
+	for _, c := range s {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return false
+		}
+	}
+	return len(s) > 0
+}
+
 // getTraceByID retrieves a trace by its ID
 func (c *TempoClient) getTraceByID(ctx context.Context, traceID string) (*wire.TempoTraceByIDResponse, error) {
+	// Convert traceID from base64 to hex (Tempo requires hex format)
+	hexTraceID, err := convertTraceIDToHex(traceID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert traceID to hex: %w", err)
+	}
+
 	// Build query URL
-	u := fmt.Sprintf("%s/api/traces/%s", c.baseURL, traceID)
+	u := fmt.Sprintf("%s/api/traces/%s", c.baseURL, hexTraceID)
 
 	// Execute request
 	var response wire.TempoTraceByIDResponse

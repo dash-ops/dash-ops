@@ -10,7 +10,7 @@ interface UseTracesState {
   error: string | null;
 }
 
-export const useTraces = (initialFilters: TracesQueryFilters) => {
+export const useTraces = (initialFilters: TracesQueryFilters, autoFetch = false) => {
   const [filters, setFilters] = useState<TracesQueryFilters>(initialFilters);
   const [state, setState] = useState<UseTracesState>({
     data: { traces: [], total: 0, page: 1, pageSize: 0 },
@@ -19,10 +19,11 @@ export const useTraces = (initialFilters: TracesQueryFilters) => {
     error: null,
   });
 
-  const fetchTraces = useCallback(async () => {
+  const fetchTraces = useCallback(async (customFilters?: TracesQueryFilters) => {
     try {
       setState((s) => ({ ...s, loading: true, error: null }));
-      const resp = await tracesResource.getTraces(filters);
+      const filtersToUse = customFilters || filters;
+      const resp = await tracesResource.getTraces(filtersToUse);
       const traces = (resp.data.traces || []).map(tracesAdapter.transformTraceInfoToDomain);
       setState({ data: { ...resp.data, traces }, spans: [], loading: false, error: null });
     } catch (e: unknown) {
@@ -52,8 +53,10 @@ export const useTraces = (initialFilters: TracesQueryFilters) => {
   }, []);
 
   useEffect(() => {
-    fetchTraces();
-  }, [fetchTraces]);
+    if (autoFetch) {
+      fetchTraces();
+    }
+  }, [fetchTraces, autoFetch]);
 
   const statuses = useMemo(() => ['all', 'ok', 'error'] as const, []);
 

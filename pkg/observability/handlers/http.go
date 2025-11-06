@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -22,16 +23,27 @@ import (
 // HTTPHandler handles HTTP requests for the observability module
 type HTTPHandler struct {
 	// Controllers
-	logsController    *controllers.LogsController
-	metricsController *controllers.MetricsController
-	tracesController  *controllers.TracesController
-	alertsController  *controllers.AlertsController
+	logsController           *controllers.LogsController
+	metricsController        *controllers.MetricsController
+	tracesController         *controllers.TracesController
+	alertsController         *controllers.AlertsController
+	serviceContextController *controllers.ServiceContextController
+	explorerController       *controllers.ExplorerController
+
+	// Service context for integration
+	serviceContextRepository ports.ServiceContextRepository
+
+	// Client maps for listing available providers
+	logsClients   map[string]ports.LogsClient
+	tracesClients map[string]ports.TracesClient
 
 	// Adapters (wire <-> models)
-	logsAdapter     *obsAdapters.LogsAdapter
-	tracesAdapter   *obsAdapters.TracesAdapter
-	responseAdapter *commonsHttp.ResponseAdapter
-	requestAdapter  *commonsHttp.RequestAdapter
+	logsAdapter           *obsAdapters.LogsAdapter
+	tracesAdapter         *obsAdapters.TracesAdapter
+	serviceContextAdapter *obsAdapters.ServiceContextAdapter
+	explorerAdapter       *obsAdapters.ExplorerAdapter
+	responseAdapter       *commonsHttp.ResponseAdapter
+	requestAdapter        *commonsHttp.RequestAdapter
 }
 
 // NewHTTPHandler creates a new HTTP handler with DI
@@ -53,6 +65,8 @@ func NewHTTPHandler(
 	// Initialize data transformation adapters
 	logsAdapter := obsAdapters.NewLogsAdapter()
 	tracesAdapter := obsAdapters.NewTracesAdapter()
+	serviceContextAdapter := obsAdapters.NewServiceContextAdapter()
+	explorerAdapter := obsAdapters.NewExplorerAdapter(logsAdapter, tracesAdapter)
 
 	// Initialize repositories with multiple clients
 	logsRepo := repositories.NewLogsRepository(logsClients)
@@ -87,15 +101,25 @@ func NewHTTPHandler(
 		alertProcessor,
 	)
 
+	serviceContextController := controllers.NewServiceContextController(nil) // Will be set via LoadDependencies
+	explorerController := controllers.NewExplorerController(logsClients, tracesClients)
+
 	return &HTTPHandler{
-		logsController:    logsController,
-		metricsController: metricsController,
-		tracesController:  tracesController,
-		alertsController:  alertsController,
-		logsAdapter:       logsAdapter,
-		tracesAdapter:     tracesAdapter,
-		responseAdapter:   responseAdapter,
-		requestAdapter:    requestAdapter,
+		logsController:           logsController,
+		metricsController:        metricsController,
+		tracesController:         tracesController,
+		alertsController:         alertsController,
+		serviceContextController: serviceContextController,
+		explorerController:       explorerController,
+		serviceContextRepository: nil, // Will be set via LoadDependencies
+		logsClients:              logsClients,
+		tracesClients:            tracesClients,
+		logsAdapter:              logsAdapter,
+		tracesAdapter:            tracesAdapter,
+		serviceContextAdapter:    serviceContextAdapter,
+		explorerAdapter:          explorerAdapter,
+		responseAdapter:          responseAdapter,
+		requestAdapter:           requestAdapter,
 	}
 }
 
@@ -125,6 +149,15 @@ func (h *HTTPHandler) RegisterRoutes(router *mux.Router) {
 	// Alerts endpoints
 	observabilityRouter.HandleFunc("/alerts", h.handleGetAlerts).Methods("GET")
 	observabilityRouter.HandleFunc("/alerts/silences", h.handleGetSilences).Methods("GET")
+
+	// Service context endpoints
+	observabilityRouter.HandleFunc("/services", h.handleGetServices).Methods("GET")
+
+	// Explorer endpoint
+	observabilityRouter.HandleFunc("/explorer", h.handleExplorerQuery).Methods("GET")
+
+	// Providers endpoint
+	observabilityRouter.HandleFunc("/providers", h.handleGetProviders).Methods("GET")
 }
 
 // handleGetLogs handles GET /observability/logs
@@ -419,4 +452,133 @@ func (h *HTTPHandler) handleGetSilences(w http.ResponseWriter, r *http.Request) 
 		"message": "Silences endpoint - to be implemented",
 		"data":    []interface{}{},
 	})
+}
+
+// SetServiceContextRepository sets the service context repository for service-catalog integration
+func (h *HTTPHandler) SetServiceContextRepository(repo ports.ServiceContextRepository) {
+	h.serviceContextRepository = repo
+	// Update service context controller with repository
+	if h.serviceContextController != nil {
+		h.serviceContextController = controllers.NewServiceContextController(repo)
+	}
+}
+
+// handleGetServices handles GET /observability/services
+func (h *HTTPHandler) handleGetServices(w http.ResponseWriter, r *http.Request) {
+	// Parse query parameters to wire.ServicesWithContextRequest
+	queryParams := r.URL.Query()
+
+	wireReq := &wire.ServicesWithContextRequest{
+		Search: queryParams.Get("search"),
+	}
+
+	// Parse limit
+	if limitStr := queryParams.Get("limit"); limitStr != "" {
+		if limit, err := strconv.Atoi(limitStr); err == nil && limit > 0 {
+			wireReq.Limit = limit
+		}
+	}
+	if wireReq.Limit == 0 {
+		wireReq.Limit = 50 // default
+	}
+
+	// Parse offset
+	if offsetStr := queryParams.Get("offset"); offsetStr != "" {
+		if offset, err := strconv.Atoi(offsetStr); err == nil && offset >= 0 {
+			wireReq.Offset = offset
+		}
+	}
+
+	// Step 1: Transform wire -> model parameters using adapter
+	search, limit, offset := h.serviceContextAdapter.WireRequestToModel(wireReq)
+
+	// Step 2: Call controller with parameters
+	services, total, err := h.serviceContextController.GetServicesWithContext(r.Context(), search, limit, offset)
+	if err != nil {
+		// Step 3a: Transform error to wire response
+		wireResp := h.serviceContextAdapter.ErrorToWireResponse(err)
+		h.responseAdapter.WriteJSON(w, http.StatusInternalServerError, wireResp)
+		return
+	}
+
+	// Step 3b: Transform models -> wire using adapter
+	hasMore := offset+limit < total
+	wireResp := h.serviceContextAdapter.ModelToWireResponse(services, total, hasMore)
+
+	// Step 4: Return wire response
+	h.responseAdapter.WriteJSON(w, http.StatusOK, wireResp)
+}
+
+// handleExplorerQuery handles GET /observability/explorer
+func (h *HTTPHandler) handleExplorerQuery(w http.ResponseWriter, r *http.Request) {
+	// Parse query parameters to wire.ExplorerQueryRequest
+	queryParams := r.URL.Query()
+
+	wireReq := &wire.ExplorerQueryRequest{
+		Query:         queryParams.Get("query"),
+		TimeRangeFrom: queryParams.Get("time_range_from"),
+		TimeRangeTo:   queryParams.Get("time_range_to"),
+		Provider:      queryParams.Get("provider"),
+	}
+
+	// Validate required parameters
+	if wireReq.Query == "" {
+		wireResp := h.explorerAdapter.ErrorToWireResponse(fmt.Errorf("query parameter is required"))
+		h.responseAdapter.WriteJSON(w, http.StatusBadRequest, wireResp)
+		return
+	}
+
+	// Step 1: Transform wire -> model parameters using adapter
+	query, timeRangeFrom, timeRangeTo, provider := h.explorerAdapter.WireRequestToModel(wireReq)
+
+	// Step 2: Call controller
+	dataSource, results, total, executionTimeMs, err := h.explorerController.ExecuteQuery(
+		r.Context(),
+		query,
+		timeRangeFrom,
+		timeRangeTo,
+		provider,
+	)
+	if err != nil {
+		// Step 3a: Transform error to wire response
+		wireResp := h.explorerAdapter.ErrorToWireResponse(err)
+		h.responseAdapter.WriteJSON(w, http.StatusInternalServerError, wireResp)
+		return
+	}
+
+	// Step 3b: Transform models -> wire using adapter
+	wireResp := h.explorerAdapter.ModelToWireResponse(dataSource, results, total, query, executionTimeMs)
+
+	// Step 4: Return wire response
+	h.responseAdapter.WriteJSON(w, http.StatusOK, wireResp)
+}
+
+// handleGetProviders handles GET /observability/providers
+func (h *HTTPHandler) handleGetProviders(w http.ResponseWriter, r *http.Request) {
+	// Extract provider names from client maps
+	logsProviders := make([]string, 0, len(h.logsClients))
+	for name := range h.logsClients {
+		logsProviders = append(logsProviders, name)
+	}
+
+	tracesProviders := make([]string, 0, len(h.tracesClients))
+	for name := range h.tracesClients {
+		tracesProviders = append(tracesProviders, name)
+	}
+
+	// TODO: Add metricsProviders when metrics clients are implemented
+	metricsProviders := []string{}
+
+	wireResp := &wire.ProvidersResponse{
+		BaseResponse: wire.BaseResponse{
+			Success: true,
+		},
+		Data: wire.ProvidersResponseData{
+			LogsProviders:    logsProviders,
+			TracesProviders:  tracesProviders,
+			MetricsProviders: metricsProviders,
+		},
+	}
+
+	h.responseAdapter.WriteJSON(w, http.StatusOK, wireResp)
 }

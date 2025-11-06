@@ -27,10 +27,43 @@ export const getTraces = async (
   };
 };
 
+export const getTraceDetail = async (
+  traceId: string,
+  provider: string
+): Promise<AxiosResponse<{ trace_id: string; spans: TraceSpan[] }>> => {
+  if (!provider) {
+    throw new Error('Provider is required to fetch trace details');
+  }
+  
+  // Sanitize traceId: remove leading/trailing slashes to avoid double slashes in URL
+  const sanitizedTraceId = traceId.replace(/^\/+|\/+$/g, '');
+  
+  if (!sanitizedTraceId) {
+    throw new Error('Trace ID is required');
+  }
+  
+  // URL encode the traceId to handle special characters in base64 (/, +, =)
+  const encodedTraceId = encodeURIComponent(sanitizedTraceId);
+  
+  const params: Record<string, unknown> = {
+    provider,
+  };
+  const response = await http.get(`${BASE_URL}/traces/${encodedTraceId}`, { params });
+  return {
+    ...response,
+    data: response.data.data
+  };
+};
+
 export const getTraceSpans = async (
-  traceId: string
+  traceId: string,
+  provider: string
 ): Promise<AxiosResponse<TraceSpan[]>> => {
-  return http.get(`${BASE_URL}/traces/${traceId}/spans`);
+  const detail = await getTraceDetail(traceId, provider);
+  return {
+    ...detail,
+    data: detail.data.spans || []
+  };
 };
 
 

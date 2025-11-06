@@ -1,5 +1,5 @@
 import { Activity } from 'lucide-react';
-import ObservabilityPage from './components/ObservabilityPage';
+import ObservabilityPageV2 from './components/ObservabilityPageV2';
 import { ModuleConfig } from '@/types';
 
 const ObservabilityModule = async (): Promise<ModuleConfig> => {
@@ -18,7 +18,7 @@ const ObservabilityModule = async (): Promise<ModuleConfig> => {
       {
         key: 'observability',
         path: '/observability',
-        element: <ObservabilityPage />,
+        element: <ObservabilityPageV2 />,
       },
     ],
   };

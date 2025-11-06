@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router';
 import { useLogs } from '../../hooks/useLogs';
 import type { LogEntry, LogsQueryFilters } from '../../types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,32 +10,71 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import Refresh from '@/components/Refresh';
 import { Database, BarChart3, Search, List, Table as TableIcon, ExternalLink, Copy, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function LogsPage(): JSX.Element {
-  const [search, setSearch] = useState('');
-  const [service, setService] = useState('all');
-  const [level, setLevel] = useState<'all' | 'error' | 'warn' | 'info' | 'debug'>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [logqlQuery, setLogqlQuery] = useState('');
   const [provider, setProvider] = useState('loki-local');
   const [viewMode, setViewMode] = useState<'table' | 'list'>('table');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  // Check if URL has parameters (shared link)
+  const hasUrlParams = searchParams.toString().length > 0;
 
   const initialFilters: LogsQueryFilters = useMemo(
     () => ({ level: 'all', limit: 50, page: 1, provider: 'loki-local' }),
     []
   );
 
-  const { data, loading, error, updateFilters, getLevels } = useLogs(initialFilters);
+  const { data, loading, error, filters, updateFilters, refresh, fetchLogs } = useLogs(initialFilters, hasUrlParams);
+
+  // Load filters from URL on mount if present
+  useEffect(() => {
+    if (hasUrlParams) {
+      const queryParam = searchParams.get('query');
+      const providerParam = searchParams.get('provider');
+      
+      if (queryParam) setLogqlQuery(queryParam);
+      if (providerParam) setProvider(providerParam);
+      
+      // Apply filters from URL
+      const partial: Partial<LogsQueryFilters> = {
+        page: 1,
+        provider: providerParam || 'loki-local',
+      };
+      if (queryParam) {
+        partial.query = queryParam;
+      }
+      updateFilters(partial);
+    }
+  }, []); // Only run on mount
 
   const onApplyFilters = () => {
     const partial: Partial<LogsQueryFilters> = {
-      level,
       page: 1,
       provider,
     };
-    if (search) partial.search = search;
-    if (service !== 'all') partial.service = service as string;
+    // Use LogQL query if provided, otherwise let backend build from filters
+    if (logqlQuery.trim()) {
+      partial.query = logqlQuery;
+    }
+    // Update URL with current filters
+    const params = new URLSearchParams();
+    if (logqlQuery.trim()) {
+      params.set('query', logqlQuery);
+    }
+    if (provider) {
+      params.set('provider', provider);
+    }
+    setSearchParams(params);
+    
+    // Build complete filters and fetch directly
+    const newFilters = { ...initialFilters, ...filters, ...partial };
     updateFilters(partial);
+    // Manually fetch with new filters since autoFetch is false
+    fetchLogs(newFilters);
   };
 
   const histogram = useMemo(() => {
@@ -77,32 +117,6 @@ export default function LogsPage(): JSX.Element {
   return (
     <div className="flex-1 overflow-hidden p-6">
       <div className="grid grid-cols-1 gap-6">
-        {/* Histogram */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4" />
-                Log Distribution
-              </CardTitle>
-              <Badge variant="outline">{data.items.length} logs</Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* lightweight bars without external chart lib */}
-            <div className="flex items-end gap-1 h-24">
-              {histogram.map((b) => (
-                <div key={b.timestamp} className="flex-1 flex items-end gap-0.5">
-                  <div title={`Total ${b.count}`} className="w-full bg-indigo-400/70" style={{ height: Math.min(96, b.count * 4) }} />
-                </div>
-              ))}
-              {histogram.length === 0 && (
-                <div className="text-sm text-muted-foreground">No data</div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Logs */}
         <Card className="flex-1 overflow-hidden">
           <CardHeader className="pb-4">
@@ -122,6 +136,7 @@ export default function LogsPage(): JSX.Element {
                     <List className="h-4 w-4" />
                   </Button>
                 </div>
+                <Refresh onReload={refresh} />
               </div>
             </div>
 
@@ -129,9 +144,13 @@ export default function LogsPage(): JSX.Element {
             <div className="flex gap-2 mt-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input placeholder="Search logs by message, host, trace ID..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+                <Input 
+                  placeholder='LogQL query (e.g., {app="dashops-playground"} |= "error" or {cluster="kind-dashops-dev"})'
+                  value={logqlQuery} 
+                  onChange={(e) => setLogqlQuery(e.target.value)} 
+                  className="pl-10 font-mono text-sm" 
+                />
               </div>
-              <Input placeholder="Service (optional)" value={service} onChange={(e) => setService(e.target.value)} className="w-56" />
               <Select value={provider} onValueChange={setProvider}>
                 <SelectTrigger className="w-40">
                   <SelectValue />
@@ -140,21 +159,31 @@ export default function LogsPage(): JSX.Element {
                   <SelectItem value="loki-local">Loki Local</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={level} onValueChange={(v) => setLevel(v as any)}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {getLevels().map((l) => (
-                    <SelectItem key={l} value={l}>
-                      {l}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <Button onClick={onApplyFilters}>Apply</Button>
             </div>
           </CardHeader>
+          
+          {/* Histogram - Moved below filters */}
+          <div className="px-6 pb-4">
+            <div className="flex items-center gap-2 mb-3">
+              <CardTitle className="flex items-center gap-2 text-sm">
+                <BarChart3 className="h-4 w-4" />
+                Log Distribution
+              </CardTitle>
+              <Badge variant="outline">{data.items.length} logs</Badge>
+            </div>
+            {/* lightweight bars without external chart lib */}
+            <div className="flex items-end gap-1 h-24">
+              {histogram.map((b) => (
+                <div key={b.timestamp} className="flex-1 flex items-end gap-0.5">
+                  <div title={`Total ${b.count}`} className="w-full bg-indigo-400/70" style={{ height: Math.min(96, b.count * 4) }} />
+                </div>
+              ))}
+              {histogram.length === 0 && (
+                <div className="text-sm text-muted-foreground">No data</div>
+              )}
+            </div>
+          </div>
 
           <CardContent className="p-0">
             {error && (

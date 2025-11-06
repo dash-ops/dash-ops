@@ -21,18 +21,66 @@ export const transformTraceInfoToDomain = (apiTrace: any): TraceInfo => {
 };
 
 export const transformTraceSpanToDomain = (apiSpan: any): TraceSpan => {
+  // Handle span_id -> id mapping
+  const spanId = apiSpan.id ?? apiSpan.spanId ?? apiSpan.span_id ?? '';
+  
+  // Handle parent_span_id -> parentId mapping
+  const parentId = apiSpan.parentId ?? apiSpan.parent_id ?? apiSpan.parent_span_id;
+  
+  // Handle service_name -> service mapping
+  const service = apiSpan.service ?? apiSpan.serviceName ?? apiSpan.service_name ?? 'unknown';
+  
+  // Handle operation_name -> operationName mapping
+  const operationName = apiSpan.operationName ?? apiSpan.operation_name ?? apiSpan.operation ?? 'unknown';
+  
+  // Handle start_time: can be string ISO8601 or number (milliseconds or nanoseconds)
+  let startTime: number = 0;
+  if (apiSpan.startTime) {
+    startTime = typeof apiSpan.startTime === 'string' 
+      ? new Date(apiSpan.startTime).getTime()
+      : apiSpan.startTime;
+  } else if (apiSpan.start_time) {
+    startTime = typeof apiSpan.start_time === 'string'
+      ? new Date(apiSpan.start_time).getTime()
+      : apiSpan.start_time;
+  }
+  
+  // Handle duration: backend sends in nanoseconds, convert to milliseconds
+  let duration: number = 0;
+  if (apiSpan.duration) {
+    // If duration is very large (> 1e9), it's likely in nanoseconds, convert to ms
+    if (apiSpan.duration > 1e9) {
+      duration = apiSpan.duration / 1e6; // nanoseconds to milliseconds
+    } else if (apiSpan.duration > 1e6) {
+      duration = apiSpan.duration / 1000; // microseconds to milliseconds
+    } else {
+      duration = apiSpan.duration; // already in milliseconds
+    }
+  }
+  
+  // Handle status: can be object with code/message or string
+  let status: 'ok' | 'error' = 'ok';
+  if (apiSpan.status) {
+    if (typeof apiSpan.status === 'object') {
+      // Backend sends SpanStatus with code: 0=OK, 1=ERROR
+      status = apiSpan.status.code === 1 ? 'error' : 'ok';
+    } else {
+      status = mapStatus(apiSpan.status);
+    }
+  }
+
   return {
-    id: apiSpan.id ?? apiSpan.spanId ?? '',
+    id: spanId,
     traceId: apiSpan.traceId ?? apiSpan.trace_id ?? '',
-    operationName: apiSpan.operationName ?? apiSpan.operation ?? 'unknown',
-    service: apiSpan.service ?? 'unknown',
-    startTime: apiSpan.startTime ?? apiSpan.start_time ?? 0,
-    duration: apiSpan.duration ?? 0,
-    status: mapStatus(apiSpan.status),
+    operationName,
+    service,
+    startTime,
+    duration,
+    status,
     tags: apiSpan.tags ?? {},
-    parentId: apiSpan.parentId ?? apiSpan.parent_id,
+    parentId,
     depth: apiSpan.depth,
-    name: apiSpan.name ?? apiSpan.operationName ?? apiSpan.operation ?? 'unknown',
+    name: operationName,
     created_at: apiSpan.created_at,
     updated_at: apiSpan.updated_at,
   } as TraceSpan;

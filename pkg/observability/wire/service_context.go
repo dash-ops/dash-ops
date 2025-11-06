@@ -17,8 +17,11 @@ type ServiceContextResponse struct {
 
 // ServicesWithContextRequest represents a request for services with context
 type ServicesWithContextRequest struct {
-	IncludeHealth bool `json:"include_health,omitempty"`
-	IncludeStats  bool `json:"include_stats,omitempty"`
+	Search        string `json:"search,omitempty"`
+	Limit         int    `json:"limit,omitempty"` // default: 50
+	Offset        int    `json:"offset,omitempty"`
+	IncludeHealth bool   `json:"include_health,omitempty"`
+	IncludeStats  bool   `json:"include_stats,omitempty"`
 }
 
 // ServicesWithContextResponse represents the response for services with context
@@ -29,9 +32,11 @@ type ServicesWithContextResponse struct {
 
 // ServicesWithContextData represents the data portion of services with context response
 type ServicesWithContextData struct {
-	Services []models.ServiceWithContext `json:"services"`
-	Total    int                         `json:"total"`
-	Summary  ServiceSummary              `json:"summary,omitempty"`
+	Services   []models.ServiceWithContext `json:"services"`
+	Total      int                         `json:"total"`
+	HasMore    bool                        `json:"has_more"`
+	NextOffset int                         `json:"next_offset,omitempty"`
+	Summary    ServiceSummary              `json:"summary,omitempty"`
 }
 
 // ServiceSummary represents a summary of services

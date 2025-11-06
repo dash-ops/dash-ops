@@ -7,12 +7,14 @@ import (
 
 	commonsHttp "github.com/dash-ops/dash-ops/pkg/commons/adapters/http"
 	k8sPorts "github.com/dash-ops/dash-ops/pkg/kubernetes/ports"
+	obsPorts "github.com/dash-ops/dash-ops/pkg/observability/ports"
 	scConfigAdapter "github.com/dash-ops/dash-ops/pkg/service-catalog/adapters/config"
 	scAdaptersHttp "github.com/dash-ops/dash-ops/pkg/service-catalog/adapters/http"
 	scStorage "github.com/dash-ops/dash-ops/pkg/service-catalog/adapters/storage"
 	scControllers "github.com/dash-ops/dash-ops/pkg/service-catalog/controllers"
 	"github.com/dash-ops/dash-ops/pkg/service-catalog/handlers"
-	scInternal "github.com/dash-ops/dash-ops/pkg/service-catalog/integrations/kubernetes"
+	k8sIntegration "github.com/dash-ops/dash-ops/pkg/service-catalog/integrations/kubernetes"
+	obsIntegration "github.com/dash-ops/dash-ops/pkg/service-catalog/integrations/observability"
 	scLogic "github.com/dash-ops/dash-ops/pkg/service-catalog/logic"
 	scModels "github.com/dash-ops/dash-ops/pkg/service-catalog/models"
 	scPorts "github.com/dash-ops/dash-ops/pkg/service-catalog/ports"
@@ -104,5 +106,11 @@ func (m *Module) LoadDependencies(modules map[string]interface{}) error {
 // GetServiceContextResolver returns the service context resolver for kubernetes integration
 func (m *Module) GetServiceContextResolver() k8sPorts.ServiceContextResolver {
 	// Use the new integration adapter for service context resolution
-	return scInternal.NewServiceCatalogAdapter(m.controller.GetServiceRepository())
+	return k8sIntegration.NewServiceCatalogAdapter(m.controller.GetServiceRepository())
+}
+
+// GetObservabilityAdapter returns the adapter for observability integration
+func (m *Module) GetObservabilityAdapter() obsPorts.ServiceContextRepository {
+	// Use the integration adapter for observability integration
+	return obsIntegration.NewObservabilityAdapter(m.controller.GetServiceRepository())
 }
