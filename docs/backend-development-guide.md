@@ -59,6 +59,7 @@ pkg/{module}/
 │   └── auth/             # Auth module integration
 ├── controllers/       # Business logic orchestration
 ├── handlers/          # HTTP endpoints (entry points)
+│   └── http.go        # Centralized HTTP handlers (one file per module)
 ├── logic/             # Pure business logic (100% tested)
 ├── models/            # Domain entities with behavior
 ├── ports/             # Interfaces & contracts

@@ -19,4 +19,6 @@ export * from './ui';
 export * as AWSTypes from '../modules/aws/types';
 export * as KubernetesTypes from '../modules/kubernetes/types';
 export * as AuthTypes from '../modules/oauth2/types';
-export * as ConfigTypes from '../modules/config/types';
+export * as ObservabilityTypes from '../modules/observability/types';
+export * as ServiceCatalogTypes from '../modules/service-catalog/types';
+export * as SettingsTypes from '../modules/settings/types';

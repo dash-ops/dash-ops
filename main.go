@@ -13,22 +13,24 @@ import (
 
 	"github.com/dash-ops/dash-ops/pkg/auth"
 	"github.com/dash-ops/dash-ops/pkg/aws"
-	"github.com/dash-ops/dash-ops/pkg/config"
 	"github.com/dash-ops/dash-ops/pkg/kubernetes"
 	"github.com/dash-ops/dash-ops/pkg/observability"
 	servicecatalog "github.com/dash-ops/dash-ops/pkg/service-catalog"
+	"github.com/dash-ops/dash-ops/pkg/settings"
 	"github.com/dash-ops/dash-ops/pkg/spa"
 	spaModels "github.com/dash-ops/dash-ops/pkg/spa/models"
 )
 
 func main() {
-	// Initialize config module
-	configModule, err := config.NewModule("")
+	settingsModule, err := settings.NewModule("")
 	if err != nil {
-		log.Fatalf("Failed to initialize config module: %v", err)
+		log.Fatalf("Failed to initialize settings module: %v", err)
 	}
 
-	dashConfig := configModule.GetConfig()
+	dashConfig := settingsModule.GetConfig()
+	if dashConfig == nil {
+		log.Fatalf("Failed to load configuration: no configuration available")
+	}
 
 	router := mux.NewRouter()
 
@@ -44,9 +46,10 @@ func main() {
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 	})
 
-	// Register config routes using hexagonal architecture
-	configModule.RegisterRoutes(api)
-	fileConfig := configModule.GetFileConfigBytes()
+	settingsModule.RegisterRoutes(api)
+	log.Println("Settings module initialized successfully")
+
+	fileConfig := settingsModule.GetFileConfigBytes()
 
 	internal := api.PathPrefix("/v1").Subrouter()
 
@@ -62,22 +65,26 @@ func main() {
 		"Observability":  func(config []byte) (interface{}, error) { return observability.NewModule(config) },
 	}
 
-	// Initialize modules dynamically based on active plugins
 	modulesLoaded := 0
-	for pluginName, factory := range moduleFactories {
-		if dashConfig.Plugins.Has(pluginName) {
-			module, err := factory(fileConfig)
-			if err != nil {
-				// All modules are optional - DashOps can run without any plugins
-				log.Printf("Failed to create %s module: %v", pluginName, err)
-				continue
-			}
+	if fileConfig == nil {
+		log.Println("No configuration file found; skipping plugin module initialization until setup is completed")
+	} else {
+		// Initialize modules dynamically based on active plugins
+		for pluginName, factory := range moduleFactories {
+			if dashConfig.Plugins.Has(pluginName) {
+				module, err := factory(fileConfig)
+				if err != nil {
+					// All modules are optional - DashOps can run without any plugins
+					log.Printf("Failed to create %s module: %v", pluginName, err)
+					continue
+				}
 
-			// Use lowercase with dashes for consistency
-			moduleKey := strings.ToLower(strings.ReplaceAll(pluginName, "Catalog", "-catalog"))
-			modules[moduleKey] = module
-			modulesLoaded++
-			log.Printf("%s module initialized successfully", pluginName)
+				// Use lowercase with dashes for consistency
+				moduleKey := strings.ToLower(strings.ReplaceAll(pluginName, "Catalog", "-catalog"))
+				modules[moduleKey] = module
+				modulesLoaded++
+				log.Printf("%s module initialized successfully", pluginName)
+			}
 		}
 	}
 
