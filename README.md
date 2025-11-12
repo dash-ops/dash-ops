@@ -6,7 +6,8 @@
 
 > **The VS Code for infrastructure** - A unified, AI-powered hub that integrates all your developer tools in one intuitive interface. Focus on building features, not juggling between different platforms.
 
-DashOPS is an **experimental integration platform** that connects your existing tools (Kubernetes, AWS, Grafana, ArgoCD) into a seamless developer experience, enhanced by contextual AI assistance and an extensible plugin system.
+DashOPS is an **experimental integration platform** that connects your existing tools (Kubernetes, AWS, Prometheus) into a seamless developer experience, enhanced by contextual AI assistance and an extensible plugin system.
+<img width="1226" height="715" alt="image" src="https://github.com/user-attachments/assets/82909cbb-8857-4c1d-b0d7-6afac3a50dc7" />
 
 **🚧 This project is actively under development and should only be used for testing and evaluation purposes.**
 
