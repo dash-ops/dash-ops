@@ -1,102 +1,88 @@
-package config
+package logic
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
 
-	configModels "github.com/dash-ops/dash-ops/pkg/config/models"
+	settingsModels "github.com/dash-ops/dash-ops/pkg/settings/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestConfigProcessor_ParseFromBytes_WithValidConfig_ReturnsConfig(t *testing.T) {
-	// Arrange
 	processor := NewConfigProcessor()
 	configData := `port: 8080
-origin: http://localhost:3000
-headers: 
+origin: http://localhost:5173
+headers:
   - "Content-Type"
   - "Authorization"
 plugins:
   - "Auth"
   - "Kubernetes"`
 
-	// Act
 	config, err := processor.ParseFromBytes([]byte(configData))
 
-	// Assert
 	require.NoError(t, err)
 	require.NotNil(t, config)
 	assert.Equal(t, "8080", config.Port)
-	assert.Equal(t, "http://localhost:3000", config.Origin)
+	assert.Equal(t, "http://localhost:5173", config.Origin)
+	assert.True(t, config.Plugins.Has("Auth"))
 }
 
 func TestConfigProcessor_ParseFromBytes_WithEnvironmentVariables_ReturnsConfigWithDefaults(t *testing.T) {
-	// Arrange
 	processor := NewConfigProcessor()
 	configData := `port: ${PORT:-8080}
-origin: ${ORIGIN:-http://localhost:3000}
+origin: ${ORIGIN:-http://localhost:5173}
 plugins:
   - "Auth"`
 
-	// Act
 	config, err := processor.ParseFromBytes([]byte(configData))
 
-	// Assert
 	require.NoError(t, err)
 	require.NotNil(t, config)
 	assert.Equal(t, "8080", config.Port)                    // Default value
-	assert.Equal(t, "http://localhost:3000", config.Origin) // Default value
+	assert.Equal(t, "http://localhost:5173", config.Origin) // Default value
+	assert.True(t, config.Plugins.Has("Auth"))
 }
 
 func TestConfigProcessor_ParseFromBytes_WithEmptyConfig_ReturnsError(t *testing.T) {
-	// Arrange
 	processor := NewConfigProcessor()
-	configData := ""
 
-	// Act
-	config, err := processor.ParseFromBytes([]byte(configData))
+	config, err := processor.ParseFromBytes([]byte(""))
 
-	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, config)
 }
 
 func TestConfigProcessor_ParseFromBytes_WithInvalidYAML_ReturnsError(t *testing.T) {
-	// Arrange
 	processor := NewConfigProcessor()
 	configData := `port: 8080
 origin: [invalid yaml`
 
-	// Act
 	config, err := processor.ParseFromBytes([]byte(configData))
 
-	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, config)
 }
 
 func TestConfigProcessor_LoadFromFile_WithValidFile_ReturnsConfig(t *testing.T) {
-	// Arrange
 	processor := NewConfigProcessor()
 	tempDir := t.TempDir()
 	configFile := filepath.Join(tempDir, "test-config.yaml")
 
 	configContent := `port: 9090
 origin: http://test.local
-headers: 
+headers:
   - "Content-Type"
 plugins:
   - "TestPlugin"`
 
-	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o644)
 	require.NoError(t, err)
 
-	// Act
 	config, err := processor.LoadFromFile(configFile)
 
-	// Assert
 	require.NoError(t, err)
 	require.NotNil(t, config)
 	assert.Equal(t, "9090", config.Port)
@@ -106,62 +92,50 @@ plugins:
 }
 
 func TestConfigProcessor_LoadFromFile_WithNonExistentFile_ReturnsError(t *testing.T) {
-	// Arrange
 	processor := NewConfigProcessor()
 
-	// Act
 	config, err := processor.LoadFromFile("/non/existent/file.yaml")
 
-	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, config)
 }
 
-func TestConfigProcessor_GetConfigFilePath_WithDefaultPath_ReturnsDefaultPath(t *testing.T) {
-	// Arrange
+func TestConfigProcessor_GetConfigFilePath_DefaultPath(t *testing.T) {
 	processor := NewConfigProcessor()
 
-	// Act
 	path := processor.GetConfigFilePath()
 
-	// Assert
 	assert.Equal(t, "./dash-ops.yaml", path)
 }
 
-func TestConfigProcessor_GetConfigFilePath_WithEnvironmentVariable_ReturnsCustomPath(t *testing.T) {
-	// Arrange
+func TestConfigProcessor_GetConfigFilePath_WithEnvironmentVariable(t *testing.T) {
 	processor := NewConfigProcessor()
 	os.Setenv("DASH_CONFIG", "/custom/path/config.yaml")
 	defer os.Unsetenv("DASH_CONFIG")
 
-	// Act
 	path := processor.GetConfigFilePath()
 
-	// Assert
 	assert.Equal(t, "/custom/path/config.yaml", path)
 }
 
-func TestConfigProcessor_MergeConfigs_WithBaseAndOverride_ReturnsMergedConfig(t *testing.T) {
-	// Arrange
+func TestConfigProcessor_MergeConfigs_WithBaseAndOverride(t *testing.T) {
 	processor := NewConfigProcessor()
-	base := &configModels.DashConfig{
+	base := &settingsModels.DashConfig{
 		Port:    "8080",
-		Origin:  "http://localhost:3000",
+		Origin:  "http://localhost:5173",
 		Headers: []string{"Content-Type"},
-		Plugins: configModels.Plugins{"Auth"},
+		Plugins: settingsModels.Plugins{"Auth"},
 	}
-	override := &configModels.DashConfig{
-		Port:    "9090",                             // Override
-		Front:   "/dist",                            // New value
-		Plugins: configModels.Plugins{"Kubernetes"}, // Override
+	override := &settingsModels.DashConfig{
+		Port:    "9090",                               // Override
+		Front:   "/dist",                              // New value
+		Plugins: settingsModels.Plugins{"Kubernetes"}, // Override
 	}
 
-	// Act
 	merged := processor.MergeConfigs(base, override)
 
-	// Assert
 	assert.Equal(t, "9090", merged.Port)                      // Overridden
-	assert.Equal(t, "http://localhost:3000", merged.Origin)   // From base
+	assert.Equal(t, "http://localhost:5173", merged.Origin)   // From base
 	assert.Equal(t, "/dist", merged.Front)                    // From override
 	assert.Equal(t, []string{"Content-Type"}, merged.Headers) // From base
 	assert.True(t, merged.Plugins.Has("Kubernetes"))          // From override
