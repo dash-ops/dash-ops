@@ -12,542 +12,300 @@ DashOPS is an **experimental integration platform** that connects your existing 
 
 ## 🚀 Quick Start
 
-### Option 1: Docker (Recommended)
+### **New: Interactive Setup Wizard** ✨
+
+No more YAML wrestling! Start DashOPS and configure everything through the UI:
+
+```bash
+# 1. Start the backend
+go run main.go
+
+# 2. Start the frontend (in another terminal)
+cd front
+yarn && yarn dev
+
+# 3. Open browser at http://localhost:5173
+# → First-time users are guided through an interactive setup wizard
+```
+
+**What the Setup Wizard does:**
+- 🎯 **Select your plugins** - Pick only what you need (AWS, Kubernetes, Auth, etc.)
+- 🔐 **Securely store credentials** - Secrets are masked in UI, never exposed via API
+- 📝 **Generate dash-ops.yaml** - Configuration auto-saved to disk
+- ♻️ **Update anytime** - Revisit Settings to adjust providers without revealing secrets
+
+> **💡 Tip**: The wizard writes to `./dash-ops.yaml` (or `$DASH_CONFIG` if set). You can still edit the file manually or version it in Git!
+
+### Option 2: Manual YAML Setup (For Infrastructure-as-Code fans)
+
+If you prefer to version your config from day one:
 
 ```bash
 # 1. Create configuration file
 cp local.sample.yaml dash-ops.yaml
 
-# 2. Set environment variables
-export GITHUB_CLIENT_ID="your-github-client-id"
-export GITHUB_CLIENT_SECRET="your-github-client-secret"
-export AWS_ACCESS_KEY_ID="your-aws-access-key"
-export AWS_SECRET_ACCESS_KEY="your-aws-secret-key"
+# 2. Edit dash-ops.yaml and set your credentials
+# (See full configuration examples at https://dash-ops.github.io/)
 
-# 3. Run with Docker
+# 3. Set environment variables (for sensitive values)
+export GITHUB_CLIENT_ID="your-client-id"
+export GITHUB_CLIENT_SECRET="your-client-secret"
+
+# 4. Start services
+go run main.go  # Backend on :8080
+cd front && yarn dev  # Frontend on :5173
+```
+
+### Option 3: Docker (Quick Test)
+
+```bash
 docker run --rm \
   -v $(pwd)/dash-ops.yaml:/dash-ops.yaml \
   -v ${HOME}/.kube/config:/.kube/config \
   -e GITHUB_CLIENT_ID \
   -e GITHUB_CLIENT_SECRET \
-  -e AWS_ACCESS_KEY_ID \
-  -e AWS_SECRET_ACCESS_KEY \
-  -p 8080:8080 \
-  -it dashops/dash-ops
-```
-
-### Option 2: Local Development
-
-```bash
-# 1. Backend (Go)
-go run main.go
-
-# 2. Frontend (React + TypeScript)
-cd front
-yarn
-yarn dev
-
-# Access: http://localhost:5173
-```
-
-## 🏗️ Architecture
-
-### Backend Architecture
-
-The DashOps backend follows a **Hexagonal Architecture** pattern with 8 consistent layers across all modules:
-
-```
-pkg/{module}/
-├── adapters/     # Data transformation & external integrations
-├── controllers/  # Business logic orchestration
-├── handlers/     # HTTP endpoints
-├── logic/        # Pure business logic (100% tested)
-├── models/       # Domain entities with behavior
-├── ports/        # Interfaces & contracts
-├── wire/         # API contracts (DTOs)
-└── module.go     # Module factory
-```
-
-**Key Benefits**:
-
-- **Consistent Structure**: Same pattern across all 8 modules
-- **High Testability**: 80+ unit tests ensuring reliability
-- **Extensibility**: Interface-based design for easy extension
-- **Maintainability**: Clear separation of concerns
-
-**📚 For Developers**: See [Backend Architecture Guide](./docs/backend-architecture.md) for detailed contribution guidelines.
-
-### Frontend Architecture
-
-DashOPS is built as an **Integration Hub** that connects your existing tools with AI-powered UX:
-
-### **🎯 Integration Philosophy**
-
-- **🔗 Connect, Don't Replace** - Integrate with tools you already use
-- **🤖 AI-Enhanced** - Contextual assistance across all integrations
-- **🎨 UX-First** - Intuitive interface that abstracts complexity
-- **🧩 Extensible** - Plugin system for community contributions
-
-### **Backend** (Go)
-
-- **Integration Engine** - Smart aggregation of external APIs
-- **Plugin System** - Extensible architecture for new tools
-- **AI Context Layer** - Contextual data correlation across tools
-- **Security Gateway** - OAuth2 integration with unified auth
-
-### **Frontend** (React + TypeScript + AI)
-
-- **Unified Dashboard** - All tools in one interface
-- **AI Assistant** - Contextual help and automation
-- **shadcn/ui Components** - Consistent, accessible design
-- **Smart Caching** - Optimized performance across integrations
-
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────────────┐
-│   Frontend      │    │  Integration     │    │    External Tools       │
-│ React + TS + AI │◄──►│   Hub (Go)       │◄──►│ Grafana│ArgoCD│AWS│K8s │
-│   Port 5173     │    │   Port 8080      │    │   Prometheus│Loki│etc   │
-└─────────────────┘    └──────────────────┘    └─────────────────────────┘
-```
-
-## 🎯 Features
-
-### **🆕 Latest Updates (v0.4.0-beta)**
-
-**New Observability Module:**
-
-- ✅ **ObservabilityPage** - Unified interface with global header and tab navigation
-- ✅ **Logs Integration** - Loki integration with histogram visualization, advanced filters, and expandable rows
-- ✅ **Traces Integration** - Tempo integration with trace listing, span details, and timeline view
-- ✅ **Provider Selector** - Support for multiple observability backends (Loki, Tempo, Prometheus)
-- ✅ **Service Context Integration** - Automatic filtering based on selected services
-- ✅ **Backend APIs** - Complete observability API endpoints (/api/v1/observability/*)
-
-**Enhanced Service Catalog Plugin:**
-
-- ✅ **Service Registry** - Complete CRUD for service definitions with modern tabbed UI
-- ✅ **Kubernetes Health Integration** - Real-time service health from K8s deployments
-- ✅ **GitHub Teams** - Service ownership and permission management
-- ✅ **Multi-Environment** - Service deployment across dev, staging, production
-- ✅ **Git Versioning** - Automatic service definition versioning
-
-**Enhanced Theme System:**
-
-- ✅ **Dark/Light Mode** - Toggle between light and dark themes with header control
-- ✅ **Color Themes** - 9 pre-built color palettes (Neutral, Red, Rose, Orange, Green, Blue, Yellow, Violet, Slate)
-- ✅ **Persistence** - Theme preferences saved to localStorage
-- ✅ **Responsive Logo** - Logo adapts to selected theme and mode
-
-### **Core Features**
-
-### **📋 Service Catalog**
-
-- **Service Registry** - Complete service definitions with YAML-based storage
-- **Team Ownership** - GitHub team-based service ownership and permissions
-- **Health Monitoring** - Real-time health aggregation from Kubernetes deployments
-- **Multi-Environment** - Service deployment tracking across environments
-- **Search & Filter** - Advanced filtering by team, tier, technology, and health status
-
-### **☁️ AWS Operations**
-
-- **EC2 Management** - Start, stop, monitor instances with modern interface
-- **Multi-Account** - Unified account selector and switching
-- **Cost Optimization** - Instance lifecycle management
-
-### **⚙️ Kubernetes Operations**
-
-- **Multi-cluster Support** - Unified cluster context switching in single menu
-- **Enhanced Workload Management** - Modern deployment and pod interfaces with restart/scale actions
-- **Advanced Pod Logs** - Real-time log streaming with search, filter, and copy functionality
-- **Node Monitoring** - Comprehensive resource usage with disk, conditions, and age information
-- **Optimized Performance** - Intelligent API caching and shared namespace management
-
-### **🔐 Authentication & Security**
-
-- **GitHub OAuth2** - Enterprise SSO integration
-- **Organization Permissions** - Team-based access control
-- **Session Management** - Secure token handling
-- **Audit Logging** - Track all operations
-
-### **📊 Observability & Monitoring**
-
-- **Logs Management** - Loki integration with histogram visualization and advanced filtering
-- **Distributed Tracing** - Tempo integration with trace search and span analysis
-- **Metrics Integration** - Prometheus integration (backend complete, frontend in development)
-- **Service-aware Monitoring** - Automatic filtering based on service context
-- **Provider Support** - Multiple observability backends with unified interface
-
-### **🔮 Planned Features (Integration Roadmap)**
-
-#### **Phase 2 - Observability Hub** ✅ **CONCLUÍDA v0.1**
-
-- ✅ **🔍 Loki Integration** - Log search with service context, histogram, and advanced filtering
-- ✅ **📊 Tempo Integration** - Trace search and timeline visualization with spans
-- ✅ **📈 Prometheus Integration** - Metrics aggregation (backend complete, frontend in development)
-- 🔄 **📊 Grafana Integration** - Embedded dashboards with service filtering (next version)
-- 🔄 **🤖 AI Assistant V1** - Troubleshooting automation (in development)
-
-#### **Phase 3 - Pipeline Hub (Q3 2025)**
-
-- **🔄 ArgoCD Integration** - GitOps workflow with service context
-- **⚙️ GitHub Actions** - Status tracking and deployment history
-- **🤖 AI Assistant V2** - Deployment intelligence and impact analysis
-
-#### **Phase 4 - Multi-Cloud Hub (Q4 2025)**
-
-- **☁️ GCP Integration** - Google Cloud resources and billing
-- **🔷 Azure Integration** - Microsoft Azure management
-- **💰 Cost Intelligence** - AI-powered optimization suggestions
-
-#### **Phase 5 - Community Ecosystem (2026+)**
-
-- **🧩 Plugin SDK** - Third-party integration framework
-- **🌟 Plugin Marketplace** - Community registry
-- **🤖 AI Assistant V3** - Cross-tool workflows with natural language
-
-## 📖 Documentation
-
-### **📚 Complete Documentation Website**
-
-Visit our comprehensive documentation at **[dash-ops.github.io](https://dash-ops.github.io/)**
-
-- **[Getting Started](https://dash-ops.github.io/#installation)** - Setup and installation
-- **[Configuration](https://dash-ops.github.io/#initial-setup)** - Complete configuration guide
-- **[First Deploy](https://dash-ops.github.io/#first-deploy)** - Deploy your first instance
-- **[Helm Deployment](https://dash-ops.github.io/#helm-deploy)** - Kubernetes deployment with Helm
-- **[Plugin Guides](https://dash-ops.github.io/#plugins-overview)** - Auth, AWS, Kubernetes, Service Catalog
-- **[API Reference](https://dash-ops.github.io/#api-intro)** - Complete API documentation
-- **[Developer Guide](https://dash-ops.github.io/#backend-guide)** - Backend development guide
-- **[Contributing](https://dash-ops.github.io/#contributing)** - How to contribute
-
-### **🔧 Quick Links**
-
-- **[Frontend Development](./front/README.md)** - React/TypeScript guide (local)
-- **[Backend Architecture](./docs/backend-development-guide.md)** - Hexagonal architecture (local)
-
-## 🛠️ Configuration
-
-### **Basic Configuration File** (`dash-ops.yaml`)
-
-```yaml
-# Server Configuration
-port: 8080
-origin: http://localhost:8080
-headers:
-  - 'Content-Type'
-  - 'Authorization'
-front: app
-
-# Enable Plugins
-plugins:
-  - 'OAuth2'
-  - 'Kubernetes'
-  - 'AWS'
-
-# GitHub OAuth2 Setup
-oauth2:
-  - provider: github
-    clientId: ${GITHUB_CLIENT_ID}
-    clientSecret: ${GITHUB_CLIENT_SECRET}
-    authURL: 'https://github.com/login/oauth/authorize'
-    tokenURL: 'https://github.com/login/oauth/access_token'
-    redirectURL: 'http://localhost:8080/api/oauth/redirect'
-    urlLoginSuccess: 'http://localhost:8080'
-    orgPermission: 'your-github-org' # Replace with your org
-    scopes: [user, repo, read:org]
-
-# Kubernetes Configuration
-kubernetes:
-  - name: 'Development'
-    kubeconfig: ${HOME}/.kube/config
-    context: 'dev-cluster'
-  - name: 'Production'
-    kubeconfig: ${HOME}/.kube/config
-    context: 'prod-cluster'
-
-# AWS Configuration
-aws:
-  - name: 'Production Account'
-    region: us-east-1
-    accessKeyId: ${AWS_ACCESS_KEY_ID}
-    secretAccessKey: ${AWS_SECRET_ACCESS_KEY}
-    ec2Config:
-      skipList:
-        - 'EKSWorkerAutoScalingGroupSpot'
-```
-
-### **Environment Variables**
-
-```bash
-# Required for OAuth2
-export GITHUB_CLIENT_ID="your-github-oauth-app-id"
-export GITHUB_CLIENT_SECRET="your-github-oauth-app-secret"
-
-# Required for AWS (if using AWS plugin)
-export AWS_ACCESS_KEY_ID="your-aws-access-key"
-export AWS_SECRET_ACCESS_KEY="your-aws-secret-key"
-
-# Optional: Custom API URL for frontend
-export VITE_API_URL="http://localhost:8080/api"
-```
-
-## 🐳 Deployment
-
-> **⚠️ Warning**: This is a beta project under active development. **DO NOT USE IN PRODUCTION ENVIRONMENTS.**
-
-### **Development Environment**
-
-```bash
-# Terminal 1: Backend
-go run main.go
-
-# Terminal 2: Frontend
-cd front
-yarn dev
-
-# Access: http://localhost:5173
-```
-
-### **Testing/Staging with Docker**
-
-```bash
-# ⚠️ FOR TESTING ONLY - NOT PRODUCTION READY
-docker run --rm \
-  -v $(pwd)/dash-ops.yaml:/dash-ops.yaml \
-  -v ${HOME}/.kube/config:/.kube/config \
-  --env-file .env \
   -p 8080:8080 \
   dashops/dash-ops
 ```
 
-### **Testing with Helm** (Development Clusters Only)
+## 📖 Documentation
 
-```bash
-# ⚠️ FOR DEVELOPMENT/TESTING ONLY
-helm repo add dash-ops-charts ./helm-charts
+### **Complete Guides**
+Visit **[dash-ops.github.io](https://dash-ops.github.io/)** for comprehensive documentation:
 
-# Install with custom values
-helm install dash-ops dash-ops-charts/dash-ops \
-  --values ./your-values.yaml
+- **[Setup Wizard Guide](https://dash-ops.github.io/#setup-wizard)** - Step-by-step interactive setup
+- **[Installation](https://dash-ops.github.io/#installation)** - Full installation guide
+- **[Configuration Reference](https://dash-ops.github.io/#initial-setup)** - All config options explained
+- **[Plugin Guides](https://dash-ops.github.io/#plugins-overview)** - AWS, Kubernetes, Auth, Observability
+- **[API Reference](https://dash-ops.github.io/#api-intro)** - REST API documentation
+- **[Contributing](https://dash-ops.github.io/#contributing)** - Contribution guidelines
 
-# Access via ingress or port-forward
-kubectl port-forward service/dash-ops 8080:8080
+### **Local Development Docs**
+- **[Backend Architecture](./docs/backend-development-guide.md)** - Hexagonal architecture deep-dive
+- **[Frontend Guide](./front/README.md)** - React/TypeScript development
+
+## 🎯 Features
+
+### **🆕 Latest Updates (v0.5.0-alpha)**
+
+**Interactive Setup Module:**
+- ✅ **Setup Wizard** - Guided first-run experience with 6 configuration tabs
+- ✅ **Settings Page** - Update providers and credentials without exposing secrets
+- ✅ **Secret Masking** - Never return sensitive values from API (shows `*****`)
+- ✅ **Live Validation** - Real-time feedback on configuration errors
+- ✅ **YAML Auto-Generation** - Writes to `dash-ops.yaml` or `$DASH_CONFIG` path
+
+**Enhanced Architecture:**
+- ✅ **Settings Module** - Replaces legacy config with hexagonal design
+- ✅ **100% Test Coverage** - Comprehensive tests for critical module loading logic
+- ✅ **Setup Mode Detection** - Frontend auto-detects first-run and shows wizard
+
+### **Core Features**
+
+### **📋 Service Catalog** ✅ Available
+- Service registry with YAML-based storage
+- GitHub team-based ownership and permissions
+- Real-time health aggregation from Kubernetes
+- Multi-environment deployment tracking
+- Advanced search and filtering
+
+### **📊 Observability Hub** ✅ Beta (v0.4.0)
+- **Logs** - Loki integration with histogram visualization
+- **Traces** - Tempo integration with trace timeline
+- **Metrics** - Prometheus integration (backend complete)
+- Service-aware monitoring with automatic filtering
+
+### **☁️ AWS Operations** 🔄 Alpha
+- EC2 instance management (start, stop, monitor)
+- Multi-account support with unified selector
+- Cost optimization through lifecycle management
+
+### **⚙️ Kubernetes Operations** 🔄 Alpha
+- Multi-cluster context switching
+- Workload management (deployments, pods)
+- Real-time log streaming with search
+- Node monitoring with resource usage
+
+### **🔐 Authentication** 🔄 Beta
+- GitHub OAuth2 integration
+- Organization-based access control
+- Session management and audit logging
+
+## 🏗️ Architecture
+
+### Backend (Go + Hexagonal Architecture)
+
+All modules follow a consistent 8-layer pattern:
+
 ```
+pkg/{module}/
+├── adapters/     # External integrations & data transformation
+├── controllers/  # Business logic orchestration
+├── handlers/     # HTTP endpoints (centralized in http.go)
+├── logic/        # Pure business logic (100% tested)
+├── models/       # Domain entities with behavior
+├── ports/        # Interfaces & contracts
+├── repositories/ # Data persistence
+├── wire/         # API contracts (DTOs)
+└── module.go     # Module factory & initialization
+```
+
+**Key Benefits:**
+- ✅ Consistent structure across all 8 modules
+- ✅ High testability with 80+ unit tests
+- ✅ Interface-based design for easy extension
+- ✅ Clear separation of concerns
+
+### Frontend (React + TypeScript)
+
+```
+src/
+├── modules/          # Feature modules (kubernetes, aws, settings, etc.)
+│   └── {module}/
+│       ├── components/    # UI components
+│       ├── resources/     # API clients
+│       ├── hooks/         # React hooks
+│       ├── types.ts       # TypeScript types
+│       └── index.tsx      # Module registration
+├── components/       # Shared UI components (shadcn/ui)
+├── helpers/          # Utilities (loadModules, http, oauth)
+└── types/            # Global TypeScript types
+```
+
+**Features:**
+- ✅ Plugin-based module loading
+- ✅ TypeScript strict mode (no `any`)
+- ✅ Comprehensive test coverage with Vitest
+- ✅ Modern UI with shadcn/ui components
 
 ## 🤝 Contributing
 
 We welcome contributions! Here's how to get started:
 
-### **🔨 Development Setup**
+### Development Setup
 
 ```bash
-# 1. Fork and clone the repository
+# 1. Fork and clone
 git clone https://github.com/your-username/dash-ops.git
 cd dash-ops
 
-# 2. Backend setup (Go)
+# 2. Backend (Go 1.21+)
 go mod download
 go run main.go
 
-# 3. Frontend setup (TypeScript/React)
+# 3. Frontend (Node 18+)
 cd front
-yarn
+yarn install
 yarn dev
 
 # 4. Run tests
-go test ./...           # Backend tests
-cd front && yarn test   # Frontend tests
+go test ./...              # Backend
+cd front && yarn test      # Frontend
 ```
 
-### **📋 Development Workflow**
+### Development Workflow
 
 ```bash
-# 1. Create feature branch
-git checkout -b feature/amazing-new-feature
+# Create feature branch
+git checkout -b feat/amazing-feature
 
-# 2. Make changes with quality checks
+# Frontend quality checks (Terminal 1)
 cd front
-yarn type-check:watch  # Terminal 1: TypeScript validation
-yarn dev               # Terminal 2: Development server
+yarn type-check:watch  # TypeScript validation
+yarn test              # Run tests
 
-# 3. Ensure quality before commit
-yarn quality           # Type check + lint + format
+# Development server (Terminal 2)
+yarn dev               # Auto-reload on changes
+
+# Before commit
+yarn quality           # Type-check + lint + format
 go test ./...          # Backend tests
 
-# 4. Commit with semantic messages
+# Commit with semantic messages (no emojis)
 git commit -m "feat: add amazing new feature"
-
-# 5. Push and create PR
-git push origin feature/amazing-new-feature
 ```
 
-### **🎯 High-Priority Contribution Areas**
+### High-Priority Areas
 
-#### **🔥 Critical for Integration Hub**
+**🔥 Critical:**
+- **Setup UX** - Improve wizard validation and error messages
+- **Secret Management** - Encrypted storage for production readiness
+- **Plugin System** - SDK for community-contributed integrations
 
-- **🔗 Tool Integrations** - Grafana, Prometheus, Loki, ArgoCD connections
-- **🤖 AI Context Layer** - Cross-tool data correlation and insights
-- **🎨 UX Unification** - Consistent interface across all integrations
-- **⚡ Performance** - Smart caching and aggregation optimizations
+**✨ Nice-to-Have:**
+- **Grafana Integration** - Embedded dashboards
+- **ArgoCD Plugin** - GitOps workflow management
+- **Multi-Cloud** - GCP and Azure support
+- **AI Assistant** - Contextual troubleshooting automation
 
-#### **✨ Integration Development**
+### Code Standards
 
-- **📊 Observability Hub** - Grafana/Prometheus/Loki integration (Phase 2)
-- **🔄 Pipeline Integration** - ArgoCD and GitHub Actions support (Phase 3)
-- **☁️ Multi-Cloud** - GCP and Azure integrations (Phase 4)
-- **🧩 Plugin System** - Community-extensible plugin framework
+- **Backend**: Go conventions, godoc comments, proper error handling
+- **Frontend**: TypeScript strict, no `any`, ESLint + Prettier
+- **Tests**: Required for new features
+- **Commits**: Semantic conventional commits (no emojis per team preference)
 
-#### **🤖 AI & UX Enhancement**
+## 📊 Project Status
 
-- **AI Assistant** - Contextual help and troubleshooting automation
-- **Developer UX** - Intuitive workflows that abstract tool complexity
-- **📖 Documentation** - Integration guides and plugin development docs
-- **🚀 Performance** - Cross-tool performance optimizations
+> **🚧 BETA** - Active development, breaking changes expected
 
-### **💻 Code Standards**
+| Component          | Status      | Maturity                                |
+| ------------------ | ----------- | --------------------------------------- |
+| **Backend API**    | 🔄 Beta     | Go 1.21+ - Stable core, evolving        |
+| **Frontend**       | 🔄 Beta     | React 19 + TypeScript - Stable UI       |
+| **Setup Module**   | ✅ Alpha    | Interactive wizard - v0.5.0             |
+| **Settings**       | ✅ Alpha    | Provider management - v0.5.0            |
+| **Service Catalog**| ✅ Beta     | Complete lifecycle management           |
+| **Observability**  | ✅ Beta     | Logs & Traces - v0.4.0                  |
+| **AWS Plugin**     | 🔄 Alpha    | EC2 operations - Basic features         |
+| **Kubernetes**     | 🔄 Alpha    | Multi-cluster - Basic features          |
+| **OAuth2**         | 🔄 Beta     | GitHub integration - Functional         |
+| **Docker Images**  | ✅ Available| Multi-arch - Testing only               |
+| **Helm Charts**    | 🔄 Alpha    | K8s deployment - Development only       |
 
-#### **Backend (Go)**
+### Production Readiness Checklist
 
-- **Testing** - Unit tests required for new features
-- **Documentation** - Godoc comments for public functions
-- **Error Handling** - Proper error propagation
-- **Code Review** - All changes require review
+❌ **NOT RECOMMENDED FOR PRODUCTION**
 
-#### **Frontend (TypeScript/React)**
+Missing features:
+- [ ] Enterprise security (encrypted secrets, RBAC)
+- [ ] Data persistence layer
+- [ ] Comprehensive error recovery
+- [ ] Monitoring and alerting
+- [ ] Rate limiting and WAF
+- [ ] Audit and compliance logging
 
-- **TypeScript Strict** - No `any` types allowed
-- **Testing** - Component tests with Testing Library
-- **Code Quality** - ESLint + Prettier enforced
-- **Semantic Commits** - Conventional commit messages
+## 🛡️ Security Notice
 
-## 🏷️ Plugin Development
+> **⚠️ Beta Security**: Current implementation is **NOT production-ready**
 
-### **Creating a New Plugin**
+**Current Limitations:**
+- Secrets stored in plain YAML files
+- Basic OAuth2 without enterprise SSO
+- No encrypted credential storage
+- Limited audit logging
+- No rate limiting on API endpoints
 
-1. **Backend Plugin** (`pkg/your-plugin/`)
+**Planned Enhancements:**
+- Encrypted storage (HashiCorp Vault, AWS Secrets Manager)
+- Enterprise SSO (SAML, OIDC)
+- Comprehensive RBAC with fine-grained permissions
+- Full audit trails and compliance reporting
 
-   ```go
-   package yourplugin
+## 🔗 Links
 
-   type Config struct {
-       // Plugin configuration
-   }
-
-   func NewHandler(config Config) *Handler {
-       // Implementation
-   }
-   ```
-
-2. **Frontend Module** (`front/src/modules/your-plugin/`)
-
-   ```typescript
-   // index.tsx - Module configuration
-   export default {
-     menus: Menu[],
-     routers: Router[],
-   };
-   ```
-
-3. **Documentation** (`docs/plugins/your-plugin.md`)
-   - Configuration options
-   - API endpoints
-   - Usage examples
-
-See [Plugin Development Guide](./docs/plugins/README.md) for detailed instructions.
-
-## 🛡️ Security
-
-> **⚠️ Beta Security Notice**: Current security implementation is basic and **NOT suitable for production environments**.
-
-### **Current Authentication (Beta)**
-
-1. **GitHub OAuth2** - Basic SSO integration
-2. **Organization Validation** - Simple team membership check
-3. **Basic Permissions** - Limited role-based access
-4. **Token Storage** - Browser localStorage (insecure for production)
-
-### **Security Limitations (Beta)**
-
-- **No encrypted storage** - Tokens stored in plain text
-- **Limited audit logging** - Basic action tracking only
-- **No session management** - Simple token-based auth
-- **Missing RBAC** - Rudimentary permission system
-- **No rate limiting** - API endpoints unprotected
-
-### **Planned Security Enhancements**
-
-- **Enterprise SSO** - SAML, OIDC, Active Directory
-- **Encrypted Storage** - Secure credential management
-- **Comprehensive RBAC** - Fine-grained permissions
-- **Audit & Compliance** - Full action logging and reporting
-- **API Security** - Rate limiting, WAF integration
-
-## 📊 Monitoring & Observability
-
-### **Health Endpoints**
-
-- `GET /api/health` - Application health status
-- `GET /api/version` - Version and build information
-
-### **Metrics** (Planned)
-
-- **Prometheus Integration** - System metrics
-- **Application Metrics** - Custom business metrics
-- **Tracing** - Request flow visualization
-
-## 🔗 Useful Links
-
-### **Project Resources**
-
-- **[Documentation Website](https://dash-ops.github.io/)** - Complete guides and API reference
-- **[GitHub Organization](https://github.com/dash-ops)** - All DashOps repositories
-- **[Main Repository](https://github.com/dash-ops/dash-ops)** - Source code and issues
-- **[Helm Charts](https://github.com/dash-ops/helm-charts)** - Kubernetes deployment charts
-- **[Docker Hub](https://hub.docker.com/r/dashops/dash-ops)** - Beta container images
-
-### **Community**
-
-- **[Issues](https://github.com/dash-ops/dash-ops/issues)** - Bug reports and feature requests
-- **[Discussions](https://github.com/dash-ops/dash-ops/discussions)** - Community discussions
-- **[Contributing Guide](https://dash-ops.github.io/#contributing)** - How to contribute
-
-## 🎊 Project Status
-
-> **🚧 BETA VERSION** - Active development, breaking changes expected
-
-| Component              | Status         | Maturity Level                         |
-| ---------------------- | -------------- | -------------------------------------- |
-| **Backend API**        | 🔄 Beta        | Go 1.21+ - Under development           |
-| **Frontend**           | 🔄 Beta        | TypeScript + React 18 - Stable UI      |
-| **AWS Plugin**         | 🔄 Alpha       | EC2 Operations - Basic features        |
-| **Kubernetes Plugin**  | 🔄 Alpha       | Multi-cluster Support - Basic features |
-| **OAuth2 Plugin**      | 🔄 Beta        | GitHub Integration - Functional        |
-| **Docker Images**      | ✅ Available   | Multi-arch Support - Testing only      |
-| **Helm Charts**        | 🔄 Alpha       | K8s Deployment - Development only      |
-| **Documentation**      | 🔄 In Progress | Comprehensive Guides                   |
-| **Service Catalog**    | ✅ Available   | Complete service lifecycle management   |
-| **Observability**      | ✅ Beta        | Logs & Traces integration - v0.1        |
-| **FinOps Integration** | 📋 Planned     | Q1 2026 - Cost management              |
-
-### **Production Readiness**
-
-❌ **NOT RECOMMENDED FOR PRODUCTION USE**
-
-- Missing enterprise security features
-- Limited error handling and recovery
-- No data persistence layer
-- Incomplete access control system
-- Missing monitoring and alerting
-- Breaking changes expected in updates
+- **[Documentation](https://dash-ops.github.io/)** - Complete guides
+- **[Issues](https://github.com/dash-ops/dash-ops/issues)** - Bug reports
+- **[Discussions](https://github.com/dash-ops/dash-ops/discussions)** - Community
+- **[Helm Charts](https://github.com/dash-ops/helm-charts)** - Kubernetes deployment
+- **[Docker Hub](https://hub.docker.com/r/dashops/dash-ops)** - Container images
 
 ## 📄 License
 
-This project is licensed under the [MIT License](./LICENSE) - see the license file for details.
+MIT License - see [LICENSE](./LICENSE) for details.
 
 ---
 
 **⚠️ Beta software - Use for testing and evaluation only!** 🧪
 
-For detailed setup instructions, visit **[dash-ops.github.io](https://dash-ops.github.io/)**.
-
-For frontend development, see the [frontend guide](./front/README.md).
+For detailed documentation, visit **[dash-ops.github.io](https://dash-ops.github.io/)**.
