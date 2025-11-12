@@ -1,4 +1,23 @@
-import type { Plugin } from '../types';
+import type { Plugin, PluginsResponse } from '../types';
+
+export const transformPluginsToDomain = (apiPlugins: string[]): Plugin[] => {
+  return apiPlugins.map(pluginName => ({
+    id: pluginName,
+    enabled: true, // Assume enabled if returned by API
+  }));
+};
+
+export const transformPluginsResponseToDomain = (response: PluginsResponse): Plugin[] => {
+  return transformPluginsToDomain(response.data);
+};
+
+export const transformPluginToApiRequest = (plugin: Plugin): string => {
+  return plugin.id;
+};
+
+export const isPluginEnabled = (plugin: Plugin): boolean => {
+  return plugin.enabled;
+};
 
 export const getPluginDisplayName = (plugin: Plugin): string => {
   return plugin.id.charAt(0).toUpperCase() + plugin.id.slice(1).replace(/-/g, ' ');
@@ -6,45 +25,45 @@ export const getPluginDisplayName = (plugin: Plugin): string => {
 
 export const getPluginIcon = (pluginName: string): string => {
   const iconMap: Record<string, string> = {
-    'aws': 'aws',
-    'kubernetes': 'kubernetes', 
+    aws: 'aws',
+    kubernetes: 'kubernetes',
     'service-catalog': 'layers-3',
-    'oauth2': 'shield',
-    'observability': 'activity',
-    'config': 'settings',
+    oauth2: 'shield',
+    observability: 'activity',
+    config: 'settings',
   };
-  
+
   return iconMap[pluginName] || 'package';
 };
 
 export const getPluginDescription = (pluginName: string): string => {
   const descriptions: Record<string, string> = {
-    'aws': 'Amazon Web Services integration for managing EC2 instances and other AWS resources',
-    'kubernetes': 'Kubernetes cluster management and monitoring capabilities',
+    aws: 'Amazon Web Services integration for managing EC2 instances and other AWS resources',
+    kubernetes: 'Kubernetes cluster management and monitoring capabilities',
     'service-catalog': 'Service catalog for managing and discovering application services',
-    'oauth2': 'OAuth2 authentication and authorization management',
-    'observability': 'Observability tools including metrics, logs, and traces',
-    'config': 'Configuration management and system settings',
+    oauth2: 'OAuth2 authentication and authorization management',
+    observability: 'Observability tools including metrics, logs, and traces',
+    config: 'Configuration management and system settings',
   };
-  
+
   return descriptions[pluginName] || 'Plugin for managing system resources';
 };
 
 export const getPluginCategory = (pluginName: string): string => {
   const categories: Record<string, string> = {
-    'aws': 'Cloud Provider',
-    'kubernetes': 'Container Platform',
+    aws: 'Cloud Provider',
+    kubernetes: 'Container Platform',
     'service-catalog': 'Service Management',
-    'oauth2': 'Authentication',
-    'observability': 'Monitoring',
-    'config': 'System',
+    oauth2: 'Authentication',
+    observability: 'Monitoring',
+    config: 'System',
   };
-  
+
   return categories[pluginName] || 'Other';
 };
 
 export const getPluginStatusColor = (enabled: boolean): string => {
-  return enabled 
+  return enabled
     ? 'bg-green-100 text-green-800 border-green-200'
     : 'bg-gray-100 text-gray-800 border-gray-200';
 };
@@ -65,11 +84,11 @@ export const sortPluginsByCategory = (plugins: Plugin[]): Plugin[] => {
   return [...plugins].sort((a, b) => {
     const categoryA = getPluginCategory(a.id);
     const categoryB = getPluginCategory(b.id);
-    
+
     if (categoryA === categoryB) {
       return a.id.localeCompare(b.id);
     }
-    
+
     return categoryA.localeCompare(categoryB);
   });
 };
@@ -79,7 +98,7 @@ export const filterPluginsByCategory = (plugins: Plugin[], category: string): Pl
 };
 
 export const filterEnabledPlugins = (plugins: Plugin[]): Plugin[] => {
-  return plugins.filter(plugin => plugin.enabled);
+  return plugins.filter(isPluginEnabled);
 };
 
 export const filterDisabledPlugins = (plugins: Plugin[]): Plugin[] => {
@@ -88,7 +107,7 @@ export const filterDisabledPlugins = (plugins: Plugin[]): Plugin[] => {
 
 export const searchPlugins = (plugins: Plugin[], query: string): Plugin[] => {
   const lowercaseQuery = query.toLowerCase();
-  return plugins.filter(plugin => 
+  return plugins.filter(plugin =>
     plugin.id.toLowerCase().includes(lowercaseQuery) ||
     getPluginDisplayName(plugin).toLowerCase().includes(lowercaseQuery) ||
     getPluginDescription(plugin.id).toLowerCase().includes(lowercaseQuery) ||
@@ -115,7 +134,7 @@ export const getPluginCategories = (plugins: Plugin[]): string[] => {
 
 export const getPluginsByCategory = (plugins: Plugin[]): Record<string, Plugin[]> => {
   const categorized: Record<string, Plugin[]> = {};
-  
+
   plugins.forEach(plugin => {
     const category = getPluginCategory(plugin.id);
     if (!categorized[category]) {
@@ -123,12 +142,11 @@ export const getPluginsByCategory = (plugins: Plugin[]): Record<string, Plugin[]
     }
     categorized[category].push(plugin);
   });
-  
-  // Sort plugins within each category
+
   Object.keys(categorized).forEach(category => {
     categorized[category] = sortPluginsByName(categorized[category]);
   });
-  
+
   return categorized;
 };
 
@@ -140,7 +158,6 @@ export const formatPluginList = (plugins: Plugin[]): string => {
 };
 
 export const validatePluginName = (name: string): boolean => {
-  // Plugin names should be lowercase, alphanumeric with hyphens
   const regex = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
   return regex.test(name) && name.length >= 2 && name.length <= 50;
 };
@@ -157,14 +174,14 @@ export const isPluginOptional = (pluginName: string): boolean => {
 
 export const getPluginPriority = (pluginName: string): number => {
   const priorities: Record<string, number> = {
-    'config': 1,
-    'oauth2': 2,
-    'aws': 3,
-    'kubernetes': 4,
+    config: 1,
+    oauth2: 2,
+    aws: 3,
+    kubernetes: 4,
     'service-catalog': 5,
-    'observability': 6,
+    observability: 6,
   };
-  
+
   return priorities[pluginName] || 999;
 };
 
@@ -172,11 +189,12 @@ export const sortPluginsByPriority = (plugins: Plugin[]): Plugin[] => {
   return [...plugins].sort((a, b) => {
     const priorityA = getPluginPriority(a.id);
     const priorityB = getPluginPriority(b.id);
-    
+
     if (priorityA === priorityB) {
       return a.id.localeCompare(b.id);
     }
-    
+
     return priorityA - priorityB;
   });
 };
+

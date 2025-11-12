@@ -45,6 +45,7 @@ export interface LoadedModulesConfig {
   auth: AuthConfig;
   menus: Menu[];
   routers: Router[];
+  setupMode: boolean;
 }
 
 // Generic filter interface

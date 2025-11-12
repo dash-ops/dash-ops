@@ -21,12 +21,10 @@ import './App.css';
 
 export default function App(): JSX.Element {
   const [auth, setAuth] = useState<AuthConfig>({ active: false });
-  const [menus, setMenus] = useState<Menu[]>([
-    ...(DashboardModule.menus || []),
-  ]);
-  const [routers, setRouters] = useState<Router[]>([
-    ...(DashboardModule.routers || []),
-  ]);
+  const [menus, setMenus] = useState<Menu[]>([]);
+  const [routers, setRouters] = useState<Router[]>([]);
+  const [setupMode, setSetupMode] = useState<boolean | null>(null);
+  const [modulesReady, setModulesReady] = useState<boolean>(false);
   const initialized = useRef<boolean>(false);
 
   useEffect(() => {
@@ -37,14 +35,68 @@ export default function App(): JSX.Element {
     loadModulesConfig()
       .then((modules) => {
         setAuth(modules.auth);
-        setMenus([...(DashboardModule.menus || []), ...modules.menus]);
-        setRouters([...(DashboardModule.routers || []), ...modules.routers]);
+        setSetupMode(modules.setupMode);
+
+        if (modules.setupMode) {
+          setMenus(modules.menus || []);
+          setRouters(modules.routers || []);
+        } else {
+          setMenus([
+            ...(DashboardModule.menus || []),
+            ...(modules.menus || []),
+          ]);
+          setRouters([
+            ...(DashboardModule.routers || []),
+            ...(modules.routers || []),
+          ]);
+        }
       })
       .catch((error) => {
         console.error('Failed to load modules:', error);
+        // ToDo: create new page for error
         toast.error('Failed to load plugins');
+        setSetupMode(false);
+        setMenus([...(DashboardModule.menus || [])]);
+        setRouters([...(DashboardModule.routers || [])]);
+      })
+      .finally(() => {
+        setModulesReady(true);
       });
   }, []);
+
+  if (!modulesReady) {
+    return (
+      <ThemeProvider>
+        <div className="flex h-screen items-center justify-center">
+          <span className="text-sm text-muted-foreground">
+            Loading DashOps...
+          </span>
+        </div>
+        <Toaster />
+      </ThemeProvider>
+    );
+  }
+
+  if (setupMode) {
+    return (
+      <ThemeProvider>
+        <Routes>
+          {routers.map((route) => (
+            <Route
+              key={route.key}
+              path={route.path}
+              element={route.element}
+            />
+          ))}
+        </Routes>
+        <Toaster />
+      </ThemeProvider>
+    );
+  }
+
+  const sidebarMenus = menus.length > 0 ? menus : (DashboardModule.menus || []);
+  const appRouters =
+    routers.length > 0 ? routers : (DashboardModule.routers || []);
 
   return (
     <ThemeProvider>
@@ -56,7 +108,7 @@ export default function App(): JSX.Element {
           path="*"
           element={
             <SidebarProvider>
-              <AppSidebar menus={menus} oAuth2={auth.active} />
+              <AppSidebar menus={sidebarMenus} oAuth2={auth.active} />
               <SidebarInset>
                 <header className="flex h-16 shrink-0 items-center justify-between gap-2 border-b px-4">
                   <div className="flex items-center gap-2">
@@ -70,7 +122,7 @@ export default function App(): JSX.Element {
                 </header>
                 <main className="flex flex-1 flex-col gap-4 p-4 pt-0 overflow-auto">
                   <Routes>
-                    {routers.map((route) => (
+                    {appRouters.map((route) => (
                       <Route
                         key={route.key}
                         path={route.path}

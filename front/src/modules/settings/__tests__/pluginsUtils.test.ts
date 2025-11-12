@@ -1,54 +1,74 @@
 import { describe, it, expect } from 'vitest';
-import * as configUtils from '../utils/configUtils';
+import * as pluginsUtils from '../utils/plugins';
 import type { Plugin } from '../types';
 
-describe('configUtils', () => {
+describe('pluginsUtils', () => {
   const mockPlugin: Plugin = {
     id: 'aws',
     enabled: true,
   };
 
+  it('transforms API plugins to domain models', () => {
+    const apiPlugins = ['aws', 'kubernetes'];
+    expect(pluginsUtils.transformPluginsToDomain(apiPlugins)).toEqual([
+      { id: 'aws', enabled: true },
+      { id: 'kubernetes', enabled: true },
+    ]);
+  });
+
+  it('transforms plugins response to domain', () => {
+    const response = { data: ['aws', 'kubernetes'] };
+    expect(pluginsUtils.transformPluginsResponseToDomain(response)).toEqual([
+      { id: 'aws', enabled: true },
+      { id: 'kubernetes', enabled: true },
+    ]);
+  });
+
+  it('transforms plugin to API request payload', () => {
+    expect(pluginsUtils.transformPluginToApiRequest(mockPlugin)).toBe('aws');
+  });
+
   it('should get plugin display name', () => {
-    expect(configUtils.getPluginDisplayName(mockPlugin)).toBe('Aws');
-    
+    expect(pluginsUtils.getPluginDisplayName(mockPlugin)).toBe('Aws');
+
     const pluginWithHyphens: Plugin = { id: 'service-catalog', enabled: true };
-    expect(configUtils.getPluginDisplayName(pluginWithHyphens)).toBe('Service catalog');
+    expect(pluginsUtils.getPluginDisplayName(pluginWithHyphens)).toBe('Service catalog');
   });
 
   it('should get plugin icon', () => {
-    expect(configUtils.getPluginIcon('aws')).toBe('aws');
-    expect(configUtils.getPluginIcon('kubernetes')).toBe('kubernetes');
-    expect(configUtils.getPluginIcon('service-catalog')).toBe('layers-3');
-    expect(configUtils.getPluginIcon('oauth2')).toBe('shield');
-    expect(configUtils.getPluginIcon('unknown')).toBe('package');
+    expect(pluginsUtils.getPluginIcon('aws')).toBe('aws');
+    expect(pluginsUtils.getPluginIcon('kubernetes')).toBe('kubernetes');
+    expect(pluginsUtils.getPluginIcon('service-catalog')).toBe('layers-3');
+    expect(pluginsUtils.getPluginIcon('oauth2')).toBe('shield');
+    expect(pluginsUtils.getPluginIcon('unknown')).toBe('package');
   });
 
   it('should get plugin description', () => {
-    expect(configUtils.getPluginDescription('aws')).toContain('Amazon Web Services');
-    expect(configUtils.getPluginDescription('kubernetes')).toContain('Kubernetes cluster');
-    expect(configUtils.getPluginDescription('unknown')).toBe('Plugin for managing system resources');
+    expect(pluginsUtils.getPluginDescription('aws')).toContain('Amazon Web Services');
+    expect(pluginsUtils.getPluginDescription('kubernetes')).toContain('Kubernetes cluster');
+    expect(pluginsUtils.getPluginDescription('unknown')).toBe('Plugin for managing system resources');
   });
 
   it('should get plugin category', () => {
-    expect(configUtils.getPluginCategory('aws')).toBe('Cloud Provider');
-    expect(configUtils.getPluginCategory('kubernetes')).toBe('Container Platform');
-    expect(configUtils.getPluginCategory('oauth2')).toBe('Authentication');
-    expect(configUtils.getPluginCategory('unknown')).toBe('Other');
+    expect(pluginsUtils.getPluginCategory('aws')).toBe('Cloud Provider');
+    expect(pluginsUtils.getPluginCategory('kubernetes')).toBe('Container Platform');
+    expect(pluginsUtils.getPluginCategory('oauth2')).toBe('Authentication');
+    expect(pluginsUtils.getPluginCategory('unknown')).toBe('Other');
   });
 
   it('should get plugin status color', () => {
-    expect(configUtils.getPluginStatusColor(true)).toContain('green');
-    expect(configUtils.getPluginStatusColor(false)).toContain('gray');
+    expect(pluginsUtils.getPluginStatusColor(true)).toContain('green');
+    expect(pluginsUtils.getPluginStatusColor(false)).toContain('gray');
   });
 
   it('should get plugin status label', () => {
-    expect(configUtils.getPluginStatusLabel(true)).toBe('Enabled');
-    expect(configUtils.getPluginStatusLabel(false)).toBe('Disabled');
+    expect(pluginsUtils.getPluginStatusLabel(true)).toBe('Enabled');
+    expect(pluginsUtils.getPluginStatusLabel(false)).toBe('Disabled');
   });
 
   it('should get plugin status icon', () => {
-    expect(configUtils.getPluginStatusIcon(true)).toBe('check-circle');
-    expect(configUtils.getPluginStatusIcon(false)).toBe('x-circle');
+    expect(pluginsUtils.getPluginStatusIcon(true)).toBe('check-circle');
+    expect(pluginsUtils.getPluginStatusIcon(false)).toBe('x-circle');
   });
 
   it('should sort plugins by name', () => {
@@ -57,8 +77,8 @@ describe('configUtils', () => {
       { id: 'aws', enabled: true },
       { id: 'service-catalog', enabled: true },
     ];
-    
-    const result = configUtils.sortPluginsByName(plugins);
+
+    const result = pluginsUtils.sortPluginsByName(plugins);
     expect(result[0].id).toBe('aws');
     expect(result[1].id).toBe('kubernetes');
     expect(result[2].id).toBe('service-catalog');
@@ -70,8 +90,8 @@ describe('configUtils', () => {
       { id: 'aws', enabled: true },
       { id: 'oauth2', enabled: true },
     ];
-    
-    const result = configUtils.sortPluginsByCategory(plugins);
+
+    const result = pluginsUtils.sortPluginsByCategory(plugins);
     expect(result[0].id).toBe('oauth2'); // Authentication (A comes first alphabetically)
     expect(result[1].id).toBe('aws'); // Cloud Provider
     expect(result[2].id).toBe('kubernetes'); // Container Platform
@@ -83,8 +103,8 @@ describe('configUtils', () => {
       { id: 'kubernetes', enabled: true },
       { id: 'oauth2', enabled: true },
     ];
-    
-    const result = configUtils.filterPluginsByCategory(plugins, 'Cloud Provider');
+
+    const result = pluginsUtils.filterPluginsByCategory(plugins, 'Cloud Provider');
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('aws');
   });
@@ -95,8 +115,8 @@ describe('configUtils', () => {
       { id: 'kubernetes', enabled: false },
       { id: 'service-catalog', enabled: true },
     ];
-    
-    const result = configUtils.filterEnabledPlugins(plugins);
+
+    const result = pluginsUtils.filterEnabledPlugins(plugins);
     expect(result).toHaveLength(2);
     expect(result[0].id).toBe('aws');
     expect(result[1].id).toBe('service-catalog');
@@ -108,8 +128,8 @@ describe('configUtils', () => {
       { id: 'kubernetes', enabled: false },
       { id: 'service-catalog', enabled: true },
     ];
-    
-    const result = configUtils.filterDisabledPlugins(plugins);
+
+    const result = pluginsUtils.filterDisabledPlugins(plugins);
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('kubernetes');
   });
@@ -120,12 +140,12 @@ describe('configUtils', () => {
       { id: 'kubernetes', enabled: true },
       { id: 'service-catalog', enabled: true },
     ];
-    
-    const result = configUtils.searchPlugins(plugins, 'aws');
+
+    const result = pluginsUtils.searchPlugins(plugins, 'aws');
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe('aws');
-    
-    const result2 = configUtils.searchPlugins(plugins, 'cloud');
+
+    const result2 = pluginsUtils.searchPlugins(plugins, 'cloud');
     expect(result2).toHaveLength(1);
     expect(result2[0].id).toBe('aws');
   });
@@ -136,10 +156,10 @@ describe('configUtils', () => {
       { id: 'kubernetes', enabled: false },
       { id: 'service-catalog', enabled: true },
     ];
-    
-    expect(configUtils.getPluginCount(plugins)).toBe(3);
-    expect(configUtils.getEnabledPluginCount(plugins)).toBe(2);
-    expect(configUtils.getDisabledPluginCount(plugins)).toBe(1);
+
+    expect(pluginsUtils.getPluginCount(plugins)).toBe(3);
+    expect(pluginsUtils.getEnabledPluginCount(plugins)).toBe(2);
+    expect(pluginsUtils.getDisabledPluginCount(plugins)).toBe(1);
   });
 
   it('should get plugin categories', () => {
@@ -148,8 +168,8 @@ describe('configUtils', () => {
       { id: 'kubernetes', enabled: true },
       { id: 'oauth2', enabled: true },
     ];
-    
-    const result = configUtils.getPluginCategories(plugins);
+
+    const result = pluginsUtils.getPluginCategories(plugins);
     expect(result).toContain('Cloud Provider');
     expect(result).toContain('Container Platform');
     expect(result).toContain('Authentication');
@@ -161,8 +181,8 @@ describe('configUtils', () => {
       { id: 'kubernetes', enabled: true },
       { id: 'oauth2', enabled: true },
     ];
-    
-    const result = configUtils.getPluginsByCategory(plugins);
+
+    const result = pluginsUtils.getPluginsByCategory(plugins);
     expect(result['Cloud Provider']).toHaveLength(1);
     expect(result['Cloud Provider'][0].id).toBe('aws');
     expect(result['Container Platform']).toHaveLength(1);
@@ -174,37 +194,37 @@ describe('configUtils', () => {
       { id: 'aws', enabled: true },
       { id: 'kubernetes', enabled: true },
     ];
-    
-    expect(configUtils.formatPluginList([])).toBe('No plugins available');
-    expect(configUtils.formatPluginList([plugins[0]])).toBe('aws');
-    expect(configUtils.formatPluginList(plugins)).toBe('aws and kubernetes');
+
+    expect(pluginsUtils.formatPluginList([])).toBe('No plugins available');
+    expect(pluginsUtils.formatPluginList([plugins[0]])).toBe('aws');
+    expect(pluginsUtils.formatPluginList(plugins)).toBe('aws and kubernetes');
   });
 
   it('should validate plugin name', () => {
-    expect(configUtils.validatePluginName('aws')).toBe(true);
-    expect(configUtils.validatePluginName('service-catalog')).toBe(true);
-    expect(configUtils.validatePluginName('AWS')).toBe(false);
-    expect(configUtils.validatePluginName('')).toBe(false);
-    expect(configUtils.validatePluginName('a')).toBe(false);
+    expect(pluginsUtils.validatePluginName('aws')).toBe(true);
+    expect(pluginsUtils.validatePluginName('service-catalog')).toBe(true);
+    expect(pluginsUtils.validatePluginName('AWS')).toBe(false);
+    expect(pluginsUtils.validatePluginName('')).toBe(false);
+    expect(pluginsUtils.validatePluginName('a')).toBe(false);
   });
 
   it('should check if plugin is core', () => {
-    expect(configUtils.isPluginCore('config')).toBe(true);
-    expect(configUtils.isPluginCore('oauth2')).toBe(true);
-    expect(configUtils.isPluginCore('aws')).toBe(false);
+    expect(pluginsUtils.isPluginCore('config')).toBe(true);
+    expect(pluginsUtils.isPluginCore('oauth2')).toBe(true);
+    expect(pluginsUtils.isPluginCore('aws')).toBe(false);
   });
 
   it('should check if plugin is optional', () => {
-    expect(configUtils.isPluginOptional('observability')).toBe(true);
-    expect(configUtils.isPluginOptional('service-catalog')).toBe(true);
-    expect(configUtils.isPluginOptional('aws')).toBe(false);
+    expect(pluginsUtils.isPluginOptional('observability')).toBe(true);
+    expect(pluginsUtils.isPluginOptional('service-catalog')).toBe(true);
+    expect(pluginsUtils.isPluginOptional('aws')).toBe(false);
   });
 
   it('should get plugin priority', () => {
-    expect(configUtils.getPluginPriority('config')).toBe(1);
-    expect(configUtils.getPluginPriority('oauth2')).toBe(2);
-    expect(configUtils.getPluginPriority('aws')).toBe(3);
-    expect(configUtils.getPluginPriority('unknown')).toBe(999);
+    expect(pluginsUtils.getPluginPriority('config')).toBe(1);
+    expect(pluginsUtils.getPluginPriority('oauth2')).toBe(2);
+    expect(pluginsUtils.getPluginPriority('aws')).toBe(3);
+    expect(pluginsUtils.getPluginPriority('unknown')).toBe(999);
   });
 
   it('should sort plugins by priority', () => {
@@ -213,10 +233,11 @@ describe('configUtils', () => {
       { id: 'config', enabled: true },
       { id: 'oauth2', enabled: true },
     ];
-    
-    const result = configUtils.sortPluginsByPriority(plugins);
+
+    const result = pluginsUtils.sortPluginsByPriority(plugins);
     expect(result[0].id).toBe('config');
     expect(result[1].id).toBe('oauth2');
     expect(result[2].id).toBe('aws');
   });
 });
+

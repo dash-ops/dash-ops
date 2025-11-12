@@ -1,5 +1,5 @@
 import { toast } from 'sonner';
-import { getPlugins } from '../modules/config/resources/configResource';
+import { getPlugins } from '../modules/settings/resources/pluginsResource';
 import {
   Menu,
   Router,
@@ -8,59 +8,90 @@ import {
   LoadedModulesConfig,
 } from '@/types';
 
-// LoadedModulesConfig is now imported from @/types
+type ModuleOptions = Record<string, unknown> | undefined;
 
-export function loadModulesConfig(): Promise<LoadedModulesConfig> {
-  return getPlugins().then(({ data }) => {
-    // Filter valid plugin names
-    const validPlugins = data.filter(
-      (plugin) => plugin && plugin.trim() !== ''
-    );
+const pluginToFolderMap: Record<string, string> = {
+  servicecatalog: 'service-catalog',
+  auth: 'oauth2',
+  kubernetes: 'kubernetes',
+  aws: 'aws',
+  observability: 'observability',
+  settings: 'settings',
+};
 
-    const modulesConfig = validPlugins.map((pluginName) => {
-      // Map plugin names to their actual folder names
-      const pluginToFolderMap: Record<string, string> = {
-        servicecatalog: 'service-catalog',
-        auth: 'oauth2',
-        kubernetes: 'kubernetes',
-        aws: 'aws',
-        config: 'config',
-        observability: 'observability',
-      };
+export async function loadModulesConfig(): Promise<LoadedModulesConfig> {
+  const response = await getPlugins();
+  const rawPlugins = Array.isArray(response.data) ? response.data : [];
+  const validPlugins = rawPlugins.filter(
+    (plugin) => typeof plugin === 'string' && plugin.trim() !== ''
+  );
 
+  const setupRequired = validPlugins.length === 0;
+  const pluginsToLoad = setupRequired ? ['settings'] : [...validPlugins];
+
+  if (
+    !pluginsToLoad.some(
+      (pluginName) => pluginName.toLowerCase() === 'settings'
+    )
+  ) {
+    pluginsToLoad.push('settings');
+  }
+
+  const loadModule = async (
+    pluginName: string,
+    options?: ModuleOptions
+  ): Promise<ModuleConfig> => {
       const moduleNameLower = pluginName.toLowerCase();
       const folderName = pluginToFolderMap[moduleNameLower] || moduleNameLower;
 
-      // Try .tsx first, then .ts
-      const tryImport = (extension: string): Promise<ModuleConfig> => {
-        return import(`../modules/${folderName}/index.${extension}`).then(
-          (module) => {
-            if (typeof module.default === 'function') {
-              // Module with dynamic route loading
-              return module
-                .default()
-                .then((config: ModuleConfig) => config)
-                .catch((e: Error) => {
+    const invokeLoader = async (
+      loader: unknown,
+      loaderOptions?: ModuleOptions
+    ): Promise<ModuleConfig> => {
+      if (typeof loader === 'function') {
+        const result = (loader as (opts?: ModuleOptions) => ModuleConfig | Promise<ModuleConfig>)(loaderOptions);
+        return await Promise.resolve(result);
+      }
+      return loader as ModuleConfig;
+    };
+
+    const tryImport = async (extension: string): Promise<ModuleConfig> => {
+      const module = await import(`../modules/${folderName}/index.${extension}`);
+      return invokeLoader(module.default, options);
+    };
+
+    try {
+      return await tryImport('tsx');
+    } catch (tsxError) {
+      try {
+        return await tryImport('ts');
+      } catch (error) {
                   toast.error(
-                    `Failed to load plugin ${pluginName}: ${e.message}`
+          `Failed to load plugin ${pluginName}: ${
+            error instanceof Error ? error.message : String(error)
+          }`
                   );
                   return {} as ModuleConfig;
-                });
-            }
-            return module.default as ModuleConfig;
-          }
-        );
-      };
+      }
+    }
+  };
 
-      return tryImport('tsx').catch(() => tryImport('ts'));
-    });
+  const moduleConfigs = await Promise.all(
+    pluginsToLoad.map((pluginName) =>
+      loadModule(
+        pluginName,
+        pluginName.toLowerCase() === 'settings' && setupRequired
+          ? { setupMode: true }
+          : undefined
+      )
+    )
+  );
 
-    return Promise.all(modulesConfig).then((configs) => {
       let auth: AuthConfig = { active: false };
       let menus: Menu[] = [];
       let routers: Router[] = [];
 
-      configs.forEach((config) => {
+  moduleConfigs.forEach((config) => {
         if (config.auth) {
           auth = config.auth;
         }
@@ -72,7 +103,5 @@ export function loadModulesConfig(): Promise<LoadedModulesConfig> {
         }
       });
 
-      return { auth, menus, routers };
-    });
-  });
+  return { auth, menus, routers, setupMode: setupRequired };
 }
