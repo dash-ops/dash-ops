@@ -1,5 +1,7 @@
 # DashOPS - Developer Experience Hub with AI (Beta)
 
+> **🗄️ ARCHIVED** — This project is no longer maintained. See [ARCHIVE.md](./ARCHIVE.md) for context.
+
 ![DashOps](https://github.com/dash-ops/dash-ops/workflows/DashOps/badge.svg)
 
 > **⚠️ BETA VERSION - NOT RECOMMENDED FOR PRODUCTION USE**
